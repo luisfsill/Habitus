@@ -2,9 +2,8 @@ import { createContext, useContext } from "react";
 import { Platform, type TextStyle, useColorScheme } from "react-native";
 
 /**
- * Palette from the ui-ux-pro-max design system ("calm lavender + mindful
- * green"), mapped onto iOS system greys. Text colours meet WCAG AA (4.5:1)
- * on their backgrounds; `success`/`warm` fills are paired with darker text
+ * Cobalt accent with mindful green, mapped onto iOS system greys. Text
+ * colours meet WCAG AA (4.5:1) on their backgrounds; `success`/`warm` fills are paired with darker text
  * variants where they carry text on light surfaces.
  */
 const light = {
@@ -15,19 +14,19 @@ const light = {
   label: "#111118",
   secondaryLabel: "#5B5B66",
   separator: "rgba(60,60,67,0.18)",
-  accent: "#7C3AED",
+  accent: "#1D5BD8",
   onAccent: "#FFFFFF",
-  accentSoft: "rgba(124,58,237,0.12)",
-  accentText: "#6D28D9",
+  accentSoft: "rgba(29,91,216,0.12)",
+  accentText: "#1A4FBF",
   success: "#059669",
   successText: "#047857",
   successSoft: "rgba(5,150,105,0.14)",
   warm: "#B45309",
   danger: "#C62828",
-  ringTrack: "rgba(124,58,237,0.14)",
+  ringTrack: "rgba(29,91,216,0.14)",
   /** Off track of a switch: iOS system grey, ≥3:1 against the card (WCAG 1.4.11). */
   switchOff: "#8E8E93",
-  shadow: "#1E1033",
+  shadow: "#0A1A3F",
 };
 
 const dark: typeof light = {
@@ -38,16 +37,16 @@ const dark: typeof light = {
   label: "#F5F5F7",
   secondaryLabel: "#A1A1AA",
   separator: "rgba(84,84,88,0.6)",
-  accent: "#A78BFA",
-  onAccent: "#1E1033",
-  accentSoft: "rgba(167,139,250,0.18)",
-  accentText: "#C4B5FD",
+  accent: "#3D7BFF",
+  onAccent: "#FFFFFF",
+  accentSoft: "rgba(61,123,255,0.18)",
+  accentText: "#8FB3FF",
   success: "#34D399",
   successText: "#34D399",
   successSoft: "rgba(52,211,153,0.18)",
   warm: "#FBBF24",
   danger: "#F87171",
-  ringTrack: "rgba(167,139,250,0.2)",
+  ringTrack: "rgba(61,123,255,0.2)",
   switchOff: "#636366",
   shadow: "#000000",
 };
