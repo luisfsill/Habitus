@@ -114,7 +114,11 @@ export default function SettingsScreen() {
           <Switch
             value={draft.sound}
             onValueChange={(sound) => void change({ sound })}
-            trackColor={{ true: colors.accent }}
+            trackColor={{ true: colors.accent, false: colors.switchOff }}
+            thumbColor="#FFFFFF"
+            // react-native-web paints the "on" thumb teal unless told otherwise.
+            {...{ activeThumbColor: "#FFFFFF" }}
+            ios_backgroundColor={colors.switchOff}
             accessibilityLabel="Som das notificações"
           />
         </View>

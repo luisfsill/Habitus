@@ -25,6 +25,8 @@ const light = {
   warm: "#B45309",
   danger: "#C62828",
   ringTrack: "rgba(124,58,237,0.14)",
+  /** Off track of a switch: iOS system grey, ≥3:1 against the card (WCAG 1.4.11). */
+  switchOff: "#8E8E93",
   shadow: "#1E1033",
 };
 
@@ -46,6 +48,7 @@ const dark: typeof light = {
   warm: "#FBBF24",
   danger: "#F87171",
   ringTrack: "rgba(167,139,250,0.2)",
+  switchOff: "#636366",
   shadow: "#000000",
 };
 
