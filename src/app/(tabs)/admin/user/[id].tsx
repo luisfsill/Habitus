@@ -9,7 +9,7 @@ import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
 import { SegmentedControl } from "@/components/segmented-control";
 import { TextField } from "@/components/text-field";
-import { accessStatus, displayName, endOfDaySaoPaulo, extendAccess, type Profile, type Role } from "@/domain/access";
+import { displayName, endOfDaySaoPaulo, extendAccess, type Profile, type Role, statusLabel } from "@/domain/access";
 import { isValidEmail } from "@/domain/auth-rules";
 import { deleteUser, listProfiles, resetPassword, setAccess, setRole, updateEmail, updateName } from "@/services/admin";
 import { useAuth } from "@/state/auth";
@@ -129,7 +129,7 @@ export default function AdminUserScreen() {
         />
       </Section>
 
-      <Section title="Acesso" footer={`Status: ${accessStatus(p, new Date())}. Validade atual: ${p.unlimited ? "ilimitado" : formatDate(p.accessUntil)}.`}>
+      <Section title="Acesso" footer={`Status: ${statusLabel(p, new Date())}. Validade atual: ${p.unlimited ? "ilimitado" : formatDate(p.accessUntil)}.`}>
         <View style={styles.inline}>
           <TextField label="Adicionar dias" value={days} onChangeText={setDays} keyboardType="number-pad" placeholder="ex.: 15" />
           <PrimaryButton label="Adicionar" variant="tinted" onPress={addDays} />

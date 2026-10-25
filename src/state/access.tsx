@@ -14,7 +14,8 @@ interface AccessValue {
   offline: boolean;
   hasAccess: boolean;
   isAdmin: boolean;
-  refresh: () => Promise<void>;
+  /** Re-reads the profile; returns it, or null when it could not be read. */
+  refresh: () => Promise<Profile | null>;
   setName: (name: string) => Promise<void>;
 }
 
@@ -26,19 +27,25 @@ export function AccessProvider({ userId, children }: { userId: string | null; ch
   const [ready, setReady] = useState(userId === null);
   const [offline, setOffline] = useState(false);
   const known = useRef(false);
+  // Bumped on every refresh, so an expiry is noticed even offline (the profile itself does not change).
+  const [checkedAt, setCheckedAt] = useState(() => Date.now());
 
   const refresh = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) return null;
     try {
       const fresh = await fetchMyProfile(userId);
       known.current = true;
       setProfile(fresh);
       setOffline(false);
       await saveProfileCache(fresh);
+      return fresh;
     } catch (error) {
       log.warn("could not read profile", error);
       // With a saved copy the app keeps working; without one it cannot know the plan.
       setOffline(!known.current);
+      return null;
+    } finally {
+      setCheckedAt(Date.now());
     }
   }, [userId]);
 
@@ -71,7 +78,7 @@ export function AccessProvider({ userId, children }: { userId: string | null; ch
       profile,
       ready,
       offline,
-      hasAccess: profile !== null && profileHasAccess(profile, new Date()),
+      hasAccess: profile !== null && profileHasAccess(profile, new Date(checkedAt)),
       isAdmin: profile?.role === "admin",
       refresh,
       async setName(name) {
@@ -79,7 +86,7 @@ export function AccessProvider({ userId, children }: { userId: string | null; ch
         await refresh();
       },
     }),
-    [profile, ready, offline, refresh],
+    [profile, ready, offline, refresh, checkedAt],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

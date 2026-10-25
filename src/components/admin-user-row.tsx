@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { accessStatus, type AccessStatus, daysLeft, displayName, type Profile } from "@/domain/access";
+import { accessStatus, displayName, type Profile, statusLabel } from "@/domain/access";
 import { radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
@@ -16,10 +16,6 @@ const GRANTS: readonly { value: Grant; label: string }[] = [
 export function formatDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-}
-
-function statusLabel(status: AccessStatus, left: number): string {
-  return { admin: "Admin", unlimited: "Ilimitado", expired: "Vencido", trial: `Teste · ${left} d`, active: "Ativo" }[status];
 }
 
 interface Props {
@@ -55,7 +51,7 @@ export function AdminUserRow({ profile, now, onGrant, onOpen, busy }: Props) {
         <View style={styles.statusLine}>
           <View style={[styles.pill, { backgroundColor: tone[1] }]}>
             <AppText variant="caption" style={{ color: tone[0], fontWeight: "700" }}>
-              {statusLabel(status, daysLeft(profile, now))}
+              {statusLabel(profile, now)}
             </AppText>
           </View>
           {until ? <AppText variant="caption" color="secondaryLabel">{until}</AppText> : null}

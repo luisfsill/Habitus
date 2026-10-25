@@ -14,6 +14,7 @@ import {
   parseProfile,
   type Profile,
   renewWhatsAppUrl,
+  statusLabel,
 } from "../access";
 
 const now = new Date("2026-10-25T12:00:00Z");
@@ -132,5 +133,16 @@ describe("parsePrice", () => {
     expect(parsePrice("abc")).toBeNull();
     expect(parsePrice("-1")).toBeNull();
     expect(parsePrice("")).toBeNull();
+  });
+});
+
+describe("statusLabel", () => {
+  it("names every status in Portuguese", () => {
+    expect(statusLabel(profile({ accessUntil: at(2 * day + hour) }), now)).toBe("Teste · 3 dias");
+    expect(statusLabel(profile({ accessUntil: at(hour) }), now)).toBe("Teste · 1 dia");
+    expect(statusLabel(profile({ plan: "paid", accessUntil: at(-day) }), now)).toBe("Vencido");
+    expect(statusLabel(profile({ plan: "paid", accessUntil: at(day) }), now)).toBe("Ativo");
+    expect(statusLabel(profile({ unlimited: true }), now)).toBe("Ilimitado");
+    expect(statusLabel(profile({ role: "admin" }), now)).toBe("Admin");
   });
 });

@@ -48,7 +48,7 @@ function useGates() {
 }
 
 /** First open without internet: the plan cannot be checked yet. */
-function OfflineGate({ onRetry }: { onRetry: () => Promise<void> }) {
+function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 16, backgroundColor: "#000" }}>
       <AppText variant="title3" align="center" style={{ color: "#fff" }}>

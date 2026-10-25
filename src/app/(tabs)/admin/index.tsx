@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from "react-native";
 
 import { AdminTopBar } from "@/components/admin-top-bar";
 import { AdminUserRow, formatDate, type Grant } from "@/components/admin-user-row";
@@ -37,6 +37,21 @@ function granted(p: Profile, grant: Grant, now: Date): Access {
   return grant === "unlimited"
     ? { accessUntil: p.accessUntil, unlimited: true, plan: "paid" }
     : { accessUntil: extendAccess(p.accessUntil, grant, now), unlimited: false, plan: "paid" };
+}
+
+/** Signs out; if changes could not be sent, asks before dropping them. */
+async function leave(signOut: (opts?: { force: boolean }) => Promise<"ok" | "unsynced">) {
+  if ((await signOut()) !== "unsynced") return;
+  const message = "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?";
+  const drop = () => void signOut({ force: true });
+  if (Platform.OS === "web") {
+    if (globalThis.confirm?.(message)) drop();
+    return;
+  }
+  Alert.alert("Sair sem enviar?", message, [
+    { text: "Cancelar", style: "cancel" },
+    { text: "Sair", style: "destructive", onPress: drop },
+  ]);
 }
 
 export default function AdminUsersScreen() {
@@ -113,7 +128,7 @@ export default function AdminUsersScreen() {
             { label: "Meu perfil", onPress: () => router.navigate("/settings") },
             { label: "Planos e preços", onPress: () => router.push("/admin/plans") },
             { label: "Termos e Privacidade", onPress: () => router.push("/legal/terms") },
-            { label: "Sair", destructive: true, onPress: () => void signOut({ force: true }) },
+            { label: "Sair", destructive: true, onPress: () => void leave(signOut) },
           ]}
         />
       )}

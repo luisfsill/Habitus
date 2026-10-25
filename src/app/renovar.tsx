@@ -6,7 +6,7 @@ import { AppText } from "@/components/app-text";
 import { AuthShell } from "@/components/auth-shell";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
-import { displayName, type Plan, renewWhatsAppUrl } from "@/domain/access";
+import { displayName, hasAccess as profileHasAccess, type Plan, renewWhatsAppUrl } from "@/domain/access";
 import { fetchPlans } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
@@ -21,6 +21,18 @@ function confirm(message: string, onYes: () => void) {
   Alert.alert("Excluir conta", message, [
     { text: "Cancelar", style: "cancel" },
     { text: "Excluir", style: "destructive", onPress: onYes },
+  ]);
+}
+
+function confirmLeave(onYes: () => void) {
+  const message = "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?";
+  if (Platform.OS === "web") {
+    if (globalThis.confirm?.(message)) onYes();
+    return;
+  }
+  Alert.alert("Sair sem enviar?", message, [
+    { text: "Cancelar", style: "cancel" },
+    { text: "Sair", style: "destructive", onPress: onYes },
   ]);
 }
 
@@ -43,6 +55,11 @@ function RenewScreen() {
       .catch((error: Error) => setMessage(error.message));
   }, []);
 
+  // Paid while this screen was the only route: go to the app (nothing to go back to).
+  useEffect(() => {
+    if (hasAccess && !router.canGoBack()) router.replace("/");
+  }, [hasAccess]);
+
   const plan = plans.find((p) => p.id === selected);
   const trial = profile?.plan === "trial";
   const title = hasAccess ? "Planos do Habitus" : trial ? "Seu teste grátis acabou" : "Seu plano acabou";
@@ -54,9 +71,17 @@ function RenewScreen() {
 
   const recheck = async () => {
     setChecking(true);
-    await refresh();
+    const fresh = await refresh();
     setChecking(false);
-    setMessage("Ainda não encontramos a renovação. Assim que for liberada, toque aqui de novo.");
+    if (fresh === null) setMessage("Sem conexão. Tente de novo em instantes.");
+    else if (!profileHasAccess(fresh, new Date())) setMessage("Ainda não encontramos a renovação. Assim que for liberada, toque aqui de novo.");
+  };
+
+  // With no plan the server refuses the upload anyway; with a plan, unsent changes need a warning.
+  const leave = async () => {
+    if ((await signOut({ force: !hasAccess })) === "unsynced") {
+      confirmLeave(() => void signOut({ force: true }));
+    }
   };
 
   const remove = () =>
@@ -76,10 +101,10 @@ function RenewScreen() {
       }
       footer={
         <View style={styles.links}>
-          {hasAccess && <PrimaryButton variant="plain" label="Voltar" onPress={() => router.back()} />}
+          {hasAccess && <PrimaryButton variant="plain" label="Voltar" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />}
           <PrimaryButton variant="plain" label="Termos de uso" onPress={() => router.push("/legal/terms")} />
           <PrimaryButton variant="plain" label="Política de privacidade" onPress={() => router.push("/legal/privacy")} />
-          <PrimaryButton variant="plain" label="Sair" onPress={() => void signOut({ force: true })} />
+          <PrimaryButton variant="plain" label="Sair" onPress={() => void leave()} />
           {!hasAccess && <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={remove} />}
         </View>
       }>

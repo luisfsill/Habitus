@@ -138,3 +138,15 @@ export function parsePrice(text: string): number | null {
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
   return Math.round(Number(clean) * 100);
 }
+
+/** Status as shown in the admin panel. */
+export function statusLabel(p: Profile, now: Date): string {
+  const left = daysLeft(p, now);
+  return {
+    admin: "Admin",
+    unlimited: "Ilimitado",
+    expired: "Vencido",
+    trial: `Teste · ${left} ${left === 1 ? "dia" : "dias"}`,
+    active: "Ativo",
+  }[accessStatus(p, now)];
+}

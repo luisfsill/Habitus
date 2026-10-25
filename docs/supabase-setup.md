@@ -76,6 +76,8 @@ A senha de app é só sua: ela fica no painel do Supabase e nunca entra no códi
 
 ## 6. Planos e administração
 
+**Rode antes de publicar esta versão do app.** Sem estas tabelas, o app não consegue ler o plano da conta e mostra "Sem conexão".
+
 1. Abra **SQL Editor → New query**.
 2. Cole todo o conteúdo de [`supabase/admin.sql`](../supabase/admin.sql) e clique em **Run**.
 
