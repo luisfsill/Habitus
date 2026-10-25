@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { parseCachedProfile, type Profile } from "@/domain/access";
 import { type AppData, defaultData, sanitizeData, withCompletion } from "@/domain/app-data";
 
 import { log } from "./log";
@@ -41,3 +42,25 @@ export const authStorage = {
   setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
   removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
+
+const PROFILE_KEY = "habitus:profile:v1";
+
+/** Last profile read from the server, so a paid user is not locked out offline. */
+export async function loadProfileCache(): Promise<Profile | null> {
+  try {
+    const raw = await AsyncStorage.getItem(PROFILE_KEY);
+    return raw ? parseCachedProfile(JSON.parse(raw)) : null;
+  } catch (error) {
+    log.error("could not read cached profile", error);
+    return null;
+  }
+}
+
+export async function saveProfileCache(profile: Profile | null): Promise<void> {
+  try {
+    if (profile) await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    else await AsyncStorage.removeItem(PROFILE_KEY);
+  } catch (error) {
+    log.error("could not save profile", error);
+  }
+}

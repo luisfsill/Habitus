@@ -111,3 +111,18 @@ export function parsePlan(row: unknown): Plan | null {
   if (typeof days !== "number" || days < 1 || typeof price_cents !== "number" || price_cents < 0) return null;
   return { id, name, days, priceCents: price_cents, highlight: highlight === true, active: active !== false, sort: typeof sort === "number" ? sort : 0 };
 }
+
+/** A profile saved by this app (camelCase), or null when the cache is damaged. */
+export function parseCachedProfile(value: unknown): Profile | null {
+  if (!isRecord(value)) return null;
+  return parseProfile({
+    id: value.id,
+    name: value.name,
+    email: value.email,
+    role: value.role,
+    plan: value.plan,
+    access_until: value.accessUntil,
+    unlimited: value.unlimited,
+    created_at: value.createdAt,
+  });
+}

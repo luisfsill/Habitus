@@ -7,6 +7,7 @@ import {
   firstName,
   hasAccess,
   matchesSearch,
+  parseCachedProfile,
   parsePlan,
   parseProfile,
   type Profile,
@@ -100,5 +101,13 @@ describe("parsing rows", () => {
     const row = { id: "yearly", name: "Anual", days: 365, price_cents: 7990, highlight: true, active: true, sort: 3 };
     expect(parsePlan(row)).toEqual({ id: "yearly", name: "Anual", days: 365, priceCents: 7990, highlight: true, active: true, sort: 3 });
     expect(parsePlan({ ...row, days: 0 })).toBeNull();
+  });
+});
+
+describe("parseCachedProfile", () => {
+  it("reads back a saved profile and rejects junk", () => {
+    const p = profile({ role: "admin", accessUntil: at(day) });
+    expect(parseCachedProfile(JSON.parse(JSON.stringify(p)))).toEqual(p);
+    expect(parseCachedProfile({ ...p, plan: "gold" })).toBeNull();
   });
 });
