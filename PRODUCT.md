@@ -41,10 +41,11 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 2. Hoje: anel de progresso 0/6–6/6, linha do tempo, próximo truque com contagem regressiva.
 3. Truque: instrução, timer (2 e 4), afirmações (3), campo de gratidão (5), frase da noite (6), "Concluir".
 4. Histórico: sequência de dias, calendário mensal, percentual da semana.
-5. Ajustes: horários, hora de dormir, dias, afirmações, som, testes de notificação, aparência (automático/claro/escuro), reset.
+5. Ajustes: horários, hora de dormir, dias, afirmações, som, testes de notificação, aparência (automático/claro/escuro), conta (Termos, Política, sair, excluir conta), reset.
 6. Conquistas: nível, faixa, estatísticas, medalhas e regras de XP.
 7. Web/PWA: cartão "Instale o Habitus" com "Instalar agora" na tela inicial.
+8. Conta: criar conta ou entrar com e-mail e senha (código de 6 dígitos por e-mail), esqueci minha senha, aceite dos Termos de uso e da Política de privacidade. No celular a conta é criada depois de instalar.
 
 ## Fora de escopo
 
-Login, sincronização entre aparelhos, push remoto (por isso o PWA só lembra com o app aberto), backend, janelas que atravessam a meia-noite.
+Cobrança e planos pagos, login social, push remoto (por isso o PWA só lembra com o app aberto), backend próprio, janelas que atravessam a meia-noite.

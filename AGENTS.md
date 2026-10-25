@@ -1,6 +1,6 @@
 # Habitus
 
-App mobile (iOS e Android) que lembra o usuário de praticar 5 truques de bem-estar ao longo do dia, com notificações locais. Sem login, sem backend. Interface 100% em português do Brasil.
+App mobile (iOS e Android) que lembra o usuário de praticar 5 truques de bem-estar ao longo do dia, com notificações locais. Conta obrigatória (e-mail e senha) e progresso sincronizado pelo Supabase; sem backend próprio. Interface 100% em português do Brasil.
 
 ## Produto e stack
 

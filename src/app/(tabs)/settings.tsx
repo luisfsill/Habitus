@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
 
@@ -17,6 +18,7 @@ import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
+import { useAuth } from "@/state/auth";
 import { HIT, useTheme } from "@/theme";
 
 function confirm(title: string, message: string, action: string, onConfirm: () => void) {
@@ -44,6 +46,43 @@ function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
       : `Hoje o lembrete chega às ${when}. O Habitus vai aprender seu horário real conforme você conclui o truque.`;
   const early = missed > 0 ? " Como o truque ficou sem resposta recentemente, o aviso foi antecipado." : "";
   return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
+}
+
+function AccountSection() {
+  const { session, signOut, deleteAccount } = useAuth();
+  const [message, setMessage] = useState<string | null>(null);
+
+  const leave = async () => {
+    if ((await signOut()) === "unsynced") {
+      confirm(
+        "Sair sem enviar?",
+        "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?",
+        "Sair",
+        () => void signOut({ force: true }),
+      );
+    }
+  };
+
+  const remove = () =>
+    confirm("Excluir conta?", "Sua conta e todo o seu progresso serão apagados. Não dá para desfazer.", "Continuar", () =>
+      confirm("Tem certeza?", "Esta é a última confirmação. A conta será excluída agora.", "Excluir conta", () => {
+        void deleteAccount().then((result) => setMessage(result.ok ? null : result.message));
+      }),
+    );
+
+  return (
+    <Section title="Conta" footer={session?.user.email ? `Conectado como ${session.user.email}.` : undefined}>
+      <PrimaryButton label="Termos de uso" variant="plain" onPress={() => router.push("/legal/terms")} />
+      <PrimaryButton label="Política de privacidade" variant="plain" onPress={() => router.push("/legal/privacy")} />
+      <PrimaryButton label="Sair" variant="tinted" onPress={() => void leave()} />
+      <PrimaryButton label="Excluir conta" variant="plain" destructive onPress={remove} />
+      {message && (
+        <AppText variant="footnote" color="danger" accessibilityLiveRegion="polite">
+          {message}
+        </AppText>
+      )}
+    </Section>
+  );
 }
 
 export default function SettingsScreen() {
@@ -145,13 +184,15 @@ export default function SettingsScreen() {
         />
       </Section>
 
+      <AccountSection />
+
       <Section title="Dados">
         <PrimaryButton
           label="Resetar dados"
           variant="plain"
           destructive
           onPress={() =>
-            confirm("Resetar dados?", "Apaga histórico, afirmações e horários. Não dá para desfazer.", "Resetar", () => void reset())
+            confirm("Resetar dados?", "Apaga histórico, afirmações e horários, neste aparelho e na nuvem. Não dá para desfazer.", "Resetar", () => void reset())
           }
         />
       </Section>

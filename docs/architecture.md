@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-Tudo roda no aparelho. Não há servidor, conta nem rede.
+Tudo roda no aparelho, com uma cópia local dos dados. A conta e a cópia na nuvem ficam no Supabase (Auth + tabela `user_data`); não há backend próprio. Configuração: [supabase-setup.md](supabase-setup.md).
 
 ```
 src/app (rotas Expo Router) ─┐
@@ -13,8 +13,8 @@ src/components (UI pura) ────┼─► src/state (contexto React) ─►
 | Camada | Responsabilidade | Pode importar |
 |---|---|---|
 | `src/domain` | Regras: agendamento, plano de notificações, histórico, sanitização dos dados, intents de resposta | nada do app |
-| `src/services` | AsyncStorage, `expo-notifications`, tarefa em background, log | `domain` |
-| `src/state` | `AppStateProvider` (dados + ações), roteamento de notificações, relógio | `domain`, `services` |
+| `src/services` | AsyncStorage, `expo-notifications`, tarefa em background, cliente Supabase e sync, log | `domain` |
+| `src/state` | `AuthProvider` (sessão + ações de conta), `AppStateProvider` (dados + ações + sync), roteamento de notificações, relógio | `domain`, `services` |
 | `src/components` | Peças visuais sem efeitos colaterais de dados | `domain` (tipos/formatadores), `theme` |
 | `src/app` | Telas e navegação | todas acima |
 
@@ -50,9 +50,17 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 - `src/services/web-reminders.ts` substitui o `expo-notifications` na web. Ele arma timers para as próximas 24 h e mostra a notificação pelo service worker, e `sw.js` abre `/trick/i` ao tocar.
 - `(tabs)/_layout.web.tsx` usa abas JS na parte de baixo, porque as abas nativas viram uma pílula no topo da página na web.
 
+## Conta e sincronização
+
+- `src/services/supabase.ts` cria o cliente com `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (ou `EXPO_PUBLIC_SUPABASE_KEY`). Sem elas, `supabase` é `null` e o layout mostra "Configuração do servidor ausente". A sessão fica no AsyncStorage pelo adaptador `authStorage` de `storage.ts`.
+- `AuthProvider` (`src/state/auth.tsx`): criar conta (`signUp` grava `terms_version` e `terms_accepted_at` nos metadados), confirmar com o código (`verifyOtp` tipo `email`), entrar, esqueci a senha (`resetPasswordForEmail` → `verifyOtp` tipo `recovery` → `updateUser`), sair e excluir conta (RPC `delete_my_account`). Erros viram português em `authErrorMessage` (`src/domain/auth-rules.ts`). Os e-mails levam código, não link: no iPhone o link abriria o Safari, fora do PWA instalado.
+- Rotas (`src/app/_layout.tsx`): sem sessão (ou no meio da troca de senha, `recovering`) só `auth/*`; com sessão e sem onboarding, `onboarding`; senão as abas. `legal/*` abre em qualquer estado. O `AppStateProvider` é remontado por conta (`key = userId`).
+- Sync (`src/services/sync.ts` + `AppStateProvider`): `pushMerged` lê o registro do servidor, aplica `mergeData` (`src/domain/sync.ts`) e grava. Roda ao abrir, ao voltar ao primeiro plano e 2 s depois de cada mudança; sem internet fica pendente (`syncPending`). `mergeData` só soma: completions unidas por dia, gratidão e sono por dia com o local vencendo, `settings` pelo `settingsUpdatedAt` maior, `onboarded` se qualquer lado for verdadeiro. "Resetar dados" com conta sobrescreve o servidor.
+- Sair envia o que falta (se não der, pede confirmação), apaga os dados locais e cancela as notificações.
+
 ## Dados
 
-Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, completions, gratitude, sleepLog }`. O truque 6 concluído depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
+Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, settingsUpdatedAt, completions, gratitude, sleepLog }`, o mesmo JSON guardado em `user_data.data`. O truque 6 concluído depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
 
 ## Notas de plataforma
 

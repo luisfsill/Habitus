@@ -92,13 +92,16 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
           <View style={styles.done} accessibilityRole="alert">
             <Icon ios="checkmark.circle.fill" android="check_circle" size={28} color={colors.success} />
             <AppText variant="headline" style={styles.doneText}>
-              Instalado! Abra o Habitus pelo ícone na sua tela inicial.
+              Instalado! Abra o Habitus pelo ícone na sua tela inicial e crie sua conta lá.
             </AppText>
           </View>
         ) : (
           <>
             <AppText variant="footnote" color="secondaryLabel" align="center">
               Gratuito · sem loja de apps · leva 5 segundos
+            </AppText>
+            <AppText variant="footnote" color="secondaryLabel" align="center">
+              Você cria sua conta depois de instalar, já dentro do app.
             </AppText>
             <PrimaryButton label="Instalar agora" onPress={press} accessibilityHint="Adiciona o Habitus à tela inicial" />
           </>
