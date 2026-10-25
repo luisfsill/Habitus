@@ -23,6 +23,11 @@ function RootStack() {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
 
+  useEffect(() => {
+    // The iOS PWA status bar is translucent and shows the page background behind it.
+    if (Platform.OS === "web") document.body.style.backgroundColor = colors.background;
+  }, [colors.background]);
+
   if (!ready) return null;
 
   const base = scheme === "dark" ? DarkTheme : DefaultTheme;

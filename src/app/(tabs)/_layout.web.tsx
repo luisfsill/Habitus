@@ -1,6 +1,9 @@
 import { Tabs } from "expo-router";
+import { useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
+import { MAX_WIDTH } from "@/components/screen";
 import { useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
@@ -14,13 +17,16 @@ const TABS = [
 
 export default function WebTabsLayout() {
   const { colors } = useTheme();
+  const { bottom } = useSafeAreaInsets();
+  // Keep the tabs in the same column as the content on wide screens.
+  const side = Math.max(0, (useWindowDimensions().width - MAX_WIDTH) / 2);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.secondaryLabel,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.separator, height: 68, paddingTop: 6, paddingBottom: 10 },
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.separator, height: 68 + bottom, paddingTop: 6, paddingBottom: 10 + bottom, paddingHorizontal: side },
         tabBarLabelStyle: { fontSize: 11, lineHeight: 16, fontWeight: "600" },
       }}>
       {TABS.map((tab) => (

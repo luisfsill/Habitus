@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
     <!-- PWA: installable on Android (Chrome) and iOS (Safari, "Adicionar à Tela de Início"). -->
     <link rel="manifest" href="/manifest.json" />
@@ -13,7 +13,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Habitus" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- The app paints under the iOS status bar; screens pad with the safe-area insets. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
