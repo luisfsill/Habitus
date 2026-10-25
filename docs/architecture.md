@@ -59,6 +59,14 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 - Os dados locais levam `owner` (id da conta). `claimData` descarta dados de outra conta ao entrar; sem sessão o app usa dados vazios e não agenda lembretes.
 - Sair envia o que falta (se não der, pede confirmação), apaga os dados locais e cancela as notificações.
 
+## Acesso e administração
+
+- Banco (`supabase/admin.sql`): `profiles` (nome, e-mail, `role`, `plan` trial/paid, `access_until`, `unlimited`), criado por gatilho no cadastro com 7 dias; `plans` com os preços. Clientes só leem (`profiles`: o próprio ou tudo se admin). Mudanças só por funções `security definer` que checam `is_admin()` (`admin_set_access`, `admin_set_role`, `admin_update_name`, `admin_delete_user`, `admin_save_plan`) e `update_my_name`. `user_data` só aceita gravação com `has_access()`.
+- Edge Function `supabase/functions/admin-users` (Deno): criar usuário com senha provisória, trocar e-mail, gerar nova senha. Confere `is_admin` com o token de quem chama; a `service_role` só existe no Supabase.
+- Regras puras em `src/domain/access.ts` (tem acesso, status, dias restantes, somar dias, fim do dia em São Paulo, busca sem acento, URL do WhatsApp, preço).
+- `AccessProvider` (`src/state/access.tsx`) lê o próprio perfil ao abrir e ao voltar ao primeiro plano e guarda cópia local (`habitus:profile:v1`). Sem cópia e sem rede: tela "Sem conexão". Sem acesso: só `/renovar` (e `legal/*`). Os lembretes são agendados só até `access_until` (`setAccessCutoff`).
+- Painel: `src/app/(tabs)/admin/*` (lista, `user/[id]`, `plans`), aba visível só para `role = admin` (`hidden` no NativeTabs, `href: null` na web); o layout do grupo redireciona quem não é admin.
+
 ## Dados
 
 Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, settingsUpdatedAt, resetAt, owner, completions, gratitude, sleepLog }`, o mesmo JSON guardado em `user_data.data`. O truque 6 concluído depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.

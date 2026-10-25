@@ -41,6 +41,7 @@ Rode `npm run check` antes de declarar qualquer tarefa pronta.
 - `src/components` é apresentacional: não importa `services` nem `app`.
 - `src/services` não importa UI nem `state`. AsyncStorage só em `src/services/storage.ts`.
 - `console` só em `src/services/log.ts`. Arquivos com no máximo 350 linhas.
+- Banco e servidor ficam em `supabase/` (SQL para colar no Supabase e a Edge Function `admin-users`, em Deno, fora do lint/tsc do app). Passo a passo: [docs/supabase-setup.md](docs/supabase-setup.md).
 
 ## Ferramentas e skills
 
