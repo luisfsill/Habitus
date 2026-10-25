@@ -20,6 +20,7 @@ import {
   requestExactAlarms,
   requestPermission,
   rescheduleAll,
+  setAccessCutoff,
 } from "@/services/notifications";
 import { clearData, loadData, saveData } from "@/services/storage";
 import { pushMerged } from "@/services/sync";
@@ -56,7 +57,14 @@ const PUSH_DELAY_MS = 2000;
 /** On a device with nothing saved for this account, wait this long for the server copy before showing onboarding. */
 const FIRST_SYNC_WAIT_MS = 8000;
 
-export function AppStateProvider({ children, userId }: { children: ReactNode; userId: string | null }) {
+interface ProviderProps {
+  children: ReactNode;
+  userId: string | null;
+  /** End of the account's access in ms (null: no limit); reminders stop there. */
+  accessCutoff: number | null;
+}
+
+export function AppStateProvider({ children, userId, accessCutoff }: ProviderProps) {
   const [data, setData] = useState<AppData>(defaultData);
   const [ready, setReady] = useState(false);
   const [permission, setPermission] = useState<PermissionState>("undetermined");
@@ -122,6 +130,13 @@ export function AppStateProvider({ children, userId }: { children: ReactNode; us
     if (userId && !own.onboarded) await Promise.race([synced, new Promise((done) => setTimeout(done, FIRST_SYNC_WAIT_MS))]);
   }, [sync, userId]);
 
+  // Runs before the boot effect below, so the first schedule already respects the cutoff.
+  const booted = useRef(false);
+  useEffect(() => {
+    setAccessCutoff(accessCutoff === null ? null : new Date(accessCutoff));
+    if (booted.current) void rescheduleAll(dataRef.current);
+  }, [accessCutoff]);
+
   useEffect(() => {
     const boot = async () => {
       try {
@@ -132,6 +147,7 @@ export function AppStateProvider({ children, userId }: { children: ReactNode; us
         log.error("startup failed", error);
       } finally {
         setReady(true);
+        booted.current = true;
       }
     };
     void boot();

@@ -69,9 +69,17 @@ function Consent({ checked, onToggle }: { checked: boolean; onToggle: () => void
   );
 }
 
-type FieldError = { field: "email" | "password" | "form"; message: string };
+type FieldError = { field: "name" | "email" | "password" | "form"; message: string };
 
-function validate(mode: Mode, email: string, password: string, accepted: boolean): FieldError | null {
+interface Form {
+  name: string;
+  email: string;
+  password: string;
+  accepted: boolean;
+}
+
+function validate(mode: Mode, { name, email, password, accepted }: Form): FieldError | null {
+  if (mode === "signup" && !name.trim()) return { field: "name", message: "Digite seu nome." };
   if (!isValidEmail(email)) return { field: "email", message: "Digite um e-mail válido." };
   if (mode === "signin") return password ? null : { field: "password", message: "Digite sua senha." };
   const checks = passwordChecks(password);
@@ -84,6 +92,7 @@ function validate(mode: Mode, email: string, password: string, accepted: boolean
 export default function AuthScreen() {
   const auth = useAuth();
   const [mode, setMode] = useState<Mode>("signup");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
@@ -99,11 +108,11 @@ export default function AuthScreen() {
   };
 
   const submit = async () => {
-    const invalid = validate(mode, email, password, accepted);
+    const invalid = validate(mode, { name, email, password, accepted });
     if (invalid) return fail(invalid);
     setBusy(true);
     setError(null);
-    const result = signup ? await auth.signUp(email, password) : await auth.signIn(email, password);
+    const result = signup ? await auth.signUp(name, email, password) : await auth.signIn(email, password);
     setBusy(false);
     if ("needsCode" in result || (signup && result.ok)) {
       router.push({ pathname: "/auth/code", params: { email: email.trim() } });
@@ -130,6 +139,11 @@ export default function AuthScreen() {
       }>
       <Tabs mode={mode} onChange={switchMode} />
       <Animated.View layout={LinearTransition.springify().damping(18)} style={styles.fields}>
+        {signup && (
+          <Animated.View entering={FadeIn} exiting={FadeOut}>
+            <AuthField label="Nome" value={name} onChangeText={(t) => setName(t.slice(0, 80))} autoComplete="name" autoCapitalize="words" textContentType="name" error={errorOf("name")} />
+          </Animated.View>
+        )}
         <AuthField
           label="E-mail"
           value={email}

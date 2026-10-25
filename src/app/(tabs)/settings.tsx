@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
+import { Alert, Platform, StyleSheet, Switch, TextInput, View } from "react-native";
 
 import { AffirmationsEditor } from "@/components/affirmations-editor";
 import { AppText } from "@/components/app-text";
@@ -18,6 +18,7 @@ import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
+import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
 import { HIT, useTheme } from "@/theme";
 
@@ -50,7 +51,17 @@ function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
 
 function AccountSection() {
   const { session, signOut, deleteAccount } = useAuth();
+  const { profile, setName } = useAccess();
+  const { colors } = useTheme();
+  const [name, setDraftName] = useState(profile?.name ?? "");
   const [message, setMessage] = useState<string | null>(null);
+
+  const saveName = () => {
+    if (!name.trim() || name.trim() === profile?.name) return;
+    setName(name.trim())
+      .then(() => setMessage("Nome salvo."))
+      .catch((error: Error) => setMessage(error.message));
+  };
 
   const leave = async () => {
     if ((await signOut()) === "unsynced") {
@@ -72,12 +83,27 @@ function AccountSection() {
 
   return (
     <Section title="Conta" footer={session?.user.email ? `Conectado como ${session.user.email}.` : undefined}>
+      <View style={styles.row}>
+        <AppText variant="body">Nome</AppText>
+        <TextInput
+          value={name}
+          onChangeText={(t) => setDraftName(t.slice(0, 80))}
+          onBlur={saveName}
+          onSubmitEditing={saveName}
+          placeholder="Seu nome"
+          placeholderTextColor={colors.secondaryLabel}
+          autoCapitalize="words"
+          accessibilityLabel="Nome"
+          style={[styles.nameInput, { color: colors.label }]}
+        />
+      </View>
+      <PrimaryButton label="Ver planos" variant="plain" onPress={() => router.push("/renovar")} />
       <PrimaryButton label="Termos de uso" variant="plain" onPress={() => router.push("/legal/terms")} />
       <PrimaryButton label="Política de privacidade" variant="plain" onPress={() => router.push("/legal/privacy")} />
       <PrimaryButton label="Sair" variant="tinted" onPress={() => void leave()} />
       <PrimaryButton label="Excluir conta" variant="plain" destructive onPress={remove} />
       {message && (
-        <AppText variant="footnote" color="danger" accessibilityLiveRegion="polite">
+        <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
           {message}
         </AppText>
       )}
@@ -203,4 +229,5 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   divider: { height: StyleSheet.hairlineWidth },
+  nameInput: { flex: 1, textAlign: "right", fontSize: 17, minHeight: HIT, marginLeft: 16 },
 });

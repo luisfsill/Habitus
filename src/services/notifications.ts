@@ -143,13 +143,20 @@ async function cancelWhere(predicate: (id: string) => boolean): Promise<void> {
  * Rebuilds the next 7 days from current data, keeping snoozes and test
  * notifications. Returns how many plan notifications are now pending.
  */
+/** End of the account's access (null: no limit). Set by the app before rescheduling. */
+let accessCutoff: Date | null = null;
+
+export function setAccessCutoff(until: Date | null): void {
+  accessCutoff = until;
+}
+
 export async function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
   soundEnabled = data.settings.sound;
   await cancelWhere((id) => !isOneOffId(id));
   const result = scheduleFor(data, now);
   if (!data.onboarded || !result.ok) return 0;
   if ((await getPermissionState()) !== "granted") return 0;
-  const plan = planNotifications(result.schedule, now, { completed: completedKeys(data.completions) });
+  const plan = planNotifications(result.schedule, now, { completed: completedKeys(data.completions), until: accessCutoff ?? undefined });
   try {
     await scheduleAll(plan);
   } catch (error) {

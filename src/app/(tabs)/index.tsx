@@ -9,19 +9,26 @@ import { PermissionBanners } from "@/components/permission-banner";
 import { Screen } from "@/components/screen";
 import { TimelineRow } from "@/components/timeline-row";
 import { TodaySummary } from "@/components/today-summary";
+import { TrialBanner } from "@/components/trial-banner";
 import { WEEKDAY_NAMES } from "@/components/weekday-picker";
+import { firstName, type Profile } from "@/domain/access";
 import { currentStreak, doneCount, trickStatuses } from "@/domain/history";
 import { scheduleFor } from "@/domain/app-data";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
 import { atMinutes, dayKey, formatCountdown, minutesOfDay, type Weekday } from "@/domain/time";
 import { TRICKS } from "@/domain/tricks";
 import { openSystemSettings } from "@/services/notifications";
+import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
 import { useInstallPrompt } from "@/state/use-install-prompt";
 import { useNow } from "@/state/use-now";
 import { space } from "@/theme";
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function title(now: Date, profile: Profile | null): string {
+  return `${greetingFor(minutesOfDay(now))}${profile ? `, ${firstName(profile)}` : ""}!`;
+}
 
 function dateLine(d: Date): string {
   return `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]}`;
@@ -43,9 +50,11 @@ export default function TodayScreen() {
   const times = result.ok ? trickTimeLabels(result.schedule) : [];
   const nextIndex = statuses.indexOf("next");
   const nextAt = result.ok && nextIndex >= 0 ? atMinutes(now, result.schedule.trickMinutes[nextIndex]) : null;
+  const { profile } = useAccess();
 
   return (
-    <Screen title={`${greetingFor(minutesOfDay(now))}!`} subtitle={dateLine(now)}>
+    <Screen title={title(now, profile)} subtitle={dateLine(now)}>
+      <TrialBanner profile={profile} now={now} onSeePlans={() => router.push("/renovar")} />
       {install.mode !== "hidden" && (
         <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
       )}

@@ -7,7 +7,7 @@ import { HIT, radius, space, type, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
 
-interface Props extends Pick<TextInputProps, "autoComplete" | "keyboardType" | "textContentType" | "onSubmitEditing" | "returnKeyType"> {
+interface Props extends Pick<TextInputProps, "autoComplete" | "autoCapitalize" | "keyboardType" | "textContentType" | "onSubmitEditing" | "returnKeyType"> {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -44,6 +44,7 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
           {label}
         </Animated.Text>
         <TextInput
+          autoCapitalize="none"
           {...input}
           accessibilityLabel={label}
           value={value}
@@ -51,7 +52,6 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           secureTextEntry={secure && hidden}
-          autoCapitalize="none"
           autoCorrect={false}
           placeholderTextColor={colors.secondaryLabel}
           style={[type.body, styles.input, { color: colors.label }]}

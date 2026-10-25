@@ -6,7 +6,9 @@ import { Appearance, Platform, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
+import { PrimaryButton } from "@/components/primary-button";
 import { RewardToast } from "@/components/reward-toast";
+import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
@@ -23,13 +25,50 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
   };
 }
 
-function RootStack() {
-  const { ready, data, reward, dismissReward } = useAppState();
+/** On a phone's browser the app is install-only; it runs from the home screen icon. */
+function installOnly(): boolean {
+  return isMobileWeb() && !isStandalone();
+}
+
+/** Which part of the app the person may see right now. */
+function useGates() {
   const { session, recovering } = useAuth();
-  const { colors, scheme } = useTheme();
+  const access = useAccess();
   // No session (or mid password reset): only the account screens.
   const signedIn = session !== null && !recovering;
-  useNotificationRouting(ready && signedIn && data.onboarded);
+  return {
+    signedIn,
+    // Signed in with an active plan (or admin): the app itself.
+    open: signedIn && access.hasAccess,
+    // Signed in but the plan is unknown (offline, never cached): ask to reconnect.
+    offline: signedIn && access.ready && access.offline,
+    ready: !signedIn || access.ready,
+    retry: access.refresh,
+  };
+}
+
+/** First open without internet: the plan cannot be checked yet. */
+function OfflineGate({ onRetry }: { onRetry: () => Promise<void> }) {
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 16, backgroundColor: "#000" }}>
+      <AppText variant="title3" align="center" style={{ color: "#fff" }}>
+        Sem conexão
+      </AppText>
+      <AppText variant="subheadline" align="center" style={{ color: "#A1A1AA" }}>
+        Conecte-se à internet para conferir o seu plano. Depois disso o Habitus funciona offline.
+      </AppText>
+      <PrimaryButton label="Tentar de novo" onPress={() => void onRetry()} />
+    </View>
+  );
+}
+
+function RootStack() {
+  const { ready: dataReady, data, reward, dismissReward } = useAppState();
+  const gates = useGates();
+  const { signedIn, open } = gates;
+  const ready = dataReady && gates.ready;
+  const { colors, scheme } = useTheme();
+  useNotificationRouting(ready && open && data.onboarded);
   const install = useInstallPrompt();
 
   useEffect(() => {
@@ -45,8 +84,9 @@ function RootStack() {
 
   const theme = navigationTheme(colors, scheme);
 
-  // On a phone's browser the app is install-only; it runs from the home screen icon.
-  if (isMobileWeb() && !isStandalone()) {
+  if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
+
+  if (installOnly()) {
     return (
       <InstallGate
         mode={install.mode === "hidden" ? "manual" : install.mode}
@@ -64,7 +104,7 @@ function RootStack() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="auth" options={{ animation: "fade" }} />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && data.onboarded}>
+        <Stack.Protected guard={open && data.onboarded}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
             name="trick/[id]"
@@ -77,8 +117,12 @@ function RootStack() {
             }}
           />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && !data.onboarded}>
+        <Stack.Protected guard={open && !data.onboarded}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />
+        </Stack.Protected>
+        {/* With no plan this is the only screen; with a plan, "Ver planos" opens it on top. */}
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="renovar" options={{ animation: "fade", gestureEnabled: open }} />
         </Stack.Protected>
         <Stack.Screen name="legal" />
       </Stack>
@@ -124,7 +168,19 @@ function AccountRoot() {
   // Mid password reset the session is temporary: keep the account screens mounted.
   const userId = recovering ? null : (session?.user.id ?? null);
   return (
-    <AppStateProvider key={userId ?? "signed-out"} userId={userId}>
+    <AccessProvider key={userId ?? "signed-out"} userId={userId}>
+      <AccountData userId={userId} />
+    </AccessProvider>
+  );
+}
+
+/** Reminders stop when the plan ends; with no plan, none are scheduled. */
+function AccountData({ userId }: { userId: string | null }) {
+  const { profile, hasAccess } = useAccess();
+  const unlimited = profile?.role === "admin" || profile?.unlimited === true;
+  const cutoff = !userId || !hasAccess ? 0 : unlimited || !profile?.accessUntil ? null : Date.parse(profile.accessUntil);
+  return (
+    <AppStateProvider key={userId ?? "signed-out"} userId={userId} accessCutoff={cutoff}>
       <ThemedRoot />
     </AppStateProvider>
   );

@@ -126,3 +126,8 @@ export function parseCachedProfile(value: unknown): Profile | null {
     created_at: value.createdAt,
   });
 }
+
+/** 990 → "R$ 9,90". */
+export function formatPrice(cents: number): string {
+  return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
+}

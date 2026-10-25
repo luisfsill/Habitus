@@ -5,6 +5,7 @@ import {
   endOfDaySaoPaulo,
   extendAccess,
   firstName,
+  formatPrice,
   hasAccess,
   matchesSearch,
   parseCachedProfile,
@@ -109,5 +110,12 @@ describe("parseCachedProfile", () => {
     const p = profile({ role: "admin", accessUntil: at(day) });
     expect(parseCachedProfile(JSON.parse(JSON.stringify(p)))).toEqual(p);
     expect(parseCachedProfile({ ...p, plan: "gold" })).toBeNull();
+  });
+});
+
+describe("formatPrice", () => {
+  it("formats cents as reais", () => {
+    expect(formatPrice(990)).toBe("R$ 9,90");
+    expect(formatPrice(7990)).toBe("R$ 79,90");
   });
 });
