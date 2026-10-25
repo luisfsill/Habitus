@@ -10,6 +10,7 @@ import {
   matchesSearch,
   parseCachedProfile,
   parsePlan,
+  parsePrice,
   parseProfile,
   type Profile,
   renewWhatsAppUrl,
@@ -117,5 +118,19 @@ describe("formatPrice", () => {
   it("formats cents as reais", () => {
     expect(formatPrice(990)).toBe("R$ 9,90");
     expect(formatPrice(7990)).toBe("R$ 79,90");
+  });
+});
+
+describe("parsePrice", () => {
+  it("reads prices typed in reais", () => {
+    expect(parsePrice("9,90")).toBe(990);
+    expect(parsePrice("R$ 79,90")).toBe(7990);
+    expect(parsePrice("10")).toBe(1000);
+  });
+
+  it("rejects text and negatives", () => {
+    expect(parsePrice("abc")).toBeNull();
+    expect(parsePrice("-1")).toBeNull();
+    expect(parsePrice("")).toBeNull();
   });
 });

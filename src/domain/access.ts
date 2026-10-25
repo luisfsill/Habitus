@@ -131,3 +131,10 @@ export function parseCachedProfile(value: unknown): Profile | null {
 export function formatPrice(cents: number): string {
   return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
 }
+
+/** "9,90" or "R$ 9,90" → 990; null when it is not a price. */
+export function parsePrice(text: string): number | null {
+  const clean = text.replace(/\s|R\$/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
+  return Math.round(Number(clean) * 100);
+}
