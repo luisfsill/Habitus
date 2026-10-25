@@ -156,5 +156,7 @@ export default defineConfig([
     "**/*.tsbuildinfo",
     "package-lock.json",
     "expo-env.d.ts",
+    // Deno code that runs on Supabase, not in the app.
+    "supabase/functions/**",
   ]),
 ]);

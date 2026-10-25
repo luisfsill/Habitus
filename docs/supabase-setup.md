@@ -73,3 +73,40 @@ A senha de app é só sua: ela fica no painel do Supabase e nunca entra no códi
 
 - **Authentication → Users**: as contas criadas aparecem aqui.
 - **Table Editor → user_data**: uma linha por conta depois do primeiro uso.
+
+## 6. Planos e administração
+
+1. Abra **SQL Editor → New query**.
+2. Cole todo o conteúdo de [`supabase/admin.sql`](../supabase/admin.sql) e clique em **Run**.
+
+Isso cria os perfis (nome, cargo, validade do acesso), os planos com os preços iniciais (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90) e as funções do painel. Contas que já existiam ganham 7 dias de teste a partir de agora.
+
+Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele reaplica a regra de que só quem tem acesso ativo sincroniza.
+
+## 7. Publicar a função `admin-users`
+
+Criar usuários, trocar e-mail e gerar senha pelo painel usam uma pequena função que roda no Supabase.
+
+**Pelo painel (mais fácil):**
+
+1. **Edge Functions → Deploy a new function → Via Editor**.
+2. Nome: `admin-users` (exatamente assim).
+3. Apague o exemplo, cole todo o conteúdo de [`supabase/functions/admin-users/index.ts`](../supabase/functions/admin-users/index.ts) e clique em **Deploy**.
+
+**Pela linha de comando (alternativa):** com a [Supabase CLI](https://supabase.com/docs/guides/cli) instalada e logada:
+
+```bash
+npx supabase functions deploy admin-users --project-ref SEU_PROJECT_REF
+```
+
+A função usa a chave secreta que o próprio Supabase fornece a ela. Você não precisa copiar nenhuma chave.
+
+## 8. Virar administrador
+
+Crie sua conta no app normalmente. Depois, no **SQL Editor**, rode (com o seu e-mail):
+
+```sql
+update public.profiles set role = 'admin', unlimited = true where email = 'seu_email@gmail.com';
+```
+
+Feche e abra o app: a aba **Admin** aparece na barra de baixo.
