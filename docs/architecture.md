@@ -45,6 +45,7 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 ## Web / PWA
 
 - `public/index.html` (modo `web.output: single`) liga `manifest.json`, ícones e `sw.js`, e guarda o `beforeinstallprompt` em `window.__habitusInstall` antes do React montar.
+- No celular pelo navegador (`isMobileWeb() && !isStandalone()`), o layout raiz mostra só `InstallGate`: apresentação + "Instalar agora". O app em si roda no computador ou instalado.
 - `useInstallPrompt` (`src/state`) decide o modo do cartão: `prompt` (Chrome/Edge/Android), `ios` (passo a passo), `manual` ou `hidden` (instalado/dispensado).
 - `src/services/web-reminders.ts` substitui o `expo-notifications` na web. Ele arma timers para as próximas 24 h e mostra a notificação pelo service worker, e `sw.js` abre `/trick/i` ao tocar.
 - `(tabs)/_layout.web.tsx` usa abas JS na parte de baixo, porque as abas nativas viram uma pílula no topo da página na web.

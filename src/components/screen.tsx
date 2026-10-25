@@ -18,6 +18,9 @@ interface Props {
 /** Height of a transparent native stack header (back button row). */
 const HEADER = Platform.select({ ios: 44, default: 56 });
 
+/** Width of the app column on wide (desktop/tablet) screens. */
+export const MAX_WIDTH = 640;
+
 /** Scrollable page with an iOS-style large title. */
 export function Screen({ title, subtitle, children, footer, underHeader }: Props) {
   const { colors } = useTheme();
@@ -50,8 +53,9 @@ export function Screen({ title, subtitle, children, footer, underHeader }: Props
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingHorizontal: space.lg, gap: space.lg, maxWidth: 640, width: "100%", alignSelf: "center" },
+  content: { paddingHorizontal: space.lg, gap: space.lg, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
   header: { gap: 2, marginBottom: space.xs },
   overline: { textTransform: "uppercase", letterSpacing: 0.6, fontWeight: "600" },
-  footer: { paddingHorizontal: space.lg, paddingTop: space.sm },
+  // Same column as the content, so buttons do not stretch across a desktop screen.
+  footer: { paddingHorizontal: space.lg, paddingTop: space.sm, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
 });

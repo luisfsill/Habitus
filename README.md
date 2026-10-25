@@ -37,11 +37,14 @@ No terminal do Expo, `a` abre no emulador Android e `i` abre no simulador iOS (s
 
 ## Instalar como app pelo navegador (PWA)
 
-O Habitus é um PWA: dá para instalar pelo navegador, sem loja, no Android e no iPhone. Ao abrir o app, a tela inicial mostra o cartão **Instale o Habitus** com o botão **Instalar agora**:
+O Habitus é um PWA: dá para instalar pelo navegador, sem loja, no Android e no iPhone.
 
-- **Android (Chrome, Edge, Samsung Internet):** o botão abre a mesma janela de instalação do navegador. É só confirmar.
-- **iPhone/iPad (Safari):** a Apple não permite que um site abra essa janela. O botão mostra o passo a passo: Compartilhar → **Adicionar à Tela de Início** → Adicionar.
-- **Já instalado:** o cartão some. O botão ✕ esconde o cartão até a próxima abertura.
+- **No computador:** o app funciona direto no navegador. O cartão **Instale o Habitus** é opcional.
+- **No celular, pelo navegador:** o app mostra só uma tela de apresentação (o que ele faz) com o botão **Instalar agora** embaixo. Para usar, é preciso instalar e abrir pelo ícone da tela inicial. Isso vale também para links diretos.
+  - **Android (Chrome, Edge, Samsung Internet):** o botão abre a janela de instalação do próprio navegador.
+  - **iPhone/iPad (Safari):** a Apple não oferece nenhum jeito de um site abrir a janela "Adicionar à Tela de Início". Só o próprio usuário abre, pelo botão Compartilhar. O botão mostra os 3 passos com ícones e uma seta apontando para a barra do Safari.
+  - **Instagram, WhatsApp, Facebook:** esses navegadores embutidos não instalam apps. O botão explica como abrir no navegador e oferece **Copiar link**.
+- **App instalado (aberto pela tela inicial):** funciona normalmente.
 
 Para instalar no celular, o app precisa estar publicado num endereço **HTTPS**, porque o celular não acessa o `localhost` do seu PC e os navegadores só instalam PWAs servidos com HTTPS. Para gerar os arquivos:
 

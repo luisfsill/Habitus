@@ -9,12 +9,16 @@ import { Icon } from "./icon";
 import { PrimaryButton } from "./primary-button";
 
 interface Props {
-  mode: "prompt" | "ios" | "manual";
+  mode: "prompt" | "ios" | "inapp" | "manual";
   onInstall: () => void;
   onDismiss: () => void;
 }
 
-const STEPS: Record<"ios" | "manual", string[]> = {
+const STEPS: Record<"ios" | "inapp" | "manual", string[]> = {
+  inapp: [
+    "Este navegador (Instagram, WhatsApp…) não instala apps.",
+    "Toque em ⋯ e escolha “Abrir no navegador”.",
+  ],
   ios: [
     "Toque no botão Compartilhar do Safari (o quadrado com a seta para cima).",
     "Escolha “Adicionar à Tela de Início”.",

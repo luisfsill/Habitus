@@ -4,8 +4,10 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Appearance, Platform } from "react-native";
 
+import { InstallGate } from "@/components/install-gate";
 import { RewardToast } from "@/components/reward-toast";
 import { AppStateProvider, useAppState } from "@/state/app-state";
+import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
 import { ThemePreferenceContext, useTheme } from "@/theme";
 
@@ -15,6 +17,7 @@ function RootStack() {
   const { ready, data, reward, dismissReward } = useAppState();
   const { colors, scheme } = useTheme();
   useNotificationRouting(ready && data.onboarded);
+  const install = useInstallPrompt();
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -27,6 +30,18 @@ function RootStack() {
     ...base,
     colors: { ...base.colors, primary: colors.accent, background: colors.background, card: colors.surface, text: colors.label },
   };
+
+  // On a phone's browser the app is install-only; it runs from the home screen icon.
+  if (isMobileWeb() && !isStandalone()) {
+    return (
+      <InstallGate
+        mode={install.mode === "hidden" ? "manual" : install.mode}
+        installed={install.installed}
+        iPhone={isIPhone()}
+        onInstall={() => void install.install()}
+      />
+    );
+  }
 
   return (
     <ThemeProvider value={theme}>
