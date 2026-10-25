@@ -1,41 +1,57 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Habitus
 
-## Expo has changed — do not trust your training data
+App mobile (iOS e Android) que lembra o usuário de praticar 5 truques de bem-estar ao longo do dia, com notificações locais. Sem login, sem backend. Interface 100% em português do Brasil.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Produto e stack
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+- Expo SDK 58 + React Native 0.88 + TypeScript (strict) + Expo Router (`src/app`).
+- `expo-notifications` (local), `expo-task-manager` (ações em background no Android), AsyncStorage, `expo-haptics`, Reanimated 4, `react-native-svg`, `expo-blur`, `expo-symbols`.
+- Detalhes: [PRODUCT.md](PRODUCT.md), [docs/architecture.md](docs/architecture.md), [docs/design.md](docs/design.md).
 
-## Commands
-
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+## Comandos canônicos
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npm start              # expo start (Expo Go / dev build)
+npm run dev            # app no navegador / PWA (http://localhost:8081)
+npm run lint           # ESLint rápido (preset Expo + quality gates)
+npm run lint:typed     # ESLint com informação de tipos
+npm run lint:rules     # self-check das regras quality/*
+npm run typecheck      # tsc --noEmit
+npm test               # Jest (jest-expo), fuso fixo America/New_York
+npm run check          # tudo acima em sequência
+npx expo install <pkg> # SEMPRE use para dependências (versões do SDK)
+npx expo-doctor        # diagnóstico de config/dependências
 ```
 
-Run lint and typecheck before declaring any task done.
+Rode `npm run check` antes de declarar qualquer tarefa pronta.
 
-## Navigation & Routing
+## Acordos de trabalho
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- Leia as instruções e o código relevante antes de agir. Separe observação, suposição, decisão e evidência.
+- Defina critério de aceite e comando de verificação antes de implementar. Correções trazem reprodução e teste de regressão quando viável.
+- Toda regra de agendamento vive em `src/domain` como função pura com teste. Mudou a regra, mudou o teste.
+- Atualize o documento responsável junto com a mudança (comportamento, comandos, configuração).
+- Expo muda a cada SDK: consulte `https://docs.expo.dev/versions/v58.0.0/` (ou Context7) antes de usar uma API Expo/RN; não confie em memória.
+- Nunca crie ou edite `ios/` e `android/` à mão (CNG). Configure via `app.json` e config plugins.
+- Não faça afirmações médicas ou científicas no conteúdo do app.
 
-## Building with EAS
+## Camadas (verificadas pelo ESLint)
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+- `src/domain` é puro: não importa de `app`, `components`, `services` nem `state`.
+- `src/components` é apresentacional: não importa `services` nem `app`.
+- `src/services` não importa UI nem `state`. AsyncStorage só em `src/services/storage.ts`.
+- `console` só em `src/services/log.ts`. Arquivos com no máximo 350 linhas.
 
-## Rules
+## Ferramentas e skills
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- Skills do projeto em `.agents/skills` (cópias em `.claude/skills`, instaladas com `--copy` por ser Windows): `vercel-react-native-skills`, `vercel-react-best-practices`, `vercel-composition-patterns`, `writing-guidelines`, `find-skills`. Plugin de projeto: `ui-ux-pro-max`.
+- Superpowers para design/planos proporcionais, Ponytail para a menor mudança completa, Caveman para conversa concisa (código, docs e commits em texto normal), Context7 para documentação atual.
+- Revisão de segurança reutilizável: [docs/prompts/security-review.md](docs/prompts/security-review.md).
+
+## Delegação e revisão
+
+Delegue só trabalho independente, com escopo e critério de aceite claros; o coordenador confere o diff e roda `npm run check`. Revisores são somente leitura. Política completa em [docs/quality.md](docs/quality.md).
+
+## Git
+
+Não há hooks nem bloqueios de branch. Commit e push só quando o usuário pedir.
