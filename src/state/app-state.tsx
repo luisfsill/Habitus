@@ -109,7 +109,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const result = computeSchedule(settings.start, settings.end, settings.days);
         // A bedtime typed by the user restarts the learning from that answer.
         const sleepLog = settings.bedtime !== current.settings.bedtime ? {} : current.sleepLog;
-        if (result.ok) await commit({ ...current, settings, sleepLog });
+        if (result.ok) await commit({ ...current, settings, sleepLog, settingsUpdatedAt: Date.now() });
         return result;
       },
       async completeOnboarding() {

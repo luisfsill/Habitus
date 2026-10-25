@@ -28,6 +28,8 @@ export interface AppData {
   gratitude: Record<string, string>;
   /** Night dayKey → night minutes when the bedtime trick was done. */
   sleepLog: Record<string, number>;
+  /** When `settings` last changed (ms); decides which device's settings win a sync. */
+  settingsUpdatedAt: number;
 }
 
 export const MAX_AFFIRMATIONS = 10;
@@ -49,6 +51,7 @@ export function defaultData(): AppData {
     completions: {},
     gratitude: {},
     sleepLog: {},
+    settingsUpdatedAt: 0,
   };
 }
 
@@ -125,6 +128,8 @@ export function sanitizeData(raw: unknown): AppData {
     completions: sanitizeCompletions(raw.completions),
     gratitude: sanitizeGratitude(raw.gratitude),
     sleepLog: sanitizeSleepLog(raw.sleepLog),
+    settingsUpdatedAt:
+      typeof raw.settingsUpdatedAt === "number" && Number.isFinite(raw.settingsUpdatedAt) && raw.settingsUpdatedAt > 0 ? raw.settingsUpdatedAt : 0,
   };
 }
 
