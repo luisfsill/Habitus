@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 
 import { AppText } from "@/components/app-text";
+import { BedtimeField } from "@/components/bedtime-field";
 import { GlassCard } from "@/components/glass-card";
 import { InstallCard } from "@/components/install-card";
 import { PrimaryButton } from "@/components/primary-button";
@@ -10,6 +11,7 @@ import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
 import { Icon } from "@/components/icon";
 import { TimeField } from "@/components/time-field";
+import { parseBedtime } from "@/domain/bedtime";
 import { computeSchedule } from "@/domain/schedule";
 import { TRICKS } from "@/domain/tricks";
 import { openSystemSettings, type PermissionState } from "@/services/notifications";
@@ -68,6 +70,7 @@ function Intro() {
 interface WindowDraft {
   start: string;
   end: string;
+  bedtime: string;
 }
 
 function Window({ draft, onChange }: { draft: WindowDraft; onChange: (next: WindowDraft) => void }) {
@@ -78,10 +81,19 @@ function Window({ draft, onChange }: { draft: WindowDraft; onChange: (next: Wind
       <View style={styles.window}>
         <TimeField label="Início do dia" value={draft.start} onChange={(start) => set({ start })} />
         <TimeField label="Fim do dia" value={draft.end} onChange={(end) => set({ end })} />
+        <BedtimeField value={draft.bedtime} onChange={(bedtime) => set({ bedtime })} />
+        <AppText variant="footnote" color="secondaryLabel">
+          O 6º truque chega na hora de dormir. Com o tempo, o Habitus aprende seu horário real pelo momento em que você o conclui.
+        </AppText>
         <AppText variant="footnote" color="secondaryLabel" style={styles.previewTitle}>
           SEUS HORÁRIOS
         </AppText>
-        <SchedulePreview start={draft.start} end={draft.end} days={data.settings.days} />
+        <SchedulePreview
+          start={draft.start}
+          end={draft.end}
+          days={data.settings.days}
+          bedtime={parseBedtime(draft.bedtime) ?? undefined}
+        />
       </View>
     </GlassCard>
   );
@@ -108,10 +120,10 @@ function Permission({ state }: { state: PermissionState }) {
   );
 }
 
-const TITLES = ["5 truques para o seu dia", "Quando é o seu dia?", "Lembretes na hora certa"];
+const TITLES = ["6 truques para o seu dia", "Quando é o seu dia?", "Lembretes na hora certa"];
 const SUBTITLES = [
   "Pequenas práticas de bem-estar, espalhadas pelo dia. O Habitus lembra você de cada uma.",
-  "Escolha o início e o fim. Os truques são distribuídos igualmente nessa janela.",
+  "Escolha o início e o fim do seu dia e a hora em que costuma dormir.",
   "Para lembrar você, o Habitus precisa de permissão para enviar notificações.",
 ];
 
@@ -119,7 +131,7 @@ export default function OnboardingScreen() {
   const { data, askPermission, completeOnboarding, permission, updateSettings } = useAppState();
   const [step, setStep] = useState(0);
   const [asked, setAsked] = useState<PermissionState>(permission);
-  const [window, setWindow] = useState<WindowDraft>({ start: data.settings.start, end: data.settings.end });
+  const [window, setWindow] = useState<WindowDraft>({ start: data.settings.start, end: data.settings.end, bedtime: data.settings.bedtime });
   const valid = computeSchedule(window.start, window.end, data.settings.days).ok;
   const changeWindow = (next: WindowDraft) => {
     setWindow(next);

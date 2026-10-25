@@ -26,7 +26,7 @@ export async function saveData(data: AppData): Promise<void> {
 
 /** Read-modify-write used by background notification actions. */
 export async function markDoneInStorage(day: string, trickIndex: number): Promise<AppData> {
-  const next = withCompletion(await loadData(), day, trickIndex);
+  const next = withCompletion(await loadData(), day, trickIndex, new Date());
   await saveData(next);
   return next;
 }

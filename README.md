@@ -1,6 +1,6 @@
 # Habitus
 
-App para iOS e Android que ajuda você a praticar **5 truques de bem-estar** ao longo do dia. Você escolhe o início e o fim do seu dia, e o Habitus distribui os truques de forma uniforme nessa janela e lembra de cada um com uma notificação local. Não tem login nem servidor, e os dados ficam no aparelho.
+App para iOS e Android que ajuda você a praticar **6 truques de bem-estar** ao longo do dia. Você escolhe o início e o fim do seu dia: o Habitus distribui 5 truques de forma uniforme nessa janela, e o 6º ("Antes de dormir") chega na hora em que você costuma dormir, horário que o app aprende sozinho. Cada um vem com uma notificação local. Não tem login nem servidor, e os dados ficam no aparelho.
 
 | Hoje | Notificação | Truque | Histórico |
 |---|---|---|---|
@@ -55,11 +55,22 @@ A pasta `dist/` é um site estático. Publique-a em qualquer hospedagem com HTTP
 
 **Limitação dos lembretes no PWA:** a web não tem como agendar uma notificação para disparar com o app fechado sem um servidor de push. No PWA, os lembretes chegam no horário enquanto o Habitus está aberto ou foi minimizado há pouco, e o toque abre o truque. No iPhone, as notificações só existem depois de instalar na Tela de Início (iOS 16.4+). As ações "Feito"/"Adiar" existem só no app nativo. Para lembretes confiáveis com o app fechado, use o app Android (APK, seção "Development build").
 
+## Hora de dormir (6º truque)
+
+O truque "Antes de dormir" pede para dizer: *"Deus, universo, vida: me surpreenda positivamente amanhã."* O horário da notificação é aprendido assim (`src/domain/bedtime.ts`):
+
+1. No onboarding (e em Ajustes) você informa a hora em que costuma dormir. O padrão é 23:00.
+2. Toda vez que você conclui o truque, o app guarda o horário. Esse é o momento real em que você está indo dormir.
+3. O lembrete vai para a **mediana das últimas 7 noites**, arredondada a 5 min. A mediana ignora uma noite fora da curva.
+4. Se você usou o app no dia mas não respondeu o truque da noite, provavelmente já dormia quando ele chegou. Por isso, o próximo aviso vem 10 min mais cedo por noite assim, até 30 min.
+5. Concluir até as 6h conta para a noite anterior (00:30 é "a noite de ontem").
+6. O lembrete nunca vem antes de 30 min depois do fim da janela do dia. Mudar a hora em Ajustes recomeça o aprendizado.
+
 ## Gamificação
 
 A aba **Conquistas** junta mecânicas que já funcionam em outros apps:
 
-- **XP e níveis (Duolingo):** +10 XP por truque, +25 por dia perfeito (5 de 5), +5 XP extra por dia de sequência (até +50) e +150 por semana perfeita (todos os dias ativos de domingo a sábado). Cada nível pede 50 XP a mais que o anterior (100, 150, 200…).
+- **XP e níveis (Duolingo):** +10 XP por truque, +25 por dia perfeito (todos os 6), +5 XP extra por dia de sequência (até +50) e +150 por semana perfeita (todos os dias ativos de domingo a sábado). Cada nível pede 50 XP a mais que o anterior (100, 150, 200…).
 - **Patentes (faixas de artes marciais):** Branca → Amarela (nível 3) → Laranja (5) → Verde (8) → Azul (12) → Roxa (16) → Marrom (21) → Preta (27).
 - **Medalhas com progresso (Apple Fitness):** 11 medalhas, como Primeiro passo, Dia perfeito, Em chamas (7 dias), Semana perfeita, Coração grato, Centena e Faixa Preta.
 - **Celebração:** ao concluir um truque aparece "+10 XP". Subir de nível, ganhar faixa ou medalha mostra um destaque com vibração.
@@ -79,8 +90,8 @@ Esse comando roda o ESLint rápido, o ESLint com tipos, o self-check das regras 
 1. Abra o app no aparelho (Expo Go ou development build), conclua o onboarding e **permita as notificações**.
 2. Vá em **Ajustes**:
    - **Testar uma notificação agora**: dispara um lembrete do truque 2 em 3 segundos.
-   - **Simular um dia em 5 minutos**: agenda a abertura em 10 s e os 5 truques nos centros de fatias de 1 minuto (40 s, 1 min 40 s, 2 min 40 s, 3 min 40 s e 4 min 40 s). Bloqueie a tela ou mande o app para segundo plano para ver os banners. O teste é somado ao horário normal, que continua agendado; reabrir o app não cancela nenhum dos dois.
-   - **Ver notificações agendadas**: mostra quantas estão pendentes. Sem adiamentos nem testes, o número esperado é até 42 (6 por dia × 7 dias).
+   - **Simular um dia em 5 minutos**: agenda a abertura em 10 s e os 6 truques espalhados pelos 5 minutos seguintes. Bloqueie a tela ou mande o app para segundo plano para ver os banners. O teste é somado ao horário normal, que continua agendado; reabrir o app não cancela nenhum dos dois.
+   - **Ver notificações agendadas**: mostra quantas estão pendentes. Sem adiamentos nem testes, o número esperado é até 49 (7 por dia × 7 dias).
 3. Toque numa notificação de truque: o app abre direto na tela daquele truque.
 4. Use as ações **Feito** e **Adiar 10 min**. No Android elas rodam sem abrir o app, inclusive com o app encerrado. No iOS elas abrem o app para registrar a ação.
 

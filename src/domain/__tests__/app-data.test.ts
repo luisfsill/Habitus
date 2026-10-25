@@ -1,4 +1,4 @@
-import { completedKeys, defaultData, sanitizeData, withCompletion } from "../app-data";
+import { completedKeys, defaultData, sanitizeData, scheduleFor, withCompletion } from "../app-data";
 import { contentData, interpretResponse, toPermissionState } from "../notification-actions";
 import { formatCountdown, formatTime, parseTime } from "../time";
 
@@ -24,7 +24,8 @@ describe("sanitizeData", () => {
       gratitude: { "2026-10-24": " Obrigado ", "2026-10-25": "" },
     });
     expect(data.onboarded).toBe(true);
-    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true });
+    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00" });
+    expect(data.sleepLog).toEqual({});
     expect(data.completions).toEqual({ "2026-10-24": [0, 2] });
     expect(data.gratitude).toEqual({ "2026-10-24": "Obrigado" });
   });
@@ -89,5 +90,32 @@ describe("contentData", () => {
   it("ignores missing or broken payloads", () => {
     expect(contentData(null)).toBeUndefined();
     expect(contentData({ dataString: "{oops" })).toBeUndefined();
+  });
+});
+
+describe("bedtime data", () => {
+  it("keeps a valid bedtime and sleep log, drops bad entries", () => {
+    const data = sanitizeData({
+      version: 1,
+      settings: { bedtime: "00:30" },
+      sleepLog: { "2026-10-23": 1400, "2026-10-22": 600, bad: 1400 },
+    });
+    expect(data.settings.bedtime).toBe("00:30");
+    expect(data.sleepLog).toEqual({ "2026-10-23": 1400 });
+    expect(sanitizeData({ version: 1, settings: { bedtime: "14:00" } }).settings.bedtime).toBe("23:00");
+  });
+
+  it("logs when the bedtime trick was done, but not daytime completions", () => {
+    const night = withCompletion(defaultData(), "2026-10-24", 5, new Date(2026, 9, 25, 0, 20));
+    expect(night.sleepLog).toEqual({ "2026-10-24": 24 * 60 + 20 });
+    const day = withCompletion(defaultData(), "2026-10-24", 5, new Date(2026, 9, 24, 15, 0));
+    expect(day.sleepLog).toEqual({});
+    expect(withCompletion(defaultData(), "2026-10-24", 2, new Date(2026, 9, 24, 23)).sleepLog).toEqual({});
+  });
+
+  it("schedules tonight's bedtime trick at the learned time", () => {
+    const data = { ...defaultData(), sleepLog: { "2026-10-23": 23 * 60 + 40 }, completions: { "2026-10-23": [5] } };
+    const result = scheduleFor(data, new Date(2026, 9, 24, 9));
+    expect(result.ok && formatTime(result.schedule.trickMinutes[5])).toBe("23:40");
   });
 });

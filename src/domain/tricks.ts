@@ -1,5 +1,5 @@
-export type TrickIndex = 0 | 1 | 2 | 3 | 4;
-export type TrickKind = "simple" | "timer" | "affirmations" | "gratitude";
+export type TrickIndex = 0 | 1 | 2 | 3 | 4 | 5;
+export type TrickKind = "simple" | "timer" | "affirmations" | "gratitude" | "phrase";
 
 export interface Trick {
   index: TrickIndex;
@@ -13,6 +13,8 @@ export interface Trick {
   kind: TrickKind;
   /** Only for timer tricks. */
   durationSeconds?: number;
+  /** Only for phrase tricks: the words to say. */
+  phrase?: string;
   symbol: { ios: string; android: string };
 }
 
@@ -69,9 +71,22 @@ export const TRICKS: readonly Trick[] = [
     kind: "gratitude",
     symbol: { ios: "heart.text.square", android: "volunteer_activism" },
   },
+  {
+    index: 5,
+    title: "Antes de dormir",
+    summary: "Peça um amanhã que surpreenda.",
+    instruction: "Já deitado, antes de dormir, diga com calma a frase abaixo.",
+    notificationBody: "Antes de dormir, diga: Deus, universo, vida, me surpreenda positivamente amanhã.",
+    kind: "phrase",
+    phrase: "Deus, universo, vida: me surpreenda positivamente amanhã.",
+    symbol: { ios: "moon.stars.fill", android: "bedtime" },
+  },
 ];
 
 export const TRICK_COUNT = TRICKS.length;
+/** The first five are spread over the day window; the last one fires at bedtime. */
+export const DAY_TRICK_COUNT = 5;
+export const BEDTIME_TRICK: TrickIndex = 5;
 
 export const DEFAULT_AFFIRMATIONS: readonly string[] = [
   "Sou bem-sucedido.",

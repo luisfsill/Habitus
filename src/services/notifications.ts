@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Linking, Platform } from "react-native";
 
-import { type AppData, completedKeys } from "@/domain/app-data";
+import { type AppData, completedKeys, scheduleFor } from "@/domain/app-data";
 import {
   ACTION_DONE,
   ACTION_SNOOZE,
@@ -18,7 +18,6 @@ import {
   snoozeNotification,
   snoozePrefix,
 } from "@/domain/notification-plan";
-import { computeSchedule } from "@/domain/schedule";
 import type { TrickIndex } from "@/domain/tricks";
 
 import { log } from "./log";
@@ -147,8 +146,7 @@ async function cancelWhere(predicate: (id: string) => boolean): Promise<void> {
 export async function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
   soundEnabled = data.settings.sound;
   await cancelWhere((id) => !isOneOffId(id));
-  const { start, end, days } = data.settings;
-  const result = computeSchedule(start, end, days);
+  const result = scheduleFor(data, now);
   if (!data.onboarded || !result.ok) return 0;
   if ((await getPermissionState()) !== "granted") return 0;
   const plan = planNotifications(result.schedule, now, { completed: completedKeys(data.completions) });

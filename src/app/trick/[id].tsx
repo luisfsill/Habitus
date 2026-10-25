@@ -9,10 +9,24 @@ import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { Icon } from "@/components/icon";
 import { MAX_TEXT_LENGTH } from "@/domain/app-data";
+import { trickDayKey } from "@/domain/bedtime";
 import { dayKey } from "@/domain/time";
 import { isTrickIndex, type Trick, TRICKS } from "@/domain/tricks";
 import { useAppState } from "@/state/app-state";
 import { radius, space, type, useTheme } from "@/theme";
+
+function Phrase({ text }: { text: string }) {
+  return (
+    <GlassCard>
+      <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
+        DIGA, DEVAGAR
+      </AppText>
+      <AppText variant="title1" color="accentText" style={styles.phrase} accessibilityRole="text">
+        “{text}”
+      </AppText>
+    </GlassCard>
+  );
+}
 
 function Affirmations() {
   const { data } = useAppState();
@@ -72,6 +86,7 @@ function Practice({ trick, gratitude, onGratitude, onCommitGratitude }: Practice
     );
   }
   if (trick.kind === "affirmations") return <Affirmations />;
+  if (trick.kind === "phrase" && trick.phrase) return <Phrase text={trick.phrase} />;
   if (trick.kind === "gratitude") {
     return <Gratitude text={gratitude} onChange={onGratitude} onCommit={onCommitGratitude} />;
   }
@@ -100,7 +115,7 @@ export default function TrickScreen() {
   }
 
   const trick = TRICKS[index];
-  const done = (data.completions[dayKey(new Date())] ?? []).includes(index);
+  const done = (data.completions[trickDayKey(index, new Date())] ?? []).includes(index);
 
   const finish = async () => {
     if (trick.kind === "gratitude") await setGratitude(gratitude);
@@ -142,6 +157,7 @@ const styles = StyleSheet.create({
   instruction: { fontWeight: "400", lineHeight: 28 },
   label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.sm },
   affirmation: { marginVertical: space.xs },
+  phrase: { lineHeight: 38, marginVertical: space.sm },
   inlineButton: { marginTop: space.sm, alignItems: "flex-start" },
   input: { minHeight: 96, borderRadius: radius.md, padding: space.md, textAlignVertical: "top" },
 });

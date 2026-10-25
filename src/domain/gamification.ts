@@ -63,7 +63,7 @@ export function nextBelt(level: number): Belt | undefined {
   return BELTS.find((b) => b.minLevel > level);
 }
 
-/** Bonus for a 5/5 day on the `streak`-th day of a run. */
+/** Bonus for a complete day on the `streak`-th day of a run. */
 export function perfectDayXp(streak: number): number {
   return XP_RULES.perfectDay + XP_RULES.streakStep * Math.min(Math.max(streak - 1, 0), XP_RULES.streakCap);
 }

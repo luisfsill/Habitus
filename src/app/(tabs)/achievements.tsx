@@ -49,7 +49,7 @@ function Badge({ badge }: { badge: BadgeState }) {
 
 const RULES = [
   `+${XP_RULES.trick} XP por truque concluído`,
-  `+${XP_RULES.perfectDay} XP por dia perfeito (5 de 5)`,
+  `+${XP_RULES.perfectDay} XP por dia perfeito (todos os truques)`,
   `+${XP_RULES.streakStep} XP extra por dia de sequência, até +${XP_RULES.streakStep * XP_RULES.streakCap}`,
   `+${XP_RULES.perfectWeek} XP por semana perfeita (todos os dias ativos)`,
 ];

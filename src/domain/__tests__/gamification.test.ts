@@ -2,7 +2,7 @@ import { progressFrom, rewardBetween } from "../achievements";
 import { beltFor, computeStats, levelFor, nextBelt, XP_RULES, xpToNext } from "../gamification";
 import { ALL_WEEKDAYS } from "../time";
 
-const full = [0, 1, 2, 3, 4];
+const full = [0, 1, 2, 3, 4, 5];
 // Saturday 24 Oct 2026; the week runs Sun 18 → Sat 24.
 const saturday = new Date(2026, 9, 24, 20);
 
@@ -44,10 +44,10 @@ describe("computeStats", () => {
 
   it("adds the perfect-day bonus, growing with the streak", () => {
     const one = computeStats(week(23, 23), {}, ALL_WEEKDAYS, saturday);
-    expect(one.xp).toBe(50 + XP_RULES.perfectDay);
+    expect(one.xp).toBe(60 + XP_RULES.perfectDay);
     const two = computeStats(week(23, 24), {}, ALL_WEEKDAYS, saturday);
     // Day 2 of the streak earns one streak step on top.
-    expect(two.xp).toBe(100 + 2 * XP_RULES.perfectDay + XP_RULES.streakStep);
+    expect(two.xp).toBe(120 + 2 * XP_RULES.perfectDay + XP_RULES.streakStep);
     expect(two.currentStreak).toBe(2);
   });
 
@@ -97,7 +97,7 @@ describe("badges and rewards", () => {
   });
 
   it("reports XP, level-up and new badges between two snapshots", () => {
-    const before = progressFrom(computeStats(week(24, 24, [0, 1, 2, 3]), {}, ALL_WEEKDAYS, saturday));
+    const before = progressFrom(computeStats(week(24, 24, [0, 1, 2, 3, 4]), {}, ALL_WEEKDAYS, saturday));
     const after = progressFrom(computeStats(week(24, 24), {}, ALL_WEEKDAYS, saturday));
     const reward = rewardBetween(before, after);
     expect(reward?.xp).toBe(XP_RULES.trick + XP_RULES.perfectDay);

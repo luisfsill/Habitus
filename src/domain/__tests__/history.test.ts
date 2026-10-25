@@ -1,7 +1,7 @@
 import { currentStreak, monthGrid, trickStatuses, weekPercent } from "../history";
 import { ALL_WEEKDAYS } from "../time";
 
-const full = [0, 1, 2, 3, 4];
+const full = [0, 1, 2, 3, 4, 5];
 
 describe("currentStreak", () => {
   // Saturday 24 Oct 2026

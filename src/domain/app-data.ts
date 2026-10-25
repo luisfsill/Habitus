@@ -1,7 +1,8 @@
+import { bedtimeSample, DEFAULT_BEDTIME, EARLIEST_BEDTIME, estimateBedtime, LATEST_BEDTIME, parseBedtime } from "./bedtime";
 import type { Completions } from "./history";
-import { DEFAULT_END, DEFAULT_START } from "./schedule";
+import { computeSchedule, DEFAULT_END, DEFAULT_START, type ScheduleResult } from "./schedule";
 import { ALL_WEEKDAYS, parseTime, type Weekday } from "./time";
-import { DEFAULT_AFFIRMATIONS, isTrickIndex } from "./tricks";
+import { BEDTIME_TRICK, DEFAULT_AFFIRMATIONS, isTrickIndex } from "./tricks";
 
 export interface Settings {
   start: string;
@@ -9,6 +10,8 @@ export interface Settings {
   days: Weekday[];
   affirmations: string[];
   sound: boolean;
+  /** The bedtime the user told us ("HH:MM"); the starting point for learning. */
+  bedtime: string;
 }
 
 export interface AppData {
@@ -18,6 +21,8 @@ export interface AppData {
   completions: Completions;
   /** dayKey → gratitude phrase written that day. */
   gratitude: Record<string, string>;
+  /** Night dayKey → night minutes when the bedtime trick was done. */
+  sleepLog: Record<string, number>;
 }
 
 export const MAX_AFFIRMATIONS = 10;
@@ -33,9 +38,11 @@ export function defaultData(): AppData {
       days: [...ALL_WEEKDAYS],
       affirmations: [...DEFAULT_AFFIRMATIONS],
       sound: true,
+      bedtime: DEFAULT_BEDTIME,
     },
     completions: {},
     gratitude: {},
+    sleepLog: {},
   };
 }
 
@@ -66,6 +73,7 @@ function sanitizeSettings(raw: unknown, fallback: Settings): Settings {
     days,
     affirmations,
     sound: typeof raw.sound === "boolean" ? raw.sound : fallback.sound,
+    bedtime: typeof raw.bedtime === "string" && parseBedtime(raw.bedtime) !== null ? raw.bedtime : fallback.bedtime,
   };
 }
 
@@ -90,6 +98,15 @@ function sanitizeGratitude(raw: unknown): Record<string, string> {
   return out;
 }
 
+function sanitizeSleepLog(raw: unknown): Record<string, number> {
+  if (!isRecord(raw)) return {};
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (DAY_KEY.test(key) && typeof value === "number" && value >= EARLIEST_BEDTIME && value <= LATEST_BEDTIME) out[key] = value;
+  }
+  return out;
+}
+
 /** Accepts anything read from storage and returns a valid AppData. */
 export function sanitizeData(raw: unknown): AppData {
   const base = defaultData();
@@ -100,18 +117,31 @@ export function sanitizeData(raw: unknown): AppData {
     settings: sanitizeSettings(raw.settings, base.settings),
     completions: sanitizeCompletions(raw.completions),
     gratitude: sanitizeGratitude(raw.gratitude),
+    sleepLog: sanitizeSleepLog(raw.sleepLog),
   };
 }
 
-/** Returns new data with `trickIndex` marked done on `day`. Idempotent. */
-export function withCompletion(data: AppData, day: string, trickIndex: number): AppData {
+/**
+ * Returns new data with `trickIndex` marked done on `day`. Idempotent.
+ * For the bedtime trick, `at` (when it was done) feeds the bedtime learning.
+ */
+export function withCompletion(data: AppData, day: string, trickIndex: number, at?: Date): AppData {
   if (!isTrickIndex(trickIndex)) return data;
   const current = data.completions[day] ?? [];
   if (current.includes(trickIndex)) return data;
+  const sample = trickIndex === BEDTIME_TRICK && at ? bedtimeSample(at) : null;
   return {
     ...data,
     completions: { ...data.completions, [day]: [...current, trickIndex].sort((a, b) => a - b) },
+    // A bedtime trick done at, say, 15:00 is not a bedtime: do not learn from it.
+    sleepLog: sample !== null && sample >= EARLIEST_BEDTIME ? { ...data.sleepLog, [day]: sample } : data.sleepLog,
   };
+}
+
+/** Today's schedule, with tonight's learned bedtime. */
+export function scheduleFor(data: Pick<AppData, "settings" | "sleepLog" | "completions">, now: Date): ScheduleResult {
+  const { start, end, days, bedtime } = data.settings;
+  return computeSchedule(start, end, days, estimateBedtime(bedtime, data.sleepLog, data.completions, now).minutes);
 }
 
 /** Set of `${day}:${index}` keys, the shape planNotifications expects. */

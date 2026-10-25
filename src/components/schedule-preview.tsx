@@ -11,12 +11,14 @@ interface Props {
   start: string;
   end: string;
   days: readonly Weekday[];
+  /** Night minutes for the bedtime trick; defaults to 23:00. */
+  bedtime?: number;
 }
 
-/** Live preview of the five computed times, or the validation error. */
-export function SchedulePreview({ start, end, days }: Props) {
+/** Live preview of the six computed times, or the validation error. */
+export function SchedulePreview({ start, end, days, bedtime }: Props) {
   const { colors } = useTheme();
-  const result = computeSchedule(start, end, days);
+  const result = computeSchedule(start, end, days, bedtime);
 
   if (!result.ok) {
     return (

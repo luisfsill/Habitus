@@ -22,7 +22,8 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 ## Agendamento
 
-- `computeSchedule(start, end, days)` (`src/domain/schedule.ts`) valida e devolve os minutos de abertura e dos 5 truques.
+- `computeSchedule(start, end, days, bedtime?)` (`src/domain/schedule.ts`) valida e devolve os minutos de abertura, dos 5 truques do dia e do 6º (hora de dormir, em "minutos noturnos": 00:30 = 24:30).
+- `estimateBedtime` (`src/domain/bedtime.ts`) aprende a hora de dormir a partir de `settings.bedtime` (resposta do usuário) e de `sleepLog` (noite → horário em que o truque 6 foi concluído, gravado por `withCompletion`). `scheduleFor(data, now)` junta tudo e é usado pela tela Hoje e pelo reagendamento.
 - `planNotifications(schedule, now, { completed })` (`src/domain/notification-plan.ts`) gera as notificações futuras dos próximos 7 dias, com ids estáveis (`AAAA-MM-DD:trick:i`), pulando truques já concluídos, com teto de 60.
 - `rescheduleAll(data)` (`src/services/notifications.ts`) cancela as notificações do plano e agenda o plano de novo, com gatilhos `DATE`. Adiamentos (`…:snooze:…`) e testes (`test:…`) são preservados (`isOneOffId`). Roda ao iniciar, quando o app volta ao primeiro plano e a cada mudança de ajustes.
 - `planTestRun(now, 5)` comprime um "dia" em 5 minutos para teste manual (ignora a janela mínima de propósito) e é somado ao plano real.
@@ -50,7 +51,7 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 ## Dados
 
-Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, completions, gratitude }`. Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
+Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, completions, gratitude, sleepLog }`. O truque 6 concluído depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
 
 ## Notas de plataforma
 

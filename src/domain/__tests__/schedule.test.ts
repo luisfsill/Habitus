@@ -1,10 +1,11 @@
 import { computeSchedule, greetingFor, MIN_WINDOW_MINUTES, sliceCenters, trickTimeLabels } from "../schedule";
 import { ALL_WEEKDAYS, parseTime } from "../time";
 
+/** Labels of the five day tricks (the sixth is the bedtime one). */
 function labels(start: string, end: string) {
   const result = computeSchedule(start, end, ALL_WEEKDAYS);
   if (!result.ok) throw new Error(result.message);
-  return trickTimeLabels(result.schedule);
+  return trickTimeLabels(result.schedule).slice(0, 5);
 }
 
 describe("computeSchedule", () => {
@@ -67,10 +68,27 @@ describe("computeSchedule", () => {
   it("keeps every trick strictly inside the window", () => {
     const result = computeSchedule("07:30", "08:30", ALL_WEEKDAYS);
     if (!result.ok) throw new Error();
-    for (const m of result.schedule.trickMinutes) {
+    for (const m of result.schedule.trickMinutes.slice(0, 5)) {
       expect(m).toBeGreaterThan(parseTime("07:30") ?? Infinity);
       expect(m).toBeLessThan(parseTime("08:30") ?? -Infinity);
     }
+  });
+});
+
+describe("bedtime trick", () => {
+  it("is the sixth time, 23:00 by default", () => {
+    const result = computeSchedule("08:00", "16:00", ALL_WEEKDAYS);
+    expect(result.ok && trickTimeLabels(result.schedule)[5]).toBe("23:00");
+  });
+
+  it("uses the given bedtime, after midnight too", () => {
+    const result = computeSchedule("08:00", "16:00", ALL_WEEKDAYS, 24 * 60 + 30);
+    expect(result.ok && result.schedule.trickMinutes[5]).toBe(24 * 60 + 30);
+  });
+
+  it("never comes before 30 min after the window ends", () => {
+    const result = computeSchedule("14:00", "23:00", ALL_WEEKDAYS, 22 * 60);
+    expect(result.ok && trickTimeLabels(result.schedule)[5]).toBe("23:30");
   });
 });
 

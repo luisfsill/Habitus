@@ -3,6 +3,7 @@ import { Alert, Platform, StyleSheet, Switch, View } from "react-native";
 
 import { AffirmationsEditor } from "@/components/affirmations-editor";
 import { AppText } from "@/components/app-text";
+import { BedtimeField } from "@/components/bedtime-field";
 import { PermissionBanners } from "@/components/permission-banner";
 import { PrimaryButton } from "@/components/primary-button";
 import { SchedulePreview } from "@/components/schedule-preview";
@@ -11,6 +12,7 @@ import { Section } from "@/components/section";
 import { TimeField } from "@/components/time-field";
 import { WeekdayPicker } from "@/components/weekday-picker";
 import type { Settings } from "@/domain/app-data";
+import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
@@ -27,11 +29,22 @@ function confirm(title: string, message: string, action: string, onConfirm: () =
   ]);
 }
 
+function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
+  const when = formatTime(minutes);
+  const learned =
+    nights > 0
+      ? `Aprendido: ${when}, pelo horário em que você concluiu o truque nas últimas ${nights} noite${nights > 1 ? "s" : ""}.`
+      : `Hoje o lembrete chega às ${when}. O Habitus vai aprender seu horário real conforme você conclui o truque.`;
+  const early = missed > 0 ? " Como o truque ficou sem resposta recentemente, o aviso foi antecipado." : "";
+  return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
+}
+
 export default function SettingsScreen() {
   const { data, permission, exactAlarms, askExactAlarms, updateSettings, reset, askPermission } = useAppState();
   const { colors } = useTheme();
   const [draft, setDraft] = useState(() => ({ ...data.settings }));
   const [status, setStatus] = useState<string | null>(null);
+  const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
 
   const change = async (patch: Partial<Settings>) => {
     // Validate the whole draft: an invalid start must not be merged with a saved end.
@@ -51,7 +64,7 @@ export default function SettingsScreen() {
     if (permission !== "granted" && (await askPermission()) !== "granted") return;
     const dates = await scheduleTestRun(5);
     const last = dates[dates.length - 1];
-    setStatus(`Dia simulado: 6 notificações até ${formatTime(minutesOfDay(last))}.`);
+    setStatus(`Dia simulado: ${dates.length} notificações até ${formatTime(minutesOfDay(last))}.`);
   };
 
   return (
@@ -63,11 +76,15 @@ export default function SettingsScreen() {
         onAllowExactAlarms={() => void askExactAlarms()}
       />
 
-      <Section title="Horário" footer="Os 5 truques são distribuídos igualmente entre o início e o fim.">
+      <Section title="Horário" footer="Os 5 primeiros truques são distribuídos igualmente entre o início e o fim. O 6º chega na hora de dormir.">
         <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
         <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
         <View style={[styles.divider, { backgroundColor: colors.separator }]} />
-        <SchedulePreview start={draft.start} end={draft.end} days={draft.days} />
+        <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
+      </Section>
+
+      <Section title="Hora de dormir" footer={bedtimeFooter(sleep)}>
+        <BedtimeField value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
       </Section>
 
       <Section title="Dias da semana">

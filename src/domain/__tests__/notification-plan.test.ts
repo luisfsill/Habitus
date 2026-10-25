@@ -18,9 +18,9 @@ function schedule(start = "08:00", end = "16:00", days: readonly Weekday[] = ALL
 const saturdayMorning = new Date(2026, 9, 24, 7, 0);
 
 describe("planNotifications", () => {
-  it("plans 6 notifications per active day for the next 7 days", () => {
+  it("plans 7 notifications per active day for the next 7 days", () => {
     const plan = planNotifications(schedule(), saturdayMorning);
-    expect(plan).toHaveLength(42);
+    expect(plan).toHaveLength(49);
     expect(plan.length).toBeLessThanOrEqual(64);
   });
 
@@ -28,7 +28,7 @@ describe("planNotifications", () => {
     const [opening] = planNotifications(schedule(), saturdayMorning);
     expect(opening.kind).toBe("opening");
     expect(formatTime(minutesOfDay(opening.date))).toBe("08:00");
-    expect(opening.body).toBe("Bom dia! Hoje você tem 5 truques para fazer. O primeiro chega às 08:48.");
+    expect(opening.body).toBe("Bom dia! Hoje você tem 6 truques para fazer. O primeiro chega às 08:48.");
   });
 
   it("uses the short trick text in the title and body", () => {
@@ -41,27 +41,28 @@ describe("planNotifications", () => {
   it("skips anything at or before now", () => {
     const noon = new Date(2026, 9, 24, 12, 0);
     const today = planNotifications(schedule(), noon).filter((n) => n.dayKey === "2026-10-24");
-    expect(today.map((n) => formatTime(minutesOfDay(n.date)))).toEqual(["13:36", "15:12"]);
+    expect(today.map((n) => formatTime(minutesOfDay(n.date)))).toEqual(["13:36", "15:12", "23:00"]);
   });
 
-  it("starts tomorrow when today's window is over", () => {
+  it("keeps only tonight's bedtime once today's window is over", () => {
     const evening = new Date(2026, 9, 24, 20, 0);
     const plan = planNotifications(schedule(), evening);
-    expect(plan[0].dayKey).toBe("2026-10-25");
-    expect(plan).toHaveLength(36);
+    expect(plan[0]).toMatchObject({ dayKey: "2026-10-24", trickIndex: 5 });
+    expect(plan[1].dayKey).toBe("2026-10-25");
+    expect(plan).toHaveLength(43);
   });
 
   it("only covers active weekdays", () => {
     // Monday (1) and Wednesday (3) only.
     const plan = planNotifications(schedule("08:00", "16:00", [1, 3]), saturdayMorning);
     expect([...new Set(plan.map((n) => n.date.getDay()))]).toEqual([1, 3]);
-    expect(plan).toHaveLength(12);
+    expect(plan).toHaveLength(14);
   });
 
   it("does not notify tricks already completed", () => {
     const plan = planNotifications(schedule(), saturdayMorning, { completed: new Set(["2026-10-24:0", "2026-10-24:4"]) });
     const today = plan.filter((n) => n.dayKey === "2026-10-24" && n.kind === "trick");
-    expect(today.map((n) => n.trickIndex)).toEqual([1, 2, 3]);
+    expect(today.map((n) => n.trickIndex)).toEqual([1, 2, 3, 5]);
   });
 
   it("gives every notification a unique, stable id", () => {
@@ -80,7 +81,7 @@ describe("planNotifications", () => {
     // DST ends Sunday 1 Nov 2026 in New York.
     const plan = planNotifications(schedule(), new Date(2026, 9, 30, 7, 0));
     const nov1 = plan.filter((n) => n.dayKey === "2026-11-01");
-    expect(nov1.map((n) => formatTime(minutesOfDay(n.date)))).toEqual(["08:00", "08:48", "10:24", "12:00", "13:36", "15:12"]);
+    expect(nov1.map((n) => formatTime(minutesOfDay(n.date)))).toEqual(["08:00", "08:48", "10:24", "12:00", "13:36", "15:12", "23:00"]);
   });
 });
 
@@ -99,7 +100,7 @@ describe("planTestRun", () => {
     const now = new Date(2026, 9, 24, 10, 0, 0);
     const plan = planTestRun(now, 5, 10);
     const offsets = plan.map((n) => (n.date.getTime() - now.getTime()) / 1000);
-    expect(offsets).toEqual([10, 40, 100, 160, 220, 280]);
+    expect(offsets).toEqual([10, 35, 85, 135, 185, 235, 285]);
     expect(plan.every((n) => n.date > now)).toBe(true);
   });
 });

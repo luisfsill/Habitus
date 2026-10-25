@@ -5,6 +5,7 @@ import { AppState } from "react-native";
 import { progressOf, type Progress, type Reward, rewardBetween } from "@/domain/achievements";
 import { type AppData, defaultData, type Settings, withCompletion } from "@/domain/app-data";
 import { computeSchedule, type ScheduleResult } from "@/domain/schedule";
+import { trickDayKey } from "@/domain/bedtime";
 import { dayKey } from "@/domain/time";
 import type { TrickIndex } from "@/domain/tricks";
 import { log } from "@/services/log";
@@ -103,9 +104,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       dismissReward,
       refresh,
       async updateSettings(patch) {
-        const settings = { ...dataRef.current.settings, ...patch };
+        const current = dataRef.current;
+        const settings = { ...current.settings, ...patch };
         const result = computeSchedule(settings.start, settings.end, settings.days);
-        if (result.ok) await commit({ ...dataRef.current, settings });
+        // A bedtime typed by the user restarts the learning from that answer.
+        const sleepLog = settings.bedtime !== current.settings.bedtime ? {} : current.sleepLog;
+        if (result.ok) await commit({ ...current, settings, sleepLog });
         return result;
       },
       async completeOnboarding() {
@@ -113,10 +117,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         await commit({ ...dataRef.current, onboarded: true });
       },
       async completeTrick(index) {
-        const today = dayKey(new Date());
+        const now = new Date();
+        const today = trickDayKey(index, now);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        const next = withCompletion(dataRef.current, today, index);
-        setReward(rewardBetween(progressOf(dataRef.current, new Date()), progressOf(next, new Date())));
+        const next = withCompletion(dataRef.current, today, index, now);
+        setReward(rewardBetween(progressOf(dataRef.current, now), progressOf(next, now)));
         dataRef.current = next;
         setData(next);
         await saveData(next);

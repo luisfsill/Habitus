@@ -13,7 +13,7 @@ export interface BadgeDef {
 /** Apple Fitness-style awards: each one shows progress until it unlocks. */
 export const BADGES: readonly BadgeDef[] = [
   { id: "first-step", title: "Primeiro passo", description: "Conclua seu primeiro truque.", symbol: { ios: "figure.walk", android: "directions_walk" }, target: 1, value: (s) => s.totalTricks },
-  { id: "perfect-day", title: "Dia perfeito", description: "Faça os 5 truques num dia.", symbol: { ios: "sun.max.fill", android: "wb_sunny" }, target: 1, value: (s) => s.perfectDays },
+  { id: "perfect-day", title: "Dia perfeito", description: "Faça todos os truques num dia.", symbol: { ios: "sun.max.fill", android: "wb_sunny" }, target: 1, value: (s) => s.perfectDays },
   { id: "streak-3", title: "Aquecendo", description: "3 dias completos seguidos.", symbol: { ios: "flame", android: "local_fire_department" }, target: 3, value: (s) => s.bestStreak },
   { id: "streak-7", title: "Em chamas", description: "7 dias completos seguidos.", symbol: { ios: "flame.fill", android: "whatshot" }, target: 7, value: (s) => s.bestStreak },
   { id: "perfect-week", title: "Semana perfeita", description: "Complete todos os dias ativos de uma semana.", symbol: { ios: "calendar.badge.checkmark", android: "event_available" }, target: 1, value: (s) => s.perfectWeeks },

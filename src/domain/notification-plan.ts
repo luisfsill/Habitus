@@ -117,7 +117,7 @@ export function snoozeNotification(day: string, trickIndex: TrickIndex, now: Dat
 export function planTestRun(now: Date, windowMinutes = 5, leadSeconds = 10): PlannedNotification[] {
   const start = now.getTime() + leadSeconds * 1000;
   const key = dayKey(now);
-  const centers = sliceCenters(start, windowMinutes * 60_000);
+  const centers = sliceCenters(start, windowMinutes * 60_000, TRICK_COUNT);
   const firstAt = new Date(centers[0]);
   const opening: PlannedNotification = {
     id: `test:${start}:opening`,
