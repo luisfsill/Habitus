@@ -25,6 +25,8 @@ export interface PlanOptions {
   horizonDays?: number;
   /** `${dayKey}:${trickIndex}` entries already completed; they are not notified. */
   completed?: ReadonlySet<string>;
+  /** End of the user's access: nothing is planned after it. */
+  until?: Date;
 }
 
 export function completionKey(day: string, trickIndex: number): string {
@@ -83,6 +85,7 @@ export function planNotifications(
     if (!schedule.days.includes(day.getDay() as DaySchedule["days"][number])) continue;
     for (const item of dayNotifications(schedule, day)) {
       if (item.date.getTime() <= now.getTime()) continue;
+      if (options.until && item.date.getTime() > options.until.getTime()) continue;
       if (item.trickIndex !== undefined && completed.has(completionKey(item.dayKey, item.trickIndex))) continue;
       plan.push(item);
     }

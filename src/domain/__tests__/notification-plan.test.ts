@@ -24,6 +24,13 @@ describe("planNotifications", () => {
     expect(plan.length).toBeLessThanOrEqual(64);
   });
 
+  it("plans nothing after the access cutoff", () => {
+    const until = new Date(2026, 9, 25, 10, 0);
+    const plan = planNotifications(schedule(), saturdayMorning, { until });
+    expect(plan.length).toBeGreaterThan(0);
+    expect(plan.every((n) => n.date.getTime() <= until.getTime())).toBe(true);
+  });
+
   it("writes the opening message with the first trick time", () => {
     const [opening] = planNotifications(schedule(), saturdayMorning);
     expect(opening.kind).toBe("opening");
