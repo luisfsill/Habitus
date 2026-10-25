@@ -41,3 +41,18 @@ example
 # generated native folders
 /ios
 /android
+
+# agent and editor tooling (local only, not needed to run the app)
+.agents/
+.claude/
+skills-lock.json
+.vscode/
+
+# screenshots: keep only the ones shown in README.md
+/docs/screenshots/*
+!/docs/screenshots/android/
+/docs/screenshots/android/*
+!/docs/screenshots/android/a16-timer-concluido.png
+!/docs/screenshots/android/a17-hoje-2de5.png
+!/docs/screenshots/android/a18-historico.png
+!/docs/screenshots/android/a20-notificacao-icone.png
