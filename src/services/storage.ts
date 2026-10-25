@@ -34,3 +34,10 @@ export async function markDoneInStorage(day: string, trickIndex: number): Promis
 export async function clearData(): Promise<void> {
   await AsyncStorage.removeItem(KEY);
 }
+
+/** Where the Supabase client keeps the login session (localStorage on the web). */
+export const authStorage = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
+};
