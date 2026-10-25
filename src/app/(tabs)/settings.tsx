@@ -9,9 +9,10 @@ import { PrimaryButton } from "@/components/primary-button";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
+import { SegmentedControl } from "@/components/segmented-control";
 import { TimeField } from "@/components/time-field";
 import { WeekdayPicker } from "@/components/weekday-picker";
-import type { Settings } from "@/domain/app-data";
+import type { Settings, ThemePreference } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
@@ -28,6 +29,12 @@ function confirm(title: string, message: string, action: string, onConfirm: () =
     { text: action, style: "destructive", onPress: onConfirm },
   ]);
 }
+
+const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[] = [
+  { value: "auto", label: "Automático" },
+  { value: "light", label: "Claro" },
+  { value: "dark", label: "Escuro" },
+];
 
 function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
   const when = formatTime(minutes);
@@ -123,6 +130,15 @@ export default function SettingsScreen() {
             {status}
           </AppText>
         )}
+      </Section>
+
+      <Section title="Aparência" footer="Automático segue o modo claro ou escuro do aparelho.">
+        <SegmentedControl
+          label="Aparência"
+          options={THEME_OPTIONS}
+          value={draft.theme}
+          onChange={(theme) => void change({ theme })}
+        />
       </Section>
 
       <Section title="Dados">

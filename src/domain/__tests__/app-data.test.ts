@@ -24,7 +24,7 @@ describe("sanitizeData", () => {
       gratitude: { "2026-10-24": " Obrigado ", "2026-10-25": "" },
     });
     expect(data.onboarded).toBe(true);
-    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00" });
+    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00", theme: "auto" });
     expect(data.sleepLog).toEqual({});
     expect(data.completions).toEqual({ "2026-10-24": [0, 2] });
     expect(data.gratitude).toEqual({ "2026-10-24": "Obrigado" });
@@ -117,5 +117,13 @@ describe("bedtime data", () => {
     const data = { ...defaultData(), sleepLog: { "2026-10-23": 23 * 60 + 40 }, completions: { "2026-10-23": [5] } };
     const result = scheduleFor(data, new Date(2026, 9, 24, 9));
     expect(result.ok && formatTime(result.schedule.trickMinutes[5])).toBe("23:40");
+  });
+});
+
+describe("theme preference", () => {
+  it("keeps auto, light or dark and rejects anything else", () => {
+    expect(defaultData().settings.theme).toBe("auto");
+    expect(sanitizeData({ version: 1, settings: { theme: "dark" } }).settings.theme).toBe("dark");
+    expect(sanitizeData({ version: 1, settings: { theme: "neon" } }).settings.theme).toBe("auto");
   });
 });

@@ -4,12 +4,17 @@ import { computeSchedule, DEFAULT_END, DEFAULT_START, type ScheduleResult } from
 import { ALL_WEEKDAYS, parseTime, type Weekday } from "./time";
 import { BEDTIME_TRICK, DEFAULT_AFFIRMATIONS, isTrickIndex } from "./tricks";
 
+export type ThemePreference = "auto" | "light" | "dark";
+const THEMES: readonly ThemePreference[] = ["auto", "light", "dark"];
+
 export interface Settings {
   start: string;
   end: string;
   days: Weekday[];
   affirmations: string[];
   sound: boolean;
+  /** "auto" follows the system light/dark setting. */
+  theme: ThemePreference;
   /** The bedtime the user told us ("HH:MM"); the starting point for learning. */
   bedtime: string;
 }
@@ -38,6 +43,7 @@ export function defaultData(): AppData {
       days: [...ALL_WEEKDAYS],
       affirmations: [...DEFAULT_AFFIRMATIONS],
       sound: true,
+      theme: "auto",
       bedtime: DEFAULT_BEDTIME,
     },
     completions: {},
@@ -73,6 +79,7 @@ function sanitizeSettings(raw: unknown, fallback: Settings): Settings {
     days,
     affirmations,
     sound: typeof raw.sound === "boolean" ? raw.sound : fallback.sound,
+    theme: THEMES.includes(raw.theme as ThemePreference) ? (raw.theme as ThemePreference) : fallback.theme,
     bedtime: typeof raw.bedtime === "string" && parseBedtime(raw.bedtime) !== null ? raw.bedtime : fallback.bedtime,
   };
 }

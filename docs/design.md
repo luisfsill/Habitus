@@ -23,6 +23,10 @@ Resultado: categoria "Meditation & Mindfulness", paleta lavanda + verde, estilo 
 
 Cores de apoio: verde (concluído) e âmbar `#B45309`/`#FBBF24` (sequência). Tokens em `src/theme/index.ts`.
 
+## Aparência
+
+Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** ou **Escuro**. A escolha fica em `settings.theme`. `useTheme` lê a preferência por `ThemePreferenceContext`, fornecido no layout raiz. No iOS/Android, `Appearance.setColorScheme` também força os componentes nativos (seletor de horário, barra de abas, status bar). Na web, o contexto basta.
+
 ## Regras visuais
 
 - Tipografia nos estilos de texto do iOS (largeTitle 34, title1 28 … caption 12). O texto acompanha o tamanho de fonte do sistema, com `maxFontSizeMultiplier` para títulos grandes não quebrarem o layout.

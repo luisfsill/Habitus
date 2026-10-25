@@ -1,3 +1,4 @@
+import { createContext, useContext } from "react";
 import { Platform, type TextStyle, useColorScheme } from "react-native";
 
 /**
@@ -51,8 +52,13 @@ const dark: typeof light = {
 export type Palette = typeof light;
 export const palettes = { light, dark };
 
+/** The user's choice in Ajustes; "auto" follows the system. Provided at the app root. */
+export const ThemePreferenceContext = createContext<"auto" | "light" | "dark">("auto");
+
 export function useTheme(): { colors: Palette; scheme: "light" | "dark" } {
-  const scheme = useColorScheme() === "dark" ? "dark" : "light";
+  const preference = useContext(ThemePreferenceContext);
+  const system = useColorScheme() === "dark" ? "dark" : "light";
+  const scheme = preference === "auto" ? system : preference;
   return { colors: palettes[scheme], scheme };
 }
 
