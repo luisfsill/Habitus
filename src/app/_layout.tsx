@@ -118,10 +118,11 @@ function MissingConfig() {
 
 /** One data store per account: switching accounts remounts it with that account's data. */
 function AccountRoot() {
-  const { configured, ready, session } = useAuth();
+  const { configured, ready, session, recovering } = useAuth();
   if (!configured) return <MissingConfig />;
   if (!ready) return null;
-  const userId = session?.user.id ?? null;
+  // Mid password reset the session is temporary: keep the account screens mounted.
+  const userId = recovering ? null : (session?.user.id ?? null);
   return (
     <AppStateProvider key={userId ?? "signed-out"} userId={userId}>
       <ThemedRoot />

@@ -7,7 +7,8 @@ import { log } from "./log";
 import { authStorage } from "./storage";
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+// Either name works: the docs use PUBLISHABLE_KEY, the owner's .env.local uses KEY.
+const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 /** Null when the build has no Supabase variables (.env.local or Vercel). */
 export const supabase: SupabaseClient | null =
