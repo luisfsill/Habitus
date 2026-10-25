@@ -28,3 +28,25 @@ export function normalizeCode(text: string): string | null {
   const code = text.replace(/[\s-]/g, "");
   return /^\d{6}$/.test(code) ? code : null;
 }
+
+const OFFLINE = "Sem conexão. Verifique sua internet e tente de novo.";
+
+const AUTH_ERRORS: Record<string, string> = {
+  invalid_credentials: "E-mail ou senha incorretos.",
+  email_not_confirmed: "Confirme seu e-mail com o código que enviamos.",
+  user_already_exists: "Já existe uma conta com este e-mail. Tente entrar.",
+  email_exists: "Já existe uma conta com este e-mail. Tente entrar.",
+  otp_expired: "Código inválido ou expirado. Peça um novo.",
+  weak_password: "Senha fraca. Use pelo menos 8 caracteres, com letras e números.",
+  same_password: "A nova senha precisa ser diferente da atual.",
+  email_address_invalid: "Este e-mail não parece válido.",
+  over_email_send_rate_limit: "Muitos e-mails enviados. Espere alguns minutos e tente de novo.",
+  over_request_rate_limit: "Muitas tentativas. Espere um pouco e tente de novo.",
+  user_not_found: "Não encontramos uma conta com este e-mail.",
+};
+
+/** A Portuguese message for any error the auth service throws; never the raw English text. */
+export function authErrorMessage(error: { code?: string; name?: string; message?: string } | null | undefined): string {
+  if (error?.name === "AuthRetryableFetchError" || /fetch|network/i.test(error?.message ?? "")) return OFFLINE;
+  return (error?.code && AUTH_ERRORS[error.code]) || "Algo deu errado. Tente de novo em instantes.";
+}

@@ -1,4 +1,4 @@
-import { isValidEmail, normalizeCode, passwordChecks, passwordStrength } from "../auth-rules";
+import { authErrorMessage, isValidEmail, normalizeCode, passwordChecks, passwordStrength } from "../auth-rules";
 
 describe("isValidEmail", () => {
   it("accepts a normal address with spaces around it", () => {
@@ -38,5 +38,23 @@ describe("normalizeCode", () => {
     expect(normalizeCode("12345")).toBeNull();
     expect(normalizeCode("1234567")).toBeNull();
     expect(normalizeCode("12a456")).toBeNull();
+  });
+});
+
+describe("authErrorMessage", () => {
+  it("translates known Supabase error codes", () => {
+    expect(authErrorMessage({ code: "invalid_credentials" })).toBe("E-mail ou senha incorretos.");
+    expect(authErrorMessage({ code: "otp_expired" })).toBe("Código inválido ou expirado. Peça um novo.");
+    expect(authErrorMessage({ code: "user_already_exists" })).toBe("Já existe uma conta com este e-mail. Tente entrar.");
+  });
+
+  it("reports a network failure as a connection problem", () => {
+    expect(authErrorMessage({ name: "AuthRetryableFetchError" })).toBe("Sem conexão. Verifique sua internet e tente de novo.");
+    expect(authErrorMessage({ message: "Failed to fetch" })).toBe("Sem conexão. Verifique sua internet e tente de novo.");
+  });
+
+  it("never shows the raw English message", () => {
+    expect(authErrorMessage({ code: "something_new", message: "Database error" })).toBe("Algo deu errado. Tente de novo em instantes.");
+    expect(authErrorMessage(null)).toBe("Algo deu errado. Tente de novo em instantes.");
   });
 });

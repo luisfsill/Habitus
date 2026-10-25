@@ -4,6 +4,7 @@ import { AppState } from "react-native";
 
 import { progressOf, type Progress, type Reward, rewardBetween } from "@/domain/achievements";
 import { type AppData, defaultData, type Settings, withCompletion } from "@/domain/app-data";
+import { mergeData } from "@/domain/sync";
 import { computeSchedule, type ScheduleResult } from "@/domain/schedule";
 import { trickDayKey } from "@/domain/bedtime";
 import { dayKey } from "@/domain/time";
@@ -21,6 +22,7 @@ import {
   rescheduleAll,
 } from "@/services/notifications";
 import { clearData, loadData, saveData } from "@/services/storage";
+import { overwriteRemote, pushMerged } from "@/services/sync";
 
 interface AppStateValue {
   data: AppData;
@@ -40,6 +42,8 @@ interface AppStateValue {
   setGratitude: (text: string) => Promise<void>;
   askPermission: () => Promise<PermissionState>;
   askExactAlarms: () => Promise<void>;
+  /** True while some change has not reached the server yet. */
+  syncPending: boolean;
   /** Re-reads storage (background actions) and reschedules. */
   refresh: () => Promise<void>;
   reset: () => Promise<void>;
@@ -47,22 +51,59 @@ interface AppStateValue {
 
 const Context = createContext<AppStateValue | null>(null);
 
-export function AppStateProvider({ children }: { children: ReactNode }) {
+/** Wait after the last change before sending, so a burst of taps is one request. */
+const PUSH_DELAY_MS = 2000;
+
+export function AppStateProvider({ children, userId }: { children: ReactNode; userId: string | null }) {
   const [data, setData] = useState<AppData>(defaultData);
   const [ready, setReady] = useState(false);
   const [permission, setPermission] = useState<PermissionState>("undetermined");
   const [exactAlarms, setExactAlarms] = useState(true);
   const [reward, setReward] = useState<Reward | null>(null);
+  const [syncPending, setSyncPending] = useState(false);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   const progress = useMemo(() => progressOf(data, new Date()), [data]);
   const dismissReward = useCallback(() => setReward(null), []);
 
-  const commit = useCallback(async (next: AppData) => {
-    dataRef.current = next;
-    setData(next);
-    await saveData(next);
-    await rescheduleAll(next);
-  }, []);
+  /** Sends local data and takes in what other devices sent. Offline just leaves it pending. */
+  const sync = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const merged = await pushMerged(userId, dataRef.current);
+      // Changes made while the request was in flight stay: merge again over the current data.
+      const next = mergeData(dataRef.current, merged);
+      setSyncPending(false);
+      if (JSON.stringify(next) === JSON.stringify(dataRef.current)) return;
+      dataRef.current = next;
+      setData(next);
+      await saveData(next);
+      await rescheduleAll(next);
+    } catch (error) {
+      setSyncPending(true);
+      log.warn("sync failed, will retry", error);
+    }
+  }, [userId]);
+
+  const schedulePush = useCallback(() => {
+    if (!userId) return;
+    setSyncPending(true);
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => void sync(), PUSH_DELAY_MS);
+  }, [userId, sync]);
+
+  useEffect(() => () => clearTimeout(pushTimer.current ?? undefined), []);
+
+  const commit = useCallback(
+    async (next: AppData) => {
+      dataRef.current = next;
+      setData(next);
+      await saveData(next);
+      await rescheduleAll(next);
+      schedulePush();
+    },
+    [schedulePush],
+  );
 
   const refresh = useCallback(async () => {
     const [stored, state, exact] = await Promise.all([loadData(), getPermissionState(), hasExactAlarms()]);
@@ -71,7 +112,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPermission(state);
     setExactAlarms(exact);
     await rescheduleAll(stored);
-  }, []);
+    await sync();
+  }, [sync]);
 
   useEffect(() => {
     const boot = async () => {
@@ -97,6 +139,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     () => ({
       data,
       ready,
+      syncPending,
       permission,
       exactAlarms,
       progress,
@@ -126,6 +169,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setData(next);
         await saveData(next);
         await cancelTrick(today, index);
+        schedulePush();
       },
       async setGratitude(text) {
         const today = dayKey(new Date());
@@ -135,6 +179,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         dataRef.current = next;
         setData(next);
         await saveData(next);
+        schedulePush();
       },
       async askExactAlarms() {
         const granted = await requestExactAlarms();
@@ -154,9 +199,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         dataRef.current = fresh;
         setData(fresh);
         await rescheduleAll(fresh);
+        // "Resetar dados" wipes the server copy too; a merge would bring everything back.
+        if (userId) {
+          try {
+            await overwriteRemote(userId, fresh);
+          } catch (error) {
+            log.error("could not reset server data", error);
+          }
+        }
       },
     }),
-    [data, ready, permission, exactAlarms, progress, reward, dismissReward, refresh, commit],
+    [data, ready, syncPending, permission, exactAlarms, progress, reward, dismissReward, refresh, commit, schedulePush, userId],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
