@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
@@ -33,6 +33,8 @@ export default function ForgotScreen() {
   const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(0);
   const [left, restart] = useCountdown(60);
+  const { cancelRecovery } = auth;
+  useEffect(() => () => void cancelRecovery(), [cancelRecovery]);
 
   const run = async (action: () => Promise<{ ok: true } | { ok: false; message: string }>, next?: Step) => {
     setBusy(true);
@@ -69,16 +71,12 @@ export default function ForgotScreen() {
     void run(() => auth.updatePassword(password));
   };
 
-  const back = () => {
-    if (step === "password") void auth.cancelRecovery();
-    router.back();
-  };
 
   return (
     <AuthShell
       title={<AppText variant="largeTitle" style={styles.title}>{COPY[step].title}</AppText>}
       subtitle={<AppText variant="callout" color="secondaryLabel">{COPY[step].subtitle}</AppText>}
-      footer={<PrimaryButton variant="plain" label="Voltar para entrar" onPress={back} />}>
+      footer={<PrimaryButton variant="plain" label="Voltar para entrar" onPress={() => router.back()} />}>
       <Animated.View key={step} entering={FadeIn.duration(250)} exiting={FadeOut.duration(150)} style={styles.step}>
         {step === "email" && (
           <AuthField label="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" textContentType="emailAddress" onSubmitEditing={sendCode} />

@@ -4,7 +4,7 @@ import { AppState } from "react-native";
 
 import { progressOf, type Progress, type Reward, rewardBetween } from "@/domain/achievements";
 import { type AppData, defaultData, type Settings, withCompletion } from "@/domain/app-data";
-import { mergeData } from "@/domain/sync";
+import { claimData, mergeData } from "@/domain/sync";
 import { computeSchedule, type ScheduleResult } from "@/domain/schedule";
 import { trickDayKey } from "@/domain/bedtime";
 import { dayKey } from "@/domain/time";
@@ -22,7 +22,7 @@ import {
   rescheduleAll,
 } from "@/services/notifications";
 import { clearData, loadData, saveData } from "@/services/storage";
-import { overwriteRemote, pushMerged } from "@/services/sync";
+import { pushMerged } from "@/services/sync";
 
 interface AppStateValue {
   data: AppData;
@@ -53,6 +53,8 @@ const Context = createContext<AppStateValue | null>(null);
 
 /** Wait after the last change before sending, so a burst of taps is one request. */
 const PUSH_DELAY_MS = 2000;
+/** On a device with nothing saved for this account, wait this long for the server copy before showing onboarding. */
+const FIRST_SYNC_WAIT_MS = 8000;
 
 export function AppStateProvider({ children, userId }: { children: ReactNode; userId: string | null }) {
   const [data, setData] = useState<AppData>(defaultData);
@@ -107,13 +109,18 @@ export function AppStateProvider({ children, userId }: { children: ReactNode; us
 
   const refresh = useCallback(async () => {
     const [stored, state, exact] = await Promise.all([loadData(), getPermissionState(), hasExactAlarms()]);
-    dataRef.current = stored;
-    setData(stored);
+    // Signed out, nothing is shown and no reminder fires; another account's data is never used.
+    const own = userId ? claimData(stored, userId) : defaultData();
+    if (userId && own !== stored) await saveData(own);
+    dataRef.current = own;
+    setData(own);
     setPermission(state);
     setExactAlarms(exact);
-    await rescheduleAll(stored);
-    await sync();
-  }, [sync]);
+    await rescheduleAll(own);
+    const synced = sync();
+    // Only a fresh device waits for the network (capped), so a slow connection never blocks the app.
+    if (userId && !own.onboarded) await Promise.race([synced, new Promise((done) => setTimeout(done, FIRST_SYNC_WAIT_MS))]);
+  }, [sync, userId]);
 
   useEffect(() => {
     const boot = async () => {
@@ -194,19 +201,10 @@ export function AppStateProvider({ children, userId }: { children: ReactNode; us
         return state;
       },
       async reset() {
+        clearTimeout(pushTimer.current ?? undefined);
         await clearData();
-        const fresh = defaultData();
-        dataRef.current = fresh;
-        setData(fresh);
-        await rescheduleAll(fresh);
-        // "Resetar dados" wipes the server copy too; a merge would bring everything back.
-        if (userId) {
-          try {
-            await overwriteRemote(userId, fresh);
-          } catch (error) {
-            log.error("could not reset server data", error);
-          }
-        }
+        // resetAt makes this empty copy win every later merge, on this and other devices.
+        await commit({ ...defaultData(), owner: userId, resetAt: Date.now() });
       },
     }),
     [data, ready, syncPending, permission, exactAlarms, progress, reward, dismissReward, refresh, commit, schedulePush, userId],

@@ -1,5 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { defaultData } from "@/domain/app-data";
 import { authErrorMessage, TERMS_VERSION } from "@/domain/auth-rules";
@@ -26,6 +26,7 @@ interface AuthValue {
   requestReset: (email: string) => Promise<AuthResult>;
   verifyReset: (email: string, code: string) => Promise<AuthResult>;
   updatePassword: (password: string) => Promise<AuthResult>;
+  /** Ends an unfinished password reset (no-op otherwise). Stable across renders. */
   cancelRecovery: () => Promise<void>;
   /** "unsynced" when changes could not be sent; call again with force to drop them. */
   signOut: (opts?: { force: boolean }) => Promise<"ok" | "unsynced">;
@@ -56,6 +57,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(!supabaseConfigured);
   const [recovering, setRecovering] = useState(false);
+  const recoveringRef = useRef(false);
+  const setRecoveringBoth = useCallback((value: boolean) => {
+    recoveringRef.current = value;
+    setRecovering(value);
+  }, []);
+
+  // Leaving the reset screen any way (button, system back, swipe) drops the temporary session.
+  const cancelRecovery = useCallback(async () => {
+    if (!recoveringRef.current) return;
+    setRecoveringBoth(false);
+    await supabase?.auth.signOut({ scope: "local" });
+  }, [setRecoveringBoth]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -109,20 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       requestReset: (email) => attempt(() => auth().resetPasswordForEmail(email.trim())),
       async verifyReset(email, code) {
-        setRecovering(true);
+        setRecoveringBoth(true);
         const result = await attempt(() => auth().verifyOtp({ email: email.trim(), token: code, type: "recovery" }));
-        if (!result.ok) setRecovering(false);
+        if (!result.ok) setRecoveringBoth(false);
         return result;
       },
       async updatePassword(password) {
         const result = await attempt(() => auth().updateUser({ password }));
-        if (result.ok) setRecovering(false);
+        if (result.ok) setRecoveringBoth(false);
         return result;
       },
-      async cancelRecovery() {
-        setRecovering(false);
-        await auth().signOut({ scope: "local" });
-      },
+      cancelRecovery,
       async signOut(opts) {
         const userId = session?.user.id;
         if (userId) {
@@ -146,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return OK;
       },
     };
-  }, [ready, session, recovering]);
+  }, [ready, session, recovering, setRecoveringBoth, cancelRecovery]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

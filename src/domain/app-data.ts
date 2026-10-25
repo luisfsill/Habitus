@@ -30,6 +30,10 @@ export interface AppData {
   sleepLog: Record<string, number>;
   /** When `settings` last changed (ms); decides which device's settings win a sync. */
   settingsUpdatedAt: number;
+  /** When "Resetar dados" last ran (ms); older copies on other devices are dropped in a sync. */
+  resetAt: number;
+  /** Account this data belongs to; null for data saved before signing in. */
+  owner: string | null;
 }
 
 export const MAX_AFFIRMATIONS = 10;
@@ -52,6 +56,8 @@ export function defaultData(): AppData {
     gratitude: {},
     sleepLog: {},
     settingsUpdatedAt: 0,
+    resetAt: 0,
+    owner: null,
   };
 }
 
@@ -85,6 +91,10 @@ function sanitizeSettings(raw: unknown, fallback: Settings): Settings {
     theme: THEMES.includes(raw.theme as ThemePreference) ? (raw.theme as ThemePreference) : fallback.theme,
     bedtime: typeof raw.bedtime === "string" && parseBedtime(raw.bedtime) !== null ? raw.bedtime : fallback.bedtime,
   };
+}
+
+function timestamp(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 function sanitizeCompletions(raw: unknown): Record<string, number[]> {
@@ -128,8 +138,9 @@ export function sanitizeData(raw: unknown): AppData {
     completions: sanitizeCompletions(raw.completions),
     gratitude: sanitizeGratitude(raw.gratitude),
     sleepLog: sanitizeSleepLog(raw.sleepLog),
-    settingsUpdatedAt:
-      typeof raw.settingsUpdatedAt === "number" && Number.isFinite(raw.settingsUpdatedAt) && raw.settingsUpdatedAt > 0 ? raw.settingsUpdatedAt : 0,
+    settingsUpdatedAt: timestamp(raw.settingsUpdatedAt),
+    resetAt: timestamp(raw.resetAt),
+    owner: typeof raw.owner === "string" ? raw.owner : null,
   };
 }
 
