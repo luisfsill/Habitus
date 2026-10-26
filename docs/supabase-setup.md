@@ -31,29 +31,22 @@ Em **Authentication → Sign In / Providers → Email**:
 - **Email OTP Length**: `6`.
 - **Email OTP Expiration**: `3600` (1 hora) está bom.
 
+Em **Authentication → URL Configuration**, troque o **Site URL** de `http://localhost:3000` para `https://habitushub.vercel.app`. É para lá que o Supabase manda quem clicar em algum link antigo.
+
 Em **Authentication → Emails → Templates**, troque o conteúdo de dois modelos. O app usa o código, não o link: no iPhone, um link abriria o Safari em vez do app instalado.
 
-**Confirm signup**: assunto `Seu código do Habitus`
+Os modelos ficam em [`supabase/email/`](../supabase/email), com as cores do app. Abra o arquivo, copie tudo e cole na aba **Source** do modelo, apagando o que estava lá:
 
-```html
-<h2>Bem-vindo ao Habitus</h2>
-<p>Use este código para confirmar sua conta:</p>
-<p style="font-size:32px;font-weight:700;letter-spacing:6px">{{ .Token }}</p>
-<p>O código vale por 1 hora. Se você não criou uma conta, ignore este e-mail.</p>
-```
+| Modelo no Supabase | Assunto | Arquivo |
+|---|---|---|
+| **Confirm signup** | `Seu código do Habitus` | [`confirm-signup.html`](../supabase/email/confirm-signup.html) |
+| **Reset password** | `Código para redefinir sua senha` | [`reset-password.html`](../supabase/email/reset-password.html) |
 
-**Reset password**: assunto `Código para redefinir sua senha`
-
-```html
-<h2>Redefinir senha</h2>
-<p>Use este código no Habitus para criar uma nova senha:</p>
-<p style="font-size:32px;font-weight:700;letter-spacing:6px">{{ .Token }}</p>
-<p>O código vale por 1 hora. Se não foi você, ignore este e-mail: sua senha continua a mesma.</p>
-```
+Clique em **Save changes** em cada modelo. Se chegar um e-mail em inglês "Confirm your email address" com um link em vez do código, o modelo não foi salvo: volte aqui. O Supabase só deixa editar os modelos com SMTP próprio ligado ("Set up custom SMTP to edit templates"): faça antes o passo 4 e depois volte.
 
 ## 4. Envio de e-mails pelo Gmail
 
-O envio padrão do Supabase só entrega para os e-mails da equipe do projeto, e poucos por hora. Serve para testar com o seu próprio e-mail. Para outras pessoas receberem o código, configure um Gmail só do Habitus.
+O envio padrão do Supabase só entrega para os e-mails da equipe do projeto, e poucos por hora. Serve para testar com o seu próprio e-mail. Para outras pessoas r?eceberem o código, configure um Gmail só do Habitus.
 
 1. Crie a conta Gmail do Habitus.
 2. Em [myaccount.google.com/security](https://myaccount.google.com/security), ligue a **Verificação em duas etapas**.
