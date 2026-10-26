@@ -1,6 +1,7 @@
 import { Alert, Platform } from "react-native";
 
 import { useAuth } from "./auth";
+import { useCurtain } from "./transition";
 
 /** Destructive confirmation: a native alert, or the browser's confirm on web. */
 export function confirm(title: string, message: string, action: string, onConfirm: () => void) {
@@ -17,13 +18,24 @@ export function confirm(title: string, message: string, action: string, onConfir
 /** Signs out, asking first when unsent changes would be lost. */
 export function useSignOut(): () => Promise<void> {
   const { signOut } = useAuth();
+  const curtain = useCurtain();
   return async () => {
-    if ((await signOut()) === "unsynced") {
+    // The curtain goes up before the sync, so the wait is covered too.
+    curtain.begin("out");
+    const result = await signOut().catch((error: unknown) => {
+      curtain.cancel();
+      throw error;
+    });
+    if (result === "unsynced") {
+      curtain.cancel();
       confirm(
         "Sair sem enviar?",
         "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?",
         "Sair",
-        () => void signOut({ force: true }),
+        () => {
+          curtain.begin("out");
+          void signOut({ force: true });
+        },
       );
     }
   };

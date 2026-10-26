@@ -12,6 +12,7 @@ import { RewardToast } from "@/components/reward-toast";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
+import { TransitionProvider } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
 import { backdrops, type Palette, ThemePreferenceContext, useTheme } from "@/theme";
@@ -57,7 +58,7 @@ function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<ty
     );
   }
   if (!signedIn && pathname === "/" && desktopWeb()) {
-    return <LandingPage onStart={() => go("/auth")} onSignIn={() => go("/auth?modo=entrar")} onLegal={(page) => go(`/legal/${page}`)} />;
+    return <LandingPage onStart={() => go("/auth?modo=criar")} onSignIn={() => go("/auth")} onLegal={(page) => go(`/legal/${page}`)} />;
   }
   return null;
 }
@@ -227,7 +228,9 @@ function AccountData({ userId }: { userId: string | null }) {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <AccountRoot />
+      <TransitionProvider>
+        <AccountRoot />
+      </TransitionProvider>
     </AuthProvider>
   );
 }

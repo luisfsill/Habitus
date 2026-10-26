@@ -25,7 +25,11 @@ Cores de apoio: verde (concluído) e âmbar `#B45309`/`#FBBF24` (sequência). To
 
 ## Aparência
 
-Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** ou **Escuro**. A escolha fica em `settings.theme`. `useTheme` lê a preferência por `ThemePreferenceContext`, fornecido no layout raiz. No iOS/Android, `Appearance.setColorScheme` também força os componentes nativos (seletor de horário, barra de abas, status bar). Na web, o contexto basta; o layout raiz também pinta o `body` e o `theme-color` com a cor de fundo do tema. No PWA do iPhone a barra de status é opaca (`apple-mobile-web-app-status-bar-style: default`) e usa essa cor: com `black-translucent`, o iOS 26 desfoca o topo da página.
+Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** ou **Escuro**. A escolha fica em `settings.theme`. `useTheme` lê a preferência por `ThemePreferenceContext`, fornecido no layout raiz. No iOS/Android, `Appearance.setColorScheme` também força os componentes nativos (seletor de horário, barra de abas, status bar). Na web, o contexto basta; o layout raiz também pinta o `body` e o `theme-color` com a cor de fundo do tema. No PWA do iPhone a barra de status é opaca (`apple-mobile-web-app-status-bar-style: default`) e usa essa cor: com `black-translucent`, o iOS 26 desfoca o topo da página. O iOS grava esse estilo no momento em que o app é adicionado à Tela de Início: quem instalou antes da mudança continua vendo o desfoque até remover o ícone e adicionar o Habitus de novo.
+
+## Entrar e sair
+
+Ao entrar (login, código confirmado ou nova senha) e ao sair, uma cortina cobre o app (`src/components/transition-screen.tsx`): o mesmo céu noturno do login, um emoji grande que flutua, o título ("Preparando o aplicativo" / "Até logo") e passos que aparecem um a um e ganham o check verde (`checkmark.circle.fill`), com vibração de sucesso no último. A cortina sobe quando a conta muda de estado (ou antes, ao tocar em Sair, para cobrir a sincronização) e desce com um fade só depois que a animação terminou e o app já está no estado novo (`TransitionProvider`, `src/state/transition.tsx`). Nunca aparece ao abrir o app com sessão salva.
 
 ## Menu da conta
 
@@ -49,7 +53,7 @@ A engrenagem na linha do usuário abre a página dele, no mesmo estilo de Ajuste
 
 ## Landing page (computador, sem login)
 
-No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components/landing-page.tsx` e `landing-sections.tsx`) em vez de ir para o login. Mesmo estilo do app: fundo em gradiente, grades com divisórias finas, sem cards. Seções: navegação fixa no topo (Benefícios, Como funciona, Planos, Dúvidas, Entrar, Começar grátis); herói com título grande e um celular mostrando a tela Hoje com as dicas escondidas (cadeado), para manter a surpresa; Benefícios (os mesmos de `benefits.ts`); Como funciona em 3 passos; Recursos; Planos com os preços atuais e o teste de 7 dias; Dúvidas; chamada final e rodapé com Termos e Privacidade. "Começar grátis" abre `/auth` (criar conta) e "Entrar" abre `/auth?modo=entrar`. Os preços estão fixos no código porque a tabela `plans` só é lida por quem está logado.
+No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components/landing-page.tsx` e `landing-sections.tsx`) em vez de ir para o login. Mesmo estilo do app: fundo em gradiente, grades com divisórias finas, sem cards. Seções: navegação fixa no topo (Benefícios, Como funciona, Planos, Dúvidas, Entrar, Começar grátis); herói com título grande e um celular mostrando a tela Hoje com as dicas escondidas (cadeado), para manter a surpresa; Benefícios (os mesmos de `benefits.ts`); Como funciona em 3 passos; Recursos; Planos com os preços atuais e o teste de 7 dias; Dúvidas; chamada final e rodapé com Termos e Privacidade. "Começar grátis" abre `/auth?modo=criar` (criar conta) e "Entrar" abre `/auth`, que começa na aba Entrar. Os preços estão fixos no código porque a tabela `plans` só é lida por quem está logado.
 
 ## Tela de instalação (celular no navegador)
 

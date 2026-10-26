@@ -91,9 +91,9 @@ function validate(mode: Mode, { name, email, password, accepted }: Form): FieldE
 
 export default function AuthScreen() {
   const auth = useAuth();
-  // The landing page links here with ?modo=entrar for people who already have an account.
+  // Opens on "Entrar"; the landing page's "Começar grátis" links here with ?modo=criar.
   const { modo } = useLocalSearchParams<{ modo?: string }>();
-  const [mode, setMode] = useState<Mode>(modo === "entrar" ? "signin" : "signup");
+  const [mode, setMode] = useState<Mode>(modo === "criar" ? "signup" : "signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
