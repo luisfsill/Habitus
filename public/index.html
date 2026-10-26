@@ -67,12 +67,14 @@
           #status-bar {
             display: block;
           }
-          /* Edge to edge: with a translucent status bar, 100% height stops one inset short of the screen bottom.
-             A fixed box uses the full screen. */
+          /* Edge to edge: with a translucent status bar the layout viewport is one top inset shorter than the
+             screen (innerHeight 793 on an 852pt iPhone), so 100% and bottom: 0 stop short. 100vh is the full screen. */
           #root {
             position: fixed;
-            inset: 0;
-            height: auto;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100vh;
           }
         }
       }

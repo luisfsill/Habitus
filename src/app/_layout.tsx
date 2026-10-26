@@ -1,8 +1,9 @@
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import { Appearance, Platform, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
@@ -228,13 +229,19 @@ function AccountData({ userId }: { userId: string | null }) {
   );
 }
 
+// Expo Router's web SafeAreaProvider hands out zero insets; the library's own one measures env(safe-area-inset-*),
+// which the installed iPhone app needs to keep the title below the clock and the tab bar above the home indicator.
+const SafeArea = Platform.OS === "web" ? SafeAreaProvider : Fragment;
+
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <TransitionProvider>
-        <AccountRoot />
-      </TransitionProvider>
-    </AuthProvider>
+    <SafeArea>
+      <AuthProvider>
+        <TransitionProvider>
+          <AccountRoot />
+        </TransitionProvider>
+      </AuthProvider>
+    </SafeArea>
   );
 }
 
