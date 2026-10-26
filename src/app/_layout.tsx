@@ -3,7 +3,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { Fragment, useEffect } from "react";
 import { Appearance, Platform, View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
@@ -16,6 +15,7 @@ import { AuthProvider, useAuth } from "@/state/auth";
 import { TransitionProvider } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
+import { WebSafeAreaInsets } from "@/state/web-safe-area";
 import { backdrops, type Palette, ThemePreferenceContext, useTheme } from "@/theme";
 
 void SplashScreen.preventAutoHideAsync();
@@ -121,13 +121,21 @@ function RootStack() {
   }, [ready]);
 
   useEffect(() => {
-    // The body shows during overscroll; theme-color is for Android/older iOS. iOS 26+ fills the status bar with the
-    // colour of the #status-bar strip (public/index.html): the page colour, or the black night sky of the account screens.
+    // The web document scrolls: a new screen starts at the top, like a new page.
+    if (Platform.OS === "web") window.scrollTo(0, 0);
+  }, [pathname]);
+
+  useEffect(() => {
+    // theme-color is for Android/older iOS. iOS 26+ fills the status bar with the colour of the #status-bar strip
+    // (public/index.html). The installed iPhone app clips the page one top inset above the screen bottom and fills
+    // the rest with the body colour alone, so body, strip and page share the flat backdrop colour.
+    // Account screens are the black night sky.
     if (Platform.OS !== "web") return;
-    document.body.style.backgroundColor = colors.background;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
+    const night = !signedIn;
+    document.body.style.backgroundColor = night ? "#000000" : colors.background;
     const bar = document.getElementById("status-bar");
-    if (bar) bar.style.backgroundColor = signedIn ? colors.background : "#000000";
+    if (bar) bar.style.backgroundColor = night ? "#000000" : colors.background;
   }, [colors.background, signedIn]);
 
   if (!ready) return null;
@@ -229,9 +237,8 @@ function AccountData({ userId }: { userId: string | null }) {
   );
 }
 
-// Expo Router's web SafeAreaProvider hands out zero insets; the library's own one measures env(safe-area-inset-*),
-// which the installed iPhone app needs to keep the title below the clock and the tab bar above the home indicator.
-const SafeArea = Platform.OS === "web" ? SafeAreaProvider : Fragment;
+// The installed iPhone app needs real insets to keep the title below the clock and the tab bar above the home indicator.
+const SafeArea = Platform.OS === "web" ? WebSafeAreaInsets : Fragment;
 
 export default function RootLayout() {
   return (

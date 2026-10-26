@@ -12,7 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HIT, radius, space, useTheme } from "@/theme";
+import { HIT, pinned, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
@@ -123,7 +123,7 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
   const [copied, setCopied] = useState(false);
 
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={[StyleSheet.absoluteFill, pinned]}>
       <Animated.View entering={FadeIn} exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.backdrop]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Fechar instruções" />
       </Animated.View>

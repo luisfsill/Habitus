@@ -14,7 +14,7 @@ import Animated, {
   ZoomIn,
 } from "react-native-reanimated";
 
-import { palettes, radius, space } from "@/theme";
+import { palettes, pinned, radius, space } from "@/theme";
 
 import { AppText } from "./app-text";
 import { HorizonBackground } from "./horizon-background";
@@ -74,7 +74,7 @@ export function TransitionScreen({ phase, landed, onDone }: Props) {
   const floating = useAnimatedStyle(() => ({ transform: [{ translateY: float.get() }] }));
 
   return (
-    <Animated.View exiting={FadeOut.duration(350)} style={[StyleSheet.absoluteFill, styles.root]} accessibilityLiveRegion="polite" accessibilityLabel={title}>
+    <Animated.View exiting={FadeOut.duration(350)} style={[StyleSheet.absoluteFill, pinned, styles.root]} accessibilityLiveRegion="polite" accessibilityLabel={title}>
       <HorizonBackground />
       <View style={styles.content}>
         <Animated.View entering={ZoomIn.springify().damping(12)} style={floating}>

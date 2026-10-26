@@ -51,20 +51,21 @@ const dark: typeof light = {
   shadow: "#000000",
 };
 
+/** Overlays pin to the viewport: on the web the document scrolls, so `absolute` would scroll away with the page. */
+export const pinned: ViewStyle = { position: Platform.OS === "web" ? ("fixed" as "absolute") : "absolute" };
+
 export type Palette = typeof light;
 export const palettes = { light, dark };
 
 /**
- * Page backdrop: a soft radial gradient from the top-left corner (slate in the
- * dark theme, off-white to cool grey in the light one). `backgroundColor` is the
- * fallback where gradients do not render. RN types still call it experimental.
+ * Page backdrop: one flat colour, so the status bar, the page and the strip the installed iPhone
+ * app fills below the page all match. Theme-toggle paints its own gradients on top.
  */
-export const backdrops: Record<"light" | "dark", ViewStyle & { backgroundImage: string }> = {
-  light: { backgroundColor: light.background, backgroundImage: "radial-gradient(ellipse at top left, #ffffff 0%, #f1f5f9 40%, #cbd5e1 100%)" },
-  dark: { backgroundColor: dark.background, backgroundImage: "radial-gradient(ellipse at top left, #1e293b 0%, #0f172a 40%, #020617 100%)" },
+export const backdrops: Record<"light" | "dark", ViewStyle> = {
+  light: { backgroundColor: light.background },
+  dark: { backgroundColor: dark.background },
 };
 
-/** The user's choice in Ajustes; "auto" follows the system. Provided at the app root. */
 export const ThemePreferenceContext = createContext<"auto" | "light" | "dark">("auto");
 
 export function useTheme(): { colors: Palette; scheme: "light" | "dark" } {

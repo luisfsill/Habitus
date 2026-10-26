@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, type StyleProp, StyleSheet, useWindowDimensions, View, type ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +17,16 @@ interface Props {
   footer?: ReactNode;
 }
 
+/** On the web the document scrolls; on native the form scrolls above the keyboard. */
+function Body({ style, children }: { style: StyleProp<ViewStyle>; children: ReactNode }) {
+  if (Platform.OS === "web") return <View style={style}>{children}</View>;
+  return (
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={style}>
+      {children}
+    </ScrollView>
+  );
+}
+
 /** Night-sky page with the title on top and a frosted card holding the form. */
 export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
@@ -26,9 +36,7 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
     <View style={styles.root}>
       <HorizonBackground />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.content, wide && styles.centered, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
+        <Body style={[styles.content, wide && styles.centered, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
           <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
             {title}
             {subtitle}
@@ -40,7 +48,7 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
             </View>
           </Animated.View>
           {footer && <Animated.View entering={FadeInDown.delay(300).springify()}>{footer}</Animated.View>}
-        </ScrollView>
+        </Body>
       </KeyboardAvoidingView>
     </View>
   );

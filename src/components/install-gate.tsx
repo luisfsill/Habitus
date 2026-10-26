@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,7 +45,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
 
   return (
     <View style={[styles.root, backdrops[scheme]]}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + space.xxl }]}>
+      <View style={[styles.content, { paddingTop: insets.top + space.xxl }]}>
         <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.hero}>
           <Image source={{ uri: "/icon-192.png" }} style={styles.logo} accessibilityIgnoresInvertColors accessible={false} />
           <AppText variant="largeTitle" align="center" accessibilityRole="header">
@@ -97,7 +97,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
             ))}
           </View>
         </Section>
-      </ScrollView>
+      </View>
 
       <View
         style={[

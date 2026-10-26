@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, withTiming } from "react-native-reanimated";
 
-import { HIT, radius, space, useTheme } from "@/theme";
+import { HIT, pinned, radius, space, useTheme } from "@/theme";
 
 import { Icon } from "./icon";
 import { MAX_WIDTH } from "./screen";
@@ -52,7 +52,7 @@ export function FloatingTabBar({ tabs, active, onPress, bottomInset }: Props) {
   const pill = useAnimatedStyle(() => ({ width: slot, transform: [{ translateX: withTiming(index * slot, GLIDE) }] }));
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { paddingBottom: bottomInset + space.md }]}>
+    <View pointerEvents="box-none" style={[styles.wrap, pinned, { paddingBottom: bottomInset + space.md }]}>
       <View
         accessibilityRole="tablist"
         onLayout={(e) => setWidth(e.nativeEvent.layout.width - 2 * PAD)}

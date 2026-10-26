@@ -34,10 +34,7 @@
       body {
         height: 100%;
       }
-      /* These styles disable body scrolling if you are using <ScrollView> */
-      body {
-        overflow: hidden;
-      }
+      /* The document scrolls (screens lay their content out in flow), so mobile Safari collapses its bars. */
       /* These styles make the root element full-height */
       #root {
         display: flex;
@@ -66,15 +63,6 @@
         @supports (-webkit-touch-callout: none) {
           #status-bar {
             display: block;
-          }
-          /* Edge to edge: with a translucent status bar the layout viewport is one top inset shorter than the
-             screen (innerHeight 793 on an 852pt iPhone), so 100% and bottom: 0 stop short. 100vh is the full screen. */
-          #root {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 100vh;
           }
         }
       }

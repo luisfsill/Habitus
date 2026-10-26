@@ -18,8 +18,8 @@ const THUMB = TRACK_H - 2 * (BORDER + PAD);
 const TRAVEL = TRACK_W - 2 * (BORDER + PAD) - THUMB;
 const PARTICLES = [0, 1, 2];
 
-// RN's `backgroundImage` takes CSS gradients; RN types still call it experimental.
-type Painted = ViewStyle & { backgroundImage?: string };
+// RN's `backgroundImage` takes CSS gradient strings.
+type Painted = ViewStyle;
 
 const LOOK = {
   light: {

@@ -1,4 +1,4 @@
-import { Image, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 import { backdrops, radius, space, useTheme } from "@/theme";
@@ -161,7 +161,7 @@ export function LandingPage({ onStart, onSignIn, onLegal }: Props) {
   const columns = width >= 960 ? 3 : width >= 640 ? 2 : 1;
 
   return (
-    <ScrollView style={backdrops[scheme]} contentContainerStyle={styles.scroll}>
+    <View style={[backdrops[scheme], styles.scroll]}>
       <View style={styles.page}>
         <Nav onStart={onStart} onSignIn={onSignIn} wide={wide} />
         <Hero onStart={onStart} wide={wide} />
@@ -183,7 +183,7 @@ export function LandingPage({ onStart, onSignIn, onLegal }: Props) {
         </View>
         <Footer onLegal={onLegal} />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 

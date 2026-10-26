@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from "react-native";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { radius, space, useTheme } from "@/theme";
+import { pinned, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 
@@ -22,7 +22,7 @@ export function UndoToast({ message, onUndo, onHide }: { message: string; onUndo
       entering={FadeInDown.springify()}
       exiting={FadeOutDown}
       accessibilityLiveRegion="polite"
-      style={[styles.toast, { bottom: insets.bottom + 90, backgroundColor: colors.surface, borderColor: colors.successText }]}>
+      style={[styles.toast, pinned, { bottom: insets.bottom + 90, backgroundColor: colors.surface, borderColor: colors.successText }]}>
       <AppText variant="subheadline" style={styles.text}>
         ✓ {message}
       </AppText>

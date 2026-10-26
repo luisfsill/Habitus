@@ -5,7 +5,7 @@ import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { Reward } from "@/domain/achievements";
-import { radius, space, useTheme } from "@/theme";
+import { pinned, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
@@ -44,7 +44,7 @@ export function RewardToast({ reward, onHide }: Props) {
       exiting={FadeOutUp.duration(200)}
       pointerEvents="none"
       accessibilityLiveRegion="polite"
-      style={[styles.wrap, { top: insets.top + space.sm }]}>
+      style={[styles.wrap, pinned, { top: insets.top + space.sm }]}>
       <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
         <View style={[styles.xp, { backgroundColor: colors.accent }]}>
           <AppText variant="headline" style={{ color: colors.onAccent }} maxFontSizeMultiplier={1.3}>
