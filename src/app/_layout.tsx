@@ -47,6 +47,16 @@ function useGates() {
   };
 }
 
+/**
+ * Where a screen that just became off-limits goes. Without it, Expo Router picks the first
+ * open route alphabetically, which is "legal": after confirming the code the user saw the terms.
+ */
+function homeRoute(signedIn: boolean, open: boolean, onboarded: boolean) {
+  if (!signedIn) return "/auth";
+  if (!open) return "/renovar";
+  return onboarded ? "/" : "/onboarding";
+}
+
 /** First open without internet: the plan cannot be checked yet. */
 function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
   return (
@@ -83,6 +93,7 @@ function RootStack() {
   if (!ready) return null;
 
   const theme = navigationTheme(colors, scheme);
+  const home = homeRoute(signedIn, open, data.onboarded);
 
   if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
 
@@ -101,10 +112,10 @@ function RootStack() {
     <ThemeProvider value={theme}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Protected guard={!signedIn}>
+        <Stack.Protected guard={!signedIn} redirectTo={home}>
           <Stack.Screen name="auth" options={{ animation: "fade" }} />
         </Stack.Protected>
-        <Stack.Protected guard={open && data.onboarded}>
+        <Stack.Protected guard={open && data.onboarded} redirectTo={home}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen
             name="trick/[id]"
@@ -117,11 +128,11 @@ function RootStack() {
             }}
           />
         </Stack.Protected>
-        <Stack.Protected guard={open && !data.onboarded}>
+        <Stack.Protected guard={open && !data.onboarded} redirectTo={home}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />
         </Stack.Protected>
         {/* With no plan this is the only screen; with a plan, "Ver planos" opens it on top. */}
-        <Stack.Protected guard={signedIn}>
+        <Stack.Protected guard={signedIn} redirectTo={home}>
           <Stack.Screen name="renovar" options={{ animation: "fade", gestureEnabled: open }} />
         </Stack.Protected>
         <Stack.Screen name="legal" />
