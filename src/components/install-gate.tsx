@@ -3,7 +3,7 @@ import { Image, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, radius, space, useTheme } from "@/theme";
+import { backdrops, pinned, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { GAINS } from "./benefits";
@@ -99,10 +99,12 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
         </Section>
       </View>
 
+      {/* Pinned to the viewport: "Instalar agora" is reachable without scrolling. */}
       <View
         style={[
           styles.footer,
-          { paddingBottom: insets.bottom + space.lg, borderTopColor: colors.separator },
+          pinned,
+          { paddingBottom: insets.bottom + space.lg, borderTopColor: colors.separator, backgroundColor: colors.background },
         ]}>
         {installed ? (
           <View style={styles.done} accessibilityRole="alert">
@@ -133,7 +135,8 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingHorizontal: space.xl, paddingBottom: space.xl, gap: space.xl, maxWidth: 640, width: "100%", alignSelf: "center" },
+  // Bottom padding leaves room for the pinned footer.
+  content: { paddingHorizontal: space.xl, paddingBottom: 200, gap: space.xl, maxWidth: 640, width: "100%", alignSelf: "center" },
   hero: { alignItems: "center", gap: space.sm },
   logo: { width: 96, height: 96, borderRadius: 22, marginBottom: space.sm },
   line: { flexDirection: "row", alignItems: "center", gap: space.md },
@@ -142,13 +145,16 @@ const styles = StyleSheet.create({
   flex: { flex: 1, gap: 2 },
   bold: { fontWeight: "600" },
   footer: {
+    left: 0,
+    right: 0,
+    bottom: 0,
+    marginHorizontal: "auto",
     gap: space.sm,
     paddingHorizontal: space.lg,
     paddingTop: space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     maxWidth: 640,
     width: "100%",
-    alignSelf: "center",
   },
   done: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 52 },
   doneText: { flex: 1 },

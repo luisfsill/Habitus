@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Abre o app em http://localhost:8081. É a versão web/PWA: tem tudo (onboarding, dicas, histórico, conquistas, ajustes), e os lembretes funcionam enquanto a aba está aberta.
+Abre o app em http://localhost:8081. É a versão web/PWA: tem tudo (onboarding, dicas, histórico, conquistas, ajustes), e os lembretes funcionam enquanto a aba está aberta. No celular, em desenvolvimento o app abre direto no navegador; para ver a tela de instalação, acrescente `?instalar` ao endereço (por exemplo `http://192.168.0.10:8081/?instalar`).
 
 ### No celular (app nativo)
 

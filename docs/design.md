@@ -57,7 +57,7 @@ No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components
 
 ## Tela de instalação (celular no navegador)
 
-`InstallGate` segue o estilo do app: fundo liso e listas com divisórias. Ícone, nome e uma frase; **Como funciona** em 3 passos numerados (conta com 7 dias grátis, horário, lembretes); **O que você ganha**, seis benefícios sem revelar as dicas (elas são surpresa dentro do app; o rodapé da seção avisa isso); **E mais** (XP e medalhas, histórico, progresso na conta). Rodapé: "7 dias grátis · sem cartão · sem loja de apps" e o botão Instalar agora. Os benefícios falam do que a pessoa sente (leveza, confiança, foco, calma), sem promessa de saúde nem "comprovado pela ciência".
+`InstallGate` segue o estilo do app: fundo liso e listas com divisórias. Ícone, nome e uma frase; **Como funciona** em 3 passos numerados (conta com 7 dias grátis, horário, lembretes); **O que você ganha**, seis benefícios sem revelar as dicas (elas são surpresa dentro do app; o rodapé da seção avisa isso); **E mais** (XP e medalhas, histórico, progresso na conta). Rodapé fixo na parte de baixo da tela (`pinned`), visível sem rolar: "7 dias grátis · sem cartão · sem loja de apps" e o botão Instalar agora. Em desenvolvimento a tela só aparece com `?instalar` no endereço. Os benefícios falam do que a pessoa sente (leveza, confiança, foco, calma), sem promessa de saúde nem "comprovado pela ciência".
 
 ## Água
 

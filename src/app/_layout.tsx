@@ -30,10 +30,12 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
 
 /**
  * On a phone's browser the app is install-only; it runs from the home screen icon.
- * Not in development (npm run dev, on localhost or the LAN address): there it opens right away for testing.
+ * Not in development (npm run dev, on localhost or the LAN address): there it opens right away for testing,
+ * unless the address carries ?instalar, which shows the install screen for a look.
  */
 function installOnly(): boolean {
-  return !__DEV__ && isMobileWeb() && !isStandalone();
+  const forced = __DEV__ && Platform.OS === "web" && window.location.search.includes("instalar");
+  return (!__DEV__ || forced) && isMobileWeb() && !isStandalone();
 }
 
 /** A computer's browser, not the installed app: visitors get the landing page at "/". */
@@ -91,6 +93,11 @@ function homeRoute(signedIn: boolean, open: boolean, onboarded: boolean) {
   return onboarded ? "/" : "/onboarding";
 }
 
+/** Only the account screens (AuthShell) are the black night sky; the install screen and legal pages are themed. */
+function nightSky(signedIn: boolean, entry: boolean, pathname: string): boolean {
+  return !signedIn && !entry && pathname.startsWith("/auth");
+}
+
 /** First open without internet: the plan cannot be checked yet. */
 function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
   return (
@@ -125,18 +132,20 @@ function RootStack() {
     if (Platform.OS === "web") window.scrollTo(0, 0);
   }, [pathname]);
 
+  const entry = entryScreen(signedIn, pathname, install);
+  const night = nightSky(signedIn, entry !== null, pathname);
+
   useEffect(() => {
     // theme-color is for Android/older iOS. iOS 26+ fills the status bar with the colour of the #status-bar strip
     // (public/index.html). The installed iPhone app clips the page one top inset above the screen bottom and fills
-    // the rest with the body colour alone, so body, strip and page share the flat backdrop colour.
-    // Account screens are the black night sky.
+    // the rest with the body colour alone, and the document scrolls past the screens' own boxes: body, strip and
+    // page share the flat backdrop colour.
     if (Platform.OS !== "web") return;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
-    const night = !signedIn;
     document.body.style.backgroundColor = night ? "#000000" : colors.background;
     const bar = document.getElementById("status-bar");
     if (bar) bar.style.backgroundColor = night ? "#000000" : colors.background;
-  }, [colors.background, signedIn]);
+  }, [colors.background, night]);
 
   if (!ready) return null;
 
@@ -145,7 +154,6 @@ function RootStack() {
 
   if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
 
-  const entry = entryScreen(signedIn, pathname, install);
   if (entry) return entry;
 
   return (
