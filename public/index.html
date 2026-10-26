@@ -43,6 +43,14 @@
         height: 100%;
         flex: 1;
       }
+      /* Browser autofill paints saved e-mails/passwords on a light-blue box; keep the app's own field colours. */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus {
+        -webkit-text-fill-color: currentColor;
+        caret-color: currentColor;
+        transition: background-color 9999s ease-out 0s;
+      }
     </style>
   </head>
 
