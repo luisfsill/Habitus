@@ -127,7 +127,6 @@ function RootStack() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
     const bar = document.getElementById("status-bar");
     if (!bar) return;
-    bar.style.display = isIPhone() && isStandalone() ? "block" : "none";
     const night = !signedIn;
     bar.style.backgroundColor = night ? "#000000" : colors.background;
     bar.style.backgroundImage = night ? "none" : backdrops[scheme].backgroundImage;

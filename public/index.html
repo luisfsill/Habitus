@@ -44,6 +44,27 @@
         height: 100%;
         flex: 1;
       }
+      /* The strip under the clock (see the comment at #status-bar). Only the installed app on iOS; the min-height keeps
+         it above WebKit's 10px "thin border" cutoff when the inset reads 0. */
+      #status-bar {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top);
+        min-height: 12px;
+        background-color: #000000;
+        z-index: 2147483647;
+        pointer-events: none;
+      }
+      @media (display-mode: standalone) {
+        @supports (-webkit-touch-callout: none) {
+          #status-bar {
+            display: block;
+          }
+        }
+      }
       /* Browser autofill paints saved e-mails/passwords on a light-blue box; keep the app's own field colours. */
       input:-webkit-autofill,
       input:-webkit-autofill:hover,
@@ -75,7 +96,7 @@
     <noscript> You need to enable JavaScript to run this app. </noscript>
     <!-- iOS 26+ blurs the top of installed web apps (Liquid Glass). WebKit drops the blur and fills the status bar
          with the colour of an opaque fixed box at the top edge (≥6px tall, ≥80% wide): this strip. Painted from the app theme. -->
-    <div id="status-bar" style="position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top), 8px); background: #000000; z-index: 2147483647; pointer-events: none; display: none"></div>
+    <div id="status-bar"></div>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
   </body>
