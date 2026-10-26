@@ -3,7 +3,6 @@ import { StyleSheet, View } from "react-native";
 import { space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { GlassCard } from "./glass-card";
 import { Icon } from "./icon";
 import { PrimaryButton } from "./primary-button";
 
@@ -35,7 +34,7 @@ export function PermissionBanner({ kind = "notifications", onPress }: Props) {
   const { colors } = useTheme();
   const copy = COPY[kind];
   return (
-    <GlassCard>
+    <View>
       <View style={styles.row} accessibilityRole="alert">
         <Icon ios={copy.ios} android={copy.android} size={22} color={colors.warm} />
         <View style={styles.text}>
@@ -48,7 +47,7 @@ export function PermissionBanner({ kind = "notifications", onPress }: Props) {
       <View style={styles.button}>
         <PrimaryButton label={copy.button} variant="tinted" onPress={onPress} />
       </View>
-    </GlassCard>
+    </View>
   );
 }
 

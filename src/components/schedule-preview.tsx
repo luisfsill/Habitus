@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { computeSchedule, trickTimeLabels } from "@/domain/schedule";
 import type { Weekday } from "@/domain/time";
 import { TRICKS } from "@/domain/tricks";
-import { space, useTheme } from "@/theme";
+import { space } from "@/theme";
 
 import { AppText } from "./app-text";
 
@@ -17,7 +17,6 @@ interface Props {
 
 /** Live preview of the six computed times, or the validation error. */
 export function SchedulePreview({ start, end, days, bedtime }: Props) {
-  const { colors } = useTheme();
   const result = computeSchedule(start, end, days, bedtime);
 
   if (!result.ok) {
@@ -38,7 +37,7 @@ export function SchedulePreview({ start, end, days, bedtime }: Props) {
           key={trick.index}
           accessible
           accessibilityLabel={`${times[i]}, ${trick.title}`}
-          style={[styles.item, i > 0 && { borderTopColor: colors.separator, borderTopWidth: StyleSheet.hairlineWidth }]}>
+          style={styles.item}>
           <AppText variant="headline" color="accentText" style={styles.time}>
             {times[i]}
           </AppText>

@@ -1,9 +1,9 @@
 import { Stack } from "expo-router";
 
-import { useTheme } from "@/theme";
+import { backdrops, useTheme } from "@/theme";
 
 export default function LegalLayout() {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   return (
     <Stack
       screenOptions={{
@@ -12,7 +12,7 @@ export default function LegalLayout() {
         headerBackTitle: "Voltar",
         headerTransparent: true,
         headerTintColor: colors.accent,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: backdrops[scheme],
       }}
     />
   );

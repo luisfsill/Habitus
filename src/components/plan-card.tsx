@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { useAnimatedStyle, withSpring } from "react-native-reanimated";
 
 import { formatPrice, type Plan } from "@/domain/access";
-import { radius, space, useTheme } from "@/theme";
+import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 
@@ -16,52 +15,37 @@ interface Props {
 export function PlanCard({ plan, selected, onSelect }: Props) {
   const { colors } = useTheme();
   const perMonth = plan.days >= 60 ? ` · ${formatPrice(Math.round((plan.priceCents * 30) / plan.days))}/mês` : "";
-  const scale = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(selected ? 1.02 : 1, { damping: 16 }) }] }));
   return (
-    <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onSelect}>
-      <Animated.View
-        style={[
-          styles.card,
-          scale,
-          {
-            borderColor: selected ? colors.accent : "rgba(255,255,255,0.1)",
-            shadowColor: colors.accent,
-            shadowOpacity: selected ? 0.6 : 0,
-          },
-        ]}>
-        <View style={styles.flex}>
-          <View style={styles.titleRow}>
-            <AppText variant="headline">{plan.name}</AppText>
-            {plan.highlight && (
-              <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                <AppText variant="caption" style={styles.badgeText}>
-                  Mais vantajoso
-                </AppText>
-              </View>
-            )}
-          </View>
-          <AppText variant="footnote" color="secondaryLabel">
-            {plan.days} dias{perMonth}
-          </AppText>
+    <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onSelect} style={styles.row}>
+      <View style={[styles.radio, { borderColor: selected ? colors.accent : colors.secondaryLabel }]}>
+        {selected && <View style={[styles.dot, { backgroundColor: colors.accent }]} />}
+      </View>
+      <View style={styles.flex}>
+        <View style={styles.titleRow}>
+          <AppText variant="headline">{plan.name}</AppText>
+          {plan.highlight && (
+            <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+              <AppText variant="caption" style={styles.badgeText}>
+                Mais vantajoso
+              </AppText>
+            </View>
+          )}
         </View>
-        <AppText variant="title3">{formatPrice(plan.priceCents)}</AppText>
-      </Animated.View>
+        <AppText variant="footnote" color="secondaryLabel">
+          {plan.days} dias{perMonth}
+        </AppText>
+      </View>
+      <AppText variant="title2" color={selected ? "accentText" : "label"}>
+        {formatPrice(plan.priceCents)}
+      </AppText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.md,
-    padding: space.lg,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 14,
-  },
+  row: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: HIT, paddingVertical: space.sm },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  dot: { width: 10, height: 10, borderRadius: 5 },
   flex: { flex: 1, gap: 2 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" },
   badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },

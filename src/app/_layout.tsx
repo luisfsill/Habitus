@@ -13,7 +13,7 @@ import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
-import { type Palette, ThemePreferenceContext, useTheme } from "@/theme";
+import { backdrops, type Palette, ThemePreferenceContext, useTheme } from "@/theme";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -111,7 +111,7 @@ function RootStack() {
   return (
     <ThemeProvider value={theme}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: backdrops[scheme] }}>
         <Stack.Protected guard={!signedIn} redirectTo={home}>
           <Stack.Screen name="auth" options={{ animation: "fade" }} />
         </Stack.Protected>

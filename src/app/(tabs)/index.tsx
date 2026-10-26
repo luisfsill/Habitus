@@ -1,14 +1,14 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
+import { AccountMenu } from "@/components/account-menu";
 import { AppText } from "@/components/app-text";
-import { GlassCard } from "@/components/glass-card";
 import { InstallCard } from "@/components/install-card";
-import { LevelCard } from "@/components/level-card";
 import { PermissionBanners } from "@/components/permission-banner";
 import { Screen } from "@/components/screen";
+import { Section } from "@/components/section";
+import { StatColumns } from "@/components/stat-columns";
 import { TimelineRow } from "@/components/timeline-row";
-import { TodaySummary } from "@/components/today-summary";
 import { TrialBanner } from "@/components/trial-banner";
 import { WEEKDAY_NAMES } from "@/components/weekday-picker";
 import { firstName, type Profile } from "@/domain/access";
@@ -16,12 +16,14 @@ import { currentStreak, doneCount, trickStatuses } from "@/domain/history";
 import { scheduleFor } from "@/domain/app-data";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
 import { atMinutes, dayKey, formatCountdown, minutesOfDay, type Weekday } from "@/domain/time";
-import { TRICKS } from "@/domain/tricks";
+import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
 import { openSystemSettings } from "@/services/notifications";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
+import { useAuth } from "@/state/auth";
 import { useInstallPrompt } from "@/state/use-install-prompt";
 import { useNow } from "@/state/use-now";
+import { useSignOut } from "@/state/use-sign-out";
 import { space } from "@/theme";
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -32,6 +34,32 @@ function title(now: Date, profile: Profile | null): string {
 
 function dateLine(d: Date): string {
   return `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]}`;
+}
+
+function TodayAccount({ profile }: { profile: Profile | null }) {
+  const { updateSettings } = useAppState();
+  const { session } = useAuth();
+  const signOut = useSignOut();
+  const email = session?.user.email;
+  if (!email) return null;
+  return (
+    <AccountMenu
+      name={profile?.name || email}
+      email={email}
+      onTheme={(theme) => void updateSettings({ theme })}
+      menu={[
+        { label: "Renovar plano", icon: { ios: "arrow.clockwise.circle", android: "autorenew" }, onPress: () => router.push("/renovar") },
+        { label: "Sair", icon: { ios: "rectangle.portrait.and.arrow.right", android: "logout" }, destructive: true, onPress: () => void signOut() },
+      ]}
+    />
+  );
+}
+
+function summary(count: number, activeToday: boolean): string {
+  if (count >= TRICK_COUNT) return "Dia completo! Você fez todos os truques de hoje.";
+  if (!activeToday) return "Dia de descanso. Você pode praticar mesmo assim.";
+  const left = TRICK_COUNT - count;
+  return left === 1 ? "Falta 1 truque hoje." : `Faltam ${left} truques hoje.`;
 }
 
 export default function TodayScreen() {
@@ -50,10 +78,12 @@ export default function TodayScreen() {
   const times = result.ok ? trickTimeLabels(result.schedule) : [];
   const nextIndex = statuses.indexOf("next");
   const nextAt = result.ok && nextIndex >= 0 ? atMinutes(now, result.schedule.trickMinutes[nextIndex]) : null;
+  const countdown = nextAt ? formatCountdown(nextAt.getTime() - now.getTime()) : undefined;
   const { profile } = useAccess();
+  const { level, belt } = progress;
 
   return (
-    <Screen title={title(now, profile)} subtitle={dateLine(now)}>
+    <Screen title={title(now, profile)} subtitle={dateLine(now)} accessory={<TodayAccount profile={profile} />}>
       <TrialBanner profile={profile} now={now} onSeePlans={() => router.push("/renovar")} />
       {install.mode !== "hidden" && (
         <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
@@ -65,49 +95,40 @@ export default function TodayScreen() {
         onAllowExactAlarms={() => void askExactAlarms()}
       />
 
-      <TodaySummary count={count} streak={streak} activeToday={activeToday} />
-
-      <LevelCard progress={progress} onPress={() => router.navigate("/achievements")} />
-
-      {nextAt && (
-        <GlassCard>
-          <View accessible accessibilityLabel={`Próximo truque: ${TRICKS[nextIndex].title}, às ${times[nextIndex]}`}>
-            <AppText variant="footnote" color="secondaryLabel">
-              PRÓXIMO TRUQUE · {times[nextIndex]}
-            </AppText>
-            <AppText variant="title2" style={styles.nextTitle}>
-              {TRICKS[nextIndex].title}
-            </AppText>
-            <AppText variant="largeTitle" color="accentText" style={styles.digits} accessibilityElementsHidden>
-              {formatCountdown(nextAt.getTime() - now.getTime())}
-            </AppText>
-          </View>
-        </GlassCard>
-      )}
-
-      <View>
-        <AppText variant="title3" accessibilityRole="header" style={styles.sectionTitle}>
-          Linha do tempo
+      <View style={styles.summary}>
+        <StatColumns
+          stats={[
+            { value: `${count}/${TRICK_COUNT}`, label: "hoje", color: count >= TRICK_COUNT ? "successText" : "label", accessibilityLabel: `Hoje: ${count} de ${TRICK_COUNT} truques` },
+            { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
+            {
+              value: String(level.level),
+              label: belt.name,
+              onPress: () => router.navigate("/achievements"),
+              accessibilityLabel: `Nível ${level.level}, ${belt.name}. Abre suas conquistas.`,
+            },
+          ]}
+        />
+        <AppText variant="footnote" color="secondaryLabel">
+          {summary(count, activeToday)}
         </AppText>
-        <GlassCard>
-          {TRICKS.map((trick, i) => (
-            <TimelineRow
-              key={trick.index}
-              trick={trick}
-              time={times[i] ?? "--:--"}
-              status={statuses[i] ?? "pending"}
-              last={i === TRICKS.length - 1}
-              onPress={() => router.push({ pathname: "/trick/[id]", params: { id: String(trick.index) } })}
-            />
-          ))}
-        </GlassCard>
       </View>
+
+      <Section title="Linha do tempo">
+        {TRICKS.map((trick, i) => (
+          <TimelineRow
+            key={trick.index}
+            trick={trick}
+            time={times[i] ?? "--:--"}
+            status={statuses[i] ?? "pending"}
+            countdown={i === nextIndex ? countdown : undefined}
+            onPress={() => router.push({ pathname: "/trick/[id]", params: { id: String(trick.index) } })}
+          />
+        ))}
+      </Section>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  digits: { fontVariant: ["tabular-nums"] },
-  nextTitle: { marginTop: 2 },
-  sectionTitle: { marginBottom: space.sm, marginLeft: space.xs },
+  summary: { gap: space.sm },
 });

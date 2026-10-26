@@ -2,33 +2,18 @@ import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
-import { GlassCard } from "@/components/glass-card";
 import { Screen } from "@/components/screen";
+import { StatColumns } from "@/components/stat-columns";
 import { Icon } from "@/components/icon";
 import { WEEKDAY_NAMES } from "@/components/weekday-picker";
 import { currentStreak, doneCount, monthGrid, weekPercent } from "@/domain/history";
 import { dayKey } from "@/domain/time";
 import { TRICK_COUNT } from "@/domain/tricks";
 import { useAppState } from "@/state/app-state";
-import { HIT, radius, space, useTheme } from "@/theme";
+import { HIT, space, useTheme } from "@/theme";
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const HEAD = ["D", "S", "T", "Q", "Q", "S", "S"];
-
-function Stat({ value, label, color }: { value: string; label: string; color: "warm" | "accentText" }) {
-  return (
-    <GlassCard style={styles.stat}>
-      <View accessible accessibilityLabel={`${label}: ${value}`}>
-        <AppText variant="largeTitle" color={color} style={styles.digits}>
-          {value}
-        </AppText>
-        <AppText variant="subheadline" color="secondaryLabel">
-          {label}
-        </AppText>
-      </View>
-    </GlassCard>
-  );
-}
 
 function MonthNav({ month, onMove }: { month: Date; onMove: (delta: number) => void }) {
   const { colors } = useTheme();
@@ -59,21 +44,23 @@ export default function HistoryScreen() {
 
   return (
     <Screen title="Histórico">
-      <View style={styles.stats}>
-        <Stat value={String(streak)} label={streak === 1 ? "dia seguido" : "dias seguidos"} color="warm" />
-        <Stat value={`${percent}%`} label="desta semana" color="accentText" />
-      </View>
+      <StatColumns
+        stats={[
+          { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
+          { value: `${percent}%`, label: "desta semana", color: "accentText" },
+        ]}
+      />
 
-      <GlassCard>
+      <View>
         <MonthNav month={month} onMove={(d) => setMonth(new Date(month.getFullYear(), month.getMonth() + d, 1))} />
         <View style={styles.grid} importantForAccessibility="no">
           {HEAD.map((h, i) => (
-            <AppText key={`h${i}`} variant="caption" color="secondaryLabel" align="center" style={styles.cell}>
+            <AppText key={`h${i}`} variant="caption" color="secondaryLabel" align="center" style={styles.weekday}>
               {h}
             </AppText>
           ))}
         </View>
-        <View style={styles.grid}>
+        <View style={[styles.grid, styles.bleed, { borderColor: colors.separator }]}>
           {monthGrid(month).map((cell) => {
             const count = doneCount(data.completions, cell.key);
             const complete = count >= TRICK_COUNT;
@@ -82,49 +69,53 @@ export default function HistoryScreen() {
             return (
               <View
                 key={cell.key}
-                style={styles.cell}
+                style={[
+                  styles.cell,
+                  styles.line,
+                  { borderColor: colors.separator },
+                  complete && { backgroundColor: colors.successSoft },
+                  isToday && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+                ]}
                 accessible={cell.inMonth}
                 accessibilityLabel={`${name}: ${complete ? "completo" : `${count} de ${TRICK_COUNT}`}`}>
                 {cell.inMonth && (
-                  <View
-                    style={[
-                      styles.day,
-                      complete && { backgroundColor: colors.success },
-                      !complete && count > 0 && { backgroundColor: colors.successSoft },
-                      isToday && { borderWidth: 2, borderColor: colors.accent },
-                    ]}>
+                  <>
                     <AppText
                       variant="subheadline"
                       maxFontSizeMultiplier={1.3}
-                      style={{ color: complete ? colors.onAccent : colors.label, fontWeight: isToday ? "700" : "400" }}>
+                      color={complete ? "successText" : isToday ? "accentText" : "label"}
+                      style={(complete || isToday) && styles.bold}>
                       {cell.date.getDate()}
                     </AppText>
-                  </View>
+                    {!complete && count > 0 && <View style={[styles.dot, { backgroundColor: colors.success }]} />}
+                  </>
                 )}
               </View>
             );
           })}
         </View>
         <View style={styles.legend}>
-          <View style={[styles.swatch, { backgroundColor: colors.success }]} />
-          <AppText variant="footnote" color="secondaryLabel">Dia completo</AppText>
           <View style={[styles.swatch, { backgroundColor: colors.successSoft }]} />
+          <AppText variant="footnote" color="secondaryLabel">Dia completo</AppText>
+          <View style={[styles.dot, { backgroundColor: colors.success }]} />
           <AppText variant="footnote" color="secondaryLabel">Parcial</AppText>
         </View>
-      </GlassCard>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  stats: { flexDirection: "row", gap: space.md },
-  stat: { flex: 1 },
-  digits: { fontVariant: ["tabular-nums"] },
   monthNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.sm },
   arrow: { width: HIT, height: HIT, alignItems: "center", justifyContent: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap" },
-  cell: { width: `${100 / 7}%`, aspectRatio: 1, alignItems: "center", justifyContent: "center" },
-  day: { width: "84%", aspectRatio: 1, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  // The month grid runs edge to edge, with hairlines between days.
+  bleed: { marginHorizontal: -space.xl, borderTopWidth: StyleSheet.hairlineWidth },
+  cell: { width: `${100 / 7}%`, aspectRatio: 1, alignItems: "center", justifyContent: "center", gap: 3 },
+  weekday: { width: `${100 / 7}%`, paddingVertical: space.sm },
+  line: { borderRightWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
+  bold: { fontWeight: "700" },
+  dot: { width: 6, height: 6, borderRadius: 3 },
   legend: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.md },
-  swatch: { width: 12, height: 12, borderRadius: 6 },
+  swatch: { width: 12, height: 12, borderRadius: 3 },
 });

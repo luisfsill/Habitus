@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { GlassCard } from "./glass-card";
 import { Icon } from "./icon";
 import { PrimaryButton } from "./primary-button";
 
@@ -38,7 +37,7 @@ export function InstallCard({ mode, onInstall, onDismiss }: Props) {
   const press = () => (mode === "prompt" ? onInstall() : setShowSteps(true));
 
   return (
-    <GlassCard>
+    <View>
       <View style={styles.row}>
         <View style={[styles.badge, { backgroundColor: colors.accentSoft }]}>
           <Icon ios="arrow.down.app" android="install_mobile" size={24} color={colors.accent} />
@@ -71,7 +70,7 @@ export function InstallCard({ mode, onInstall, onDismiss }: Props) {
           <PrimaryButton label="Instalar agora" onPress={press} />
         </View>
       )}
-    </GlassCard>
+    </View>
   );
 }
 

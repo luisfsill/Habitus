@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Switch, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
-import { GlassCard } from "@/components/glass-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { TextField } from "@/components/text-field";
@@ -57,7 +56,7 @@ function PlanEditor({ plan, onSaved }: { plan: Plan; onSaved: (message: string) 
   );
 
   return (
-    <GlassCard>
+    <View>
       <View style={styles.editor}>
         <View style={styles.fields}>
           <TextField label="Nome" value={d.name} onChangeText={(name) => patch({ name })} />
@@ -68,7 +67,7 @@ function PlanEditor({ plan, onSaved }: { plan: Plan; onSaved: (message: string) 
         {toggle("Mostrar na tela de renovação", d.active, "active")}
         <PrimaryButton label="Salvar" variant="tinted" onPress={() => void save()} loading={busy} />
       </View>
-    </GlassCard>
+    </View>
   );
 }
 

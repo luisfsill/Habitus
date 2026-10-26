@@ -1,30 +1,15 @@
 import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
-import { GlassCard } from "@/components/glass-card";
 import { Icon } from "@/components/icon";
 import { LevelCard } from "@/components/level-card";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
+import { StatColumns } from "@/components/stat-columns";
 import type { BadgeState } from "@/domain/achievements";
 import { BELTS, nextBelt, XP_RULES } from "@/domain/gamification";
 import { useAppState } from "@/state/app-state";
 import { radius, space, useTheme } from "@/theme";
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <GlassCard style={styles.stat}>
-      <View accessible accessibilityLabel={`${label}: ${value}`}>
-        <AppText variant="title1" color="accentText" style={styles.digits}>
-          {value}
-        </AppText>
-        <AppText variant="footnote" color="secondaryLabel">
-          {label}
-        </AppText>
-      </View>
-    </GlassCard>
-  );
-}
 
 function Badge({ badge }: { badge: BadgeState }) {
   const { colors } = useTheme();
@@ -65,14 +50,15 @@ export default function AchievementsScreen() {
     <Screen title="Conquistas" subtitle={`${stats.xp} XP no total`}>
       <LevelCard progress={progress} />
 
-      <View style={styles.stats}>
-        <Stat value={stats.currentStreak} label="dias seguidos" />
-        <Stat value={stats.bestStreak} label="melhor sequência" />
-      </View>
-      <View style={styles.stats}>
-        <Stat value={stats.perfectDays} label="dias perfeitos" />
-        <Stat value={stats.perfectWeeks} label="semanas perfeitas" />
-      </View>
+      <StatColumns
+        columns={2}
+        stats={[
+          { value: String(stats.currentStreak), label: "dias seguidos", color: "warm" },
+          { value: String(stats.bestStreak), label: "melhor sequência" },
+          { value: String(stats.perfectDays), label: "dias perfeitos", color: "successText" },
+          { value: String(stats.perfectWeeks), label: "semanas perfeitas", color: "accentText" },
+        ]}
+      />
 
       <Section
         title="Patentes"
@@ -120,9 +106,6 @@ export default function AchievementsScreen() {
 }
 
 const styles = StyleSheet.create({
-  stats: { flexDirection: "row", gap: space.md },
-  stat: { flex: 1 },
-  digits: { fontVariant: ["tabular-nums"] },
   belts: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, justifyContent: "space-between" },
   belt: { width: 32, height: 32, borderRadius: radius.pill, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap", rowGap: space.lg },

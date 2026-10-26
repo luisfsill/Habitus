@@ -1,43 +1,28 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Platform, StyleSheet, Switch, TextInput, View } from "react-native";
+import { Platform, StyleSheet, TextInput, View } from "react-native";
 
+import { ActionRow } from "@/components/action-row";
 import { AffirmationsEditor } from "@/components/affirmations-editor";
 import { AppText } from "@/components/app-text";
 import { BedtimeField } from "@/components/bedtime-field";
 import { PermissionBanners } from "@/components/permission-banner";
-import { PrimaryButton } from "@/components/primary-button";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
-import { SegmentedControl } from "@/components/segmented-control";
+import { ThemeTabs } from "@/components/theme-tabs";
 import { TimeField } from "@/components/time-field";
+import { ToggleSwitch } from "@/components/toggle-switch";
 import { WeekdayPicker } from "@/components/weekday-picker";
-import type { Settings, ThemePreference } from "@/domain/app-data";
+import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
+import { confirm, useSignOut } from "@/state/use-sign-out";
 import { HIT, useTheme } from "@/theme";
-
-function confirm(title: string, message: string, action: string, onConfirm: () => void) {
-  if (Platform.OS === "web") {
-    if (globalThis.confirm?.(`${title}\n\n${message}`)) onConfirm();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: "Cancelar", style: "cancel" },
-    { text: action, style: "destructive", onPress: onConfirm },
-  ]);
-}
-
-const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[] = [
-  { value: "auto", label: "Automático" },
-  { value: "light", label: "Claro" },
-  { value: "dark", label: "Escuro" },
-];
 
 function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
   const when = formatTime(minutes);
@@ -49,8 +34,9 @@ function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
   return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
 }
 
-function AccountSection() {
-  const { session, signOut, deleteAccount } = useAuth();
+function AccountSection({ onReset }: { onReset: () => void }) {
+  const { session, deleteAccount } = useAuth();
+  const leave = useSignOut();
   const { profile, setName } = useAccess();
   const { colors } = useTheme();
   const [name, setDraftName] = useState(profile?.name ?? "");
@@ -63,17 +49,6 @@ function AccountSection() {
       .catch((error: Error) => setMessage(error.message));
   };
 
-  const leave = async () => {
-    if ((await signOut()) === "unsynced") {
-      confirm(
-        "Sair sem enviar?",
-        "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?",
-        "Sair",
-        () => void signOut({ force: true }),
-      );
-    }
-  };
-
   const remove = () =>
     confirm("Excluir conta?", "Sua conta e todo o seu progresso serão apagados. Não dá para desfazer.", "Continuar", () =>
       confirm("Tem certeza?", "Esta é a última confirmação. A conta será excluída agora.", "Excluir conta", () => {
@@ -82,38 +57,52 @@ function AccountSection() {
     );
 
   return (
-    <Section title="Conta" footer={session?.user.email ? `Conectado como ${session.user.email}.` : undefined}>
-      <View style={styles.row}>
-        <AppText variant="body">Nome</AppText>
-        <TextInput
-          value={name}
-          onChangeText={(t) => setDraftName(t.slice(0, 80))}
-          onBlur={saveName}
-          onSubmitEditing={saveName}
-          placeholder="Seu nome"
-          placeholderTextColor={colors.secondaryLabel}
-          autoCapitalize="words"
-          accessibilityLabel="Nome"
-          style={[styles.nameInput, { color: colors.label }]}
-        />
+    <Section title="Conta">
+      <View>
+        <View style={styles.row}>
+          <AppText variant="body">Nome</AppText>
+          <TextInput
+            value={name}
+            onChangeText={(t) => setDraftName(t.slice(0, 80))}
+            onBlur={saveName}
+            onSubmitEditing={saveName}
+            placeholder="Seu nome"
+            placeholderTextColor={colors.secondaryLabel}
+            autoCapitalize="words"
+            accessibilityLabel="Nome"
+            style={[styles.nameInput, { color: colors.label }]}
+          />
+        </View>
+        {session?.user.email && (
+          <View style={styles.row}>
+            <AppText variant="body">E-mail</AppText>
+            <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
+              {session.user.email}
+            </AppText>
+          </View>
+        )}
       </View>
-      <PrimaryButton label="Ver planos" variant="plain" onPress={() => router.push("/renovar")} />
-      <PrimaryButton label="Termos de uso" variant="plain" onPress={() => router.push("/legal/terms")} />
-      <PrimaryButton label="Política de privacidade" variant="plain" onPress={() => router.push("/legal/privacy")} />
-      <PrimaryButton label="Sair" variant="tinted" onPress={() => void leave()} />
-      <PrimaryButton label="Excluir conta" variant="plain" destructive onPress={remove} />
-      {message && (
-        <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
-          {message}
-        </AppText>
-      )}
+      <View>
+        <ActionRow label="Ver planos" icon={{ ios: "creditcard", android: "credit_card" }} navigates onPress={() => router.push("/renovar")} />
+        <ActionRow label="Termos de uso" icon={{ ios: "doc.text", android: "description" }} navigates onPress={() => router.push("/legal/terms")} />
+        <ActionRow label="Política de privacidade" icon={{ ios: "lock", android: "lock" }} navigates onPress={() => router.push("/legal/privacy")} />
+      </View>
+      <View>
+        <ActionRow label="Sair" icon={{ ios: "rectangle.portrait.and.arrow.right", android: "logout" }} onPress={() => void leave()} />
+        <ActionRow label="Resetar dados" icon={{ ios: "arrow.counterclockwise", android: "restart_alt" }} destructive onPress={onReset} />
+        <ActionRow label="Excluir conta" icon={{ ios: "trash", android: "delete" }} destructive onPress={remove} />
+        {message && (
+          <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
+            {message}
+          </AppText>
+        )}
+      </View>
     </Section>
   );
 }
 
 export default function SettingsScreen() {
   const { data, permission, exactAlarms, askExactAlarms, updateSettings, reset, askPermission } = useAppState();
-  const { colors } = useTheme();
   const [draft, setDraft] = useState(() => ({ ...data.settings }));
   const [status, setStatus] = useState<string | null>(null);
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
@@ -151,7 +140,6 @@ export default function SettingsScreen() {
       <Section title="Horário" footer="Os 5 primeiros truques são distribuídos igualmente entre o início e o fim. O 6º chega na hora de dormir.">
         <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
         <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
-        <View style={[styles.divider, { backgroundColor: colors.separator }]} />
         <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
       </Section>
 
@@ -176,58 +164,40 @@ export default function SettingsScreen() {
         }>
         <View style={styles.row}>
           <AppText variant="body">Som</AppText>
-          <Switch
-            value={draft.sound}
-            onValueChange={(sound) => void change({ sound })}
-            trackColor={{ true: colors.accent, false: colors.switchOff }}
-            thumbColor="#FFFFFF"
-            // react-native-web paints the "on" thumb teal unless told otherwise.
-            {...{ activeThumbColor: "#FFFFFF" }}
-            ios_backgroundColor={colors.switchOff}
-            accessibilityLabel="Som das notificações"
-          />
+          <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
         </View>
-        <PrimaryButton label="Testar uma notificação agora" variant="tinted" onPress={() => void testNow()} />
-        <PrimaryButton label="Simular um dia em 5 minutos" variant="tinted" onPress={() => void testRun()} />
-        <PrimaryButton
-          label="Ver notificações agendadas"
-          variant="plain"
-          onPress={() => void pendingCount().then((n) => setStatus(`${n} notificações agendadas.`))}
-        />
-        {status && (
-          <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
-            {status}
-          </AppText>
-        )}
+        <View>
+          <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
+          <ActionRow label="Simular um dia em 5 minutos" icon={{ ios: "timer", android: "timer" }} onPress={() => void testRun()} />
+          <ActionRow
+            label="Ver notificações agendadas"
+            icon={{ ios: "list.bullet", android: "list" }}
+            onPress={() => void pendingCount().then((n) => setStatus(`${n} notificações agendadas.`))}
+          />
+          {status && (
+            <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite" style={styles.status}>
+              {status}
+            </AppText>
+          )}
+        </View>
       </Section>
 
       <Section title="Aparência" footer="Automático segue o modo claro ou escuro do aparelho.">
-        <SegmentedControl
-          label="Aparência"
-          options={THEME_OPTIONS}
-          value={draft.theme}
-          onChange={(theme) => void change({ theme })}
-        />
+        <ThemeTabs value={data.settings.theme} onChange={(theme) => void change({ theme })} />
       </Section>
 
-      <AccountSection />
-
-      <Section title="Dados">
-        <PrimaryButton
-          label="Resetar dados"
-          variant="plain"
-          destructive
-          onPress={() =>
-            confirm("Resetar dados?", "Apaga histórico, afirmações e horários, neste aparelho e na nuvem. Não dá para desfazer.", "Resetar", () => void reset())
-          }
-        />
-      </Section>
+      <AccountSection
+        onReset={() =>
+          confirm("Resetar dados?", "Apaga histórico, afirmações e horários, neste aparelho e na nuvem. Não dá para desfazer.", "Resetar", () => void reset())
+        }
+      />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  divider: { height: StyleSheet.hairlineWidth },
+  value: { flex: 1, textAlign: "right", marginLeft: 16 },
+  status: { marginTop: 4 },
   nameInput: { flex: 1, textAlign: "right", fontSize: 17, minHeight: HIT, marginLeft: 16 },
 });

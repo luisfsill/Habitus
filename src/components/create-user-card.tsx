@@ -5,7 +5,6 @@ import { isValidEmail } from "@/domain/auth-rules";
 import { space } from "@/theme";
 
 import { AppText } from "./app-text";
-import { GlassCard } from "./glass-card";
 import { PrimaryButton } from "./primary-button";
 import { TextField } from "./text-field";
 
@@ -44,7 +43,7 @@ export function CreateUserCard({ onCreate, onClose }: Props) {
   };
 
   return (
-    <GlassCard>
+    <View>
       <View style={styles.root}>
         <AppText variant="headline">Criar usuário</AppText>
         {password === null ? (
@@ -75,7 +74,7 @@ export function CreateUserCard({ onCreate, onClose }: Props) {
           </>
         )}
       </View>
-    </GlassCard>
+    </View>
   );
 }
 

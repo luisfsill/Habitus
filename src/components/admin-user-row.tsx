@@ -40,7 +40,7 @@ export function AdminUserRow({ profile, now, onGrant, onOpen, busy }: Props) {
   const until = status === "expired" ? `venceu ${formatDate(profile.accessUntil)}` : status === "unlimited" || status === "admin" ? "" : `até ${formatDate(profile.accessUntil)}`;
 
   return (
-    <View style={[styles.row, { backgroundColor: colors.surface, opacity: busy ? 0.6 : 1 }]}>
+    <View style={[styles.row, { opacity: busy ? 0.6 : 1 }]}>
       <Pressable style={styles.who} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Abrir ${displayName(profile)}`}>
         <AppText variant="headline" numberOfLines={1}>
           {displayName(profile)}
@@ -82,7 +82,7 @@ export function AdminUserRow({ profile, now, onGrant, onOpen, busy }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { borderRadius: radius.md, padding: space.md, gap: space.sm, flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
+  row: { gap: space.sm, flexDirection: "row", flexWrap: "wrap", alignItems: "center" },
   who: { flexGrow: 1, flexBasis: 220, gap: 2 },
   statusLine: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 4 },
   pill: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },

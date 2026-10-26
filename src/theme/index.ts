@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { Platform, type TextStyle, useColorScheme } from "react-native";
+import { Platform, type TextStyle, useColorScheme, type ViewStyle } from "react-native";
 
 /**
  * Cobalt accent with mindful green, mapped onto iOS system greys. Text
@@ -7,7 +7,7 @@ import { Platform, type TextStyle, useColorScheme } from "react-native";
  * variants where they carry text on light surfaces.
  */
 const light = {
-  background: "#F2F2F7",
+  background: "#F1F5F9",
   surface: "#FFFFFF",
   surfaceGlass: "rgba(255,255,255,0.72)",
   fill: "rgba(120,120,128,0.12)",
@@ -30,9 +30,9 @@ const light = {
 };
 
 const dark: typeof light = {
-  background: "#000000",
-  surface: "#1C1C1E",
-  surfaceGlass: "rgba(28,28,30,0.72)",
+  background: "#0F172A",
+  surface: "#1E293B",
+  surfaceGlass: "rgba(30,41,59,0.72)",
   fill: "rgba(120,120,128,0.24)",
   label: "#F5F5F7",
   secondaryLabel: "#A1A1AA",
@@ -53,6 +53,16 @@ const dark: typeof light = {
 
 export type Palette = typeof light;
 export const palettes = { light, dark };
+
+/**
+ * Page backdrop: a soft radial gradient from the top-left corner (slate in the
+ * dark theme, off-white to cool grey in the light one). `backgroundColor` is the
+ * fallback where gradients do not render. RN types still call it experimental.
+ */
+export const backdrops: Record<"light" | "dark", ViewStyle & { backgroundImage: string }> = {
+  light: { backgroundColor: light.background, backgroundImage: "radial-gradient(ellipse at top left, #ffffff 0%, #f1f5f9 40%, #cbd5e1 100%)" },
+  dark: { backgroundColor: dark.background, backgroundImage: "radial-gradient(ellipse at top left, #1e293b 0%, #0f172a 40%, #020617 100%)" },
+};
 
 /** The user's choice in Ajustes; "auto" follows the system. Provided at the app root. */
 export const ThemePreferenceContext = createContext<"auto" | "light" | "dark">("auto");

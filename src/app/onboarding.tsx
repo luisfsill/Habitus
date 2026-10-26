@@ -4,7 +4,6 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanim
 
 import { AppText } from "@/components/app-text";
 import { BedtimeField } from "@/components/bedtime-field";
-import { GlassCard } from "@/components/glass-card";
 import { InstallCard } from "@/components/install-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { SchedulePreview } from "@/components/schedule-preview";
@@ -48,7 +47,7 @@ function Intro() {
     {install.mode !== "hidden" && (
       <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
     )}
-    <GlassCard>
+    <View>
       <View style={styles.tricks}>
         {TRICKS.map((t) => (
           <View key={t.index} style={styles.trickRow}>
@@ -62,7 +61,7 @@ function Intro() {
           </View>
         ))}
       </View>
-    </GlassCard>
+    </View>
     </>
   );
 }
@@ -77,7 +76,7 @@ function Window({ draft, onChange }: { draft: WindowDraft; onChange: (next: Wind
   const { data } = useAppState();
   const set = (patch: Partial<WindowDraft>) => onChange({ ...draft, ...patch });
   return (
-    <GlassCard>
+    <View>
       <View style={styles.window}>
         <TimeField label="Início do dia" value={draft.start} onChange={(start) => set({ start })} />
         <TimeField label="Fim do dia" value={draft.end} onChange={(end) => set({ end })} />
@@ -95,14 +94,14 @@ function Window({ draft, onChange }: { draft: WindowDraft; onChange: (next: Wind
           bedtime={parseBedtime(draft.bedtime) ?? undefined}
         />
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
 function Permission({ state }: { state: PermissionState }) {
   const { colors } = useTheme();
   return (
-    <GlassCard>
+    <View>
       <View style={styles.permission}>
         <Icon
           ios={state === "denied" ? "bell.slash.fill" : "bell.badge.fill"}
@@ -116,7 +115,7 @@ function Permission({ state }: { state: PermissionState }) {
             : "O Habitus avisa você na hora de cada truque, com uma notificação curta. Nada sai do seu aparelho: tudo é agendado localmente."}
         </AppText>
       </View>
-    </GlassCard>
+    </View>
   );
 }
 

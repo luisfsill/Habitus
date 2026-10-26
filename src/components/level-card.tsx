@@ -4,7 +4,6 @@ import type { Progress } from "@/domain/achievements";
 import { radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { GlassCard } from "./glass-card";
 import { Icon } from "./icon";
 
 interface Props {
@@ -26,7 +25,7 @@ export function LevelCard({ progress, onPress }: Props) {
       accessibilityRole={onPress ? "button" : undefined}
       accessibilityLabel={`Nível ${level.level}, ${belt.name}. ${stats.xp} XP no total. Faltam ${missing} XP para o nível ${level.level + 1}.`}
       accessibilityHint={onPress ? "Abre suas conquistas" : undefined}>
-      <GlassCard>
+      <View>
         <View style={styles.row}>
           <View style={[styles.belt, { backgroundColor: belt.color, borderColor: colors.separator }]}>
             <AppText variant="headline" style={{ color: belt.ink }} maxFontSizeMultiplier={1.2}>
@@ -46,7 +45,7 @@ export function LevelCard({ progress, onPress }: Props) {
           </View>
           {onPress && <Icon ios="chevron.right" android="chevron_right" size={16} color={colors.secondaryLabel} />}
         </View>
-      </GlassCard>
+      </View>
     </Pressable>
   );
 }
@@ -55,6 +54,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: space.md },
   belt: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   text: { flex: 1, gap: 6 },
-  track: { height: 8, borderRadius: radius.pill, overflow: "hidden" },
+  track: { height: 4, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
 });

@@ -4,7 +4,6 @@ import { StyleSheet, TextInput, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { CircularTimer } from "@/components/circular-timer";
-import { GlassCard } from "@/components/glass-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { Icon } from "@/components/icon";
@@ -17,21 +16,21 @@ import { radius, space, type, useTheme } from "@/theme";
 
 function Phrase({ text }: { text: string }) {
   return (
-    <GlassCard>
+    <View>
       <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
         DIGA, DEVAGAR
       </AppText>
       <AppText variant="title1" color="accentText" style={styles.phrase} accessibilityRole="text">
         “{text}”
       </AppText>
-    </GlassCard>
+    </View>
   );
 }
 
 function Affirmations() {
   const { data } = useAppState();
   return (
-    <GlassCard>
+    <View>
       <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
         SUAS AFIRMAÇÕES
       </AppText>
@@ -43,14 +42,14 @@ function Affirmations() {
       <View style={styles.inlineButton}>
         <PrimaryButton label="Editar afirmações" variant="plain" onPress={() => router.navigate("/settings")} />
       </View>
-    </GlassCard>
+    </View>
   );
 }
 
 function Gratitude({ text, onChange, onCommit }: { text: string; onChange: (t: string) => void; onCommit: () => void }) {
   const { colors } = useTheme();
   return (
-    <GlassCard>
+    <View>
       <AppText variant="footnote" color="secondaryLabel" style={styles.label} nativeID="gratitude-label">
         PELO QUE VOCÊ AGRADECE HOJE?
       </AppText>
@@ -66,7 +65,7 @@ function Gratitude({ text, onChange, onCommit }: { text: string; onChange: (t: s
         accessibilityLabelledBy="gratitude-label"
         style={[type.body, styles.input, { color: colors.label, backgroundColor: colors.fill }]}
       />
-    </GlassCard>
+    </View>
   );
 }
 
@@ -80,9 +79,9 @@ interface PracticeProps {
 function Practice({ trick, gratitude, onGratitude, onCommitGratitude }: PracticeProps) {
   if (trick.kind === "timer" && trick.durationSeconds) {
     return (
-      <GlassCard>
+      <View>
         <CircularTimer seconds={trick.durationSeconds} />
-      </GlassCard>
+      </View>
     );
   }
   if (trick.kind === "affirmations") return <Affirmations />;
