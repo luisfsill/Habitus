@@ -13,8 +13,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Habitus" />
-    <!-- iOS 26+ ignores this tag and theme-color; kept for older iOS. The installed app's top edge is handled by #status-bar below. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Translucent: the page runs under the clock (edge to edge). iOS reads this when the app is added to the Home Screen.
+         iOS 26+ would blur that edge; #status-bar below turns it into a solid band in the page colour instead. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
