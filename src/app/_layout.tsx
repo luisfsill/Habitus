@@ -26,9 +26,12 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
   };
 }
 
-/** On a phone's browser the app is install-only; it runs from the home screen icon. */
+/**
+ * On a phone's browser the app is install-only; it runs from the home screen icon.
+ * Not in development (npm run dev, on localhost or the LAN address): there it opens right away for testing.
+ */
 function installOnly(): boolean {
-  return isMobileWeb() && !isStandalone();
+  return !__DEV__ && isMobileWeb() && !isStandalone();
 }
 
 /** A computer's browser, not the installed app: visitors get the landing page at "/". */

@@ -24,6 +24,8 @@ interface Props {
   menu: AccountMenuItem[];
   /** Shows the light/dark switch at the top of the menu. */
   onTheme?: (theme: "light" | "dark") => void;
+  /** Avatar only (narrow screens); name and e-mail still show inside the menu. */
+  compact?: boolean;
 }
 
 export function initials(name: string): string {
@@ -31,7 +33,7 @@ export function initials(name: string): string {
 }
 
 /** Account button (initials, name, e-mail) that opens a menu of account actions. */
-export function AccountMenu({ name, email, tag, menu, onTheme }: Props) {
+export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props) {
   const { colors, scheme } = useTheme();
   const fill = backdrops[scheme];
   const [open, setOpen] = useState(false);
@@ -47,21 +49,25 @@ export function AccountMenu({ name, email, tag, menu, onTheme }: Props) {
         accessibilityRole="button"
         accessibilityLabel={`Conta de ${name}`}
         accessibilityState={{ expanded: open }}
-        style={[styles.account, fill]}>
+        style={[styles.account, compact && styles.compact, fill]}>
         <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
           <AppText variant="footnote" style={styles.avatarText}>
             {initials(name)}
           </AppText>
         </View>
-        <View style={styles.who}>
-          <AppText variant="subheadline" numberOfLines={1} style={styles.bold}>
-            {name}
-          </AppText>
-          <AppText variant="caption" color="secondaryLabel" numberOfLines={1}>
-            {email}
-          </AppText>
-        </View>
-        <Icon ios="chevron.down" android="expand_more" size={14} color={colors.secondaryLabel} />
+        {!compact && (
+          <>
+            <View style={styles.who}>
+              <AppText variant="subheadline" numberOfLines={1} style={styles.bold}>
+                {name}
+              </AppText>
+              <AppText variant="caption" color="secondaryLabel" numberOfLines={1}>
+                {email}
+              </AppText>
+            </View>
+            <Icon ios="chevron.down" android="expand_more" size={14} color={colors.secondaryLabel} />
+          </>
+        )}
       </Pressable>
       {open && (
         <Animated.View
@@ -108,6 +114,7 @@ const styles = StyleSheet.create({
   avatar: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#FFFFFF", fontWeight: "800" },
   who: { maxWidth: 180 },
+  compact: { paddingVertical: 4, paddingLeft: 4, paddingRight: 4, borderRadius: radius.pill },
   bold: { fontWeight: "700" },
   menu: {
     position: "absolute",
