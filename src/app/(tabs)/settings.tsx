@@ -6,6 +6,7 @@ import { ActionRow } from "@/components/action-row";
 import { AffirmationsEditor } from "@/components/affirmations-editor";
 import { AppText } from "@/components/app-text";
 import { BedtimeField } from "@/components/bedtime-field";
+import { Icon } from "@/components/icon";
 import { PermissionBanners } from "@/components/permission-banner";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
@@ -24,6 +25,7 @@ import { useAppState } from "@/state/app-state";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
 import { confirm, useSignOut } from "@/state/use-sign-out";
+import { TabAccount } from "@/state/tab-account";
 import { HIT, useTheme } from "@/theme";
 
 function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
@@ -107,6 +109,7 @@ export default function SettingsScreen() {
   const { data, permission, exactAlarms, askExactAlarms, updateSettings, reset, askPermission } = useAppState();
   const [draft, setDraft] = useState(() => ({ ...data.settings }));
   const [status, setStatus] = useState<string | null>(null);
+  const { colors } = useTheme();
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
 
   const change = async (patch: Partial<Settings>) => {
@@ -131,7 +134,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <Screen title="Ajustes">
+    <Screen title="Ajustes" accessory={<TabAccount />}>
       <PermissionBanners
         permission={permission}
         exactAlarms={exactAlarms}
@@ -192,7 +195,10 @@ export default function SettingsScreen() {
             : "Opcional. Ligue para receber lembretes de beber água e marcar os copos na tela Hoje."
         }>
         <View style={styles.row}>
-          <AppText variant="body">Lembretes de água</AppText>
+          <View style={styles.label}>
+            <Icon ios="drop.fill" android="water_drop" color={colors.accent} />
+            <AppText variant="body">Lembretes de água</AppText>
+          </View>
           <ToggleSwitch
             value={draft.water.enabled}
             onValueChange={(enabled) => void change({ water: { ...draft.water, enabled } })}
@@ -236,6 +242,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  label: { flexDirection: "row", alignItems: "center", gap: 10 },
   value: { flex: 1, textAlign: "right", marginLeft: 16 },
   status: { marginTop: 4 },
   nameInput: { flex: 1, textAlign: "right", fontSize: 17, minHeight: HIT, marginLeft: 16 },

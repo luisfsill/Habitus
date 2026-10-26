@@ -10,6 +10,7 @@ import { currentStreak, doneCount, monthGrid, weekPercent } from "@/domain/histo
 import { dayKey } from "@/domain/time";
 import { TRICK_COUNT } from "@/domain/tricks";
 import { useAppState } from "@/state/app-state";
+import { TabAccount } from "@/state/tab-account";
 import { HIT, space, useTheme } from "@/theme";
 
 const MONTHS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -43,7 +44,7 @@ export default function HistoryScreen() {
   const todayKey = dayKey(today);
 
   return (
-    <Screen title="Histórico">
+    <Screen title="Histórico" accessory={<TabAccount />}>
       <StatColumns
         stats={[
           { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },

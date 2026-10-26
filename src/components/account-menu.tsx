@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ComponentRef, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
@@ -37,13 +37,32 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props)
   const { colors, scheme } = useTheme();
   const fill = backdrops[scheme];
   const [open, setOpen] = useState(false);
+  const wrap = useRef<ComponentRef<typeof View>>(null);
+
+  // Web only (this menu lives in the web layouts): a click outside, or Escape, closes it.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    const onPointer = (event: PointerEvent) => {
+      if (!(wrap.current as unknown as HTMLElement | null)?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   const choose = (item: AccountMenuItem) => {
     setOpen(false);
     item.onPress();
   };
 
   return (
-    <View style={styles.wrap}>
+    <View ref={wrap} style={styles.wrap}>
       <Pressable
         onPress={() => setOpen((o) => !o)}
         accessibilityRole="button"

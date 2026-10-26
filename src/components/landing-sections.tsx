@@ -27,7 +27,7 @@ const FEATURES = [
   { icon: { ios: "trophy", android: "emoji_events" }, title: "XP, faixas e medalhas", text: "Cada dica feita conta. Suba de nível e mantenha a sequência." },
   { icon: { ios: "calendar", android: "calendar_month" }, title: "Histórico do mês", text: "Veja num calendário os dias completos e os parciais." },
   { icon: { ios: "icloud", android: "cloud_done" }, title: "Na sua conta", text: "Seu progresso fica salvo e aparece em qualquer aparelho." },
-  { icon: { ios: "moon", android: "dark_mode" }, title: "Claro ou escuro", text: "Escolha a aparência ou deixe seguir o seu aparelho." },
+  { icon: { ios: "drop.fill", android: "water_drop" }, title: "Lembrete de água", text: "Defina sua meta de copos e receba avisos para beber água." },
   { icon: { ios: "iphone", android: "smartphone" }, title: "Sem loja de apps", text: "Instale pelo navegador do celular em poucos segundos." },
 ] as const;
 

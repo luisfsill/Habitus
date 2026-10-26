@@ -9,6 +9,7 @@ import { StatColumns } from "@/components/stat-columns";
 import type { BadgeState } from "@/domain/achievements";
 import { BELTS, nextBelt, XP_RULES } from "@/domain/gamification";
 import { useAppState } from "@/state/app-state";
+import { TabAccount } from "@/state/tab-account";
 import { radius, space, useTheme } from "@/theme";
 
 function Badge({ badge }: { badge: BadgeState }) {
@@ -48,7 +49,7 @@ export default function AchievementsScreen() {
   const unlocked = badges.filter((b) => b.unlocked).length;
 
   return (
-    <Screen title="Conquistas" subtitle={`${stats.xp} XP no total`}>
+    <Screen title="Conquistas" subtitle={`${stats.xp} XP no total`} accessory={<TabAccount />}>
       <LevelCard progress={progress} />
 
       <StatColumns

@@ -1,7 +1,6 @@
 import { router } from "expo-router";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { AccountMenu } from "@/components/account-menu";
 import { AppText } from "@/components/app-text";
 import { InstallCard } from "@/components/install-card";
 import { PermissionBanners } from "@/components/permission-banner";
@@ -22,10 +21,9 @@ import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
-import { useAuth } from "@/state/auth";
 import { useInstallPrompt } from "@/state/use-install-prompt";
 import { useNow } from "@/state/use-now";
-import { useSignOut } from "@/state/use-sign-out";
+import { TabAccount } from "@/state/tab-account";
 import { space } from "@/theme";
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -36,28 +34,6 @@ function title(now: Date, profile: Profile | null): string {
 
 function dateLine(d: Date): string {
   return `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]}`;
-}
-
-function TodayAccount({ profile }: { profile: Profile | null }) {
-  const { updateSettings } = useAppState();
-  const { session } = useAuth();
-  const signOut = useSignOut();
-  // On a phone the name and e-mail would push the greeting onto three lines.
-  const compact = useWindowDimensions().width < 520;
-  const email = session?.user.email;
-  if (!email) return null;
-  return (
-    <AccountMenu
-      name={profile?.name || email}
-      email={email}
-      compact={compact}
-      onTheme={(theme) => void updateSettings({ theme })}
-      menu={[
-        { label: "Renovar plano", icon: { ios: "arrow.clockwise.circle", android: "autorenew" }, onPress: () => router.push("/renovar") },
-        { label: "Sair", icon: { ios: "rectangle.portrait.and.arrow.right", android: "logout" }, destructive: true, onPress: () => void signOut() },
-      ]}
-    />
-  );
 }
 
 /** Today's water row, only when the person turned water reminders on. */
@@ -99,7 +75,7 @@ export default function TodayScreen() {
   const { level, belt } = progress;
 
   return (
-    <Screen title={title(now, profile)} subtitle={dateLine(now)} accessory={<TodayAccount profile={profile} />}>
+    <Screen title={title(now, profile)} subtitle={dateLine(now)} accessory={<TabAccount />}>
       <TrialBanner profile={profile} now={now} onSeePlans={() => router.push("/renovar")} />
       {install.mode !== "hidden" && (
         <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
