@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 import { AppText } from "@/components/app-text";
 import { AuthField } from "@/components/auth-field";
@@ -20,7 +20,7 @@ function Tabs({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => void }
   const [width, setWidth] = useState(0);
   const indicator = useAnimatedStyle(() => ({
     width: width / 2 - 3,
-    transform: [{ translateX: withSpring(mode === "signup" ? 0 : width / 2, { damping: 20, stiffness: 220 }) }],
+    transform: [{ translateX: withTiming(mode === "signup" ? 0 : width / 2, { duration: 250, easing: Easing.out(Easing.cubic) }) }],
   }));
   return (
     <View style={styles.tabs} accessibilityRole="tablist" onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
@@ -138,11 +138,12 @@ export default function AuthScreen() {
         </AppText>
       }>
       <Tabs mode={mode} onChange={switchMode} />
-      <Animated.View layout={LinearTransition.springify().damping(18)} style={styles.fields}>
+      <Animated.View layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
+      <Animated.View key={mode} style={[styles.fields, swap]}>
         {signup && (
-          <Animated.View entering={FadeIn} exiting={FadeOut}>
+          <View>
             <AuthField label="Nome" value={name} onChangeText={(t) => setName(t.slice(0, 80))} autoComplete="name" autoCapitalize="words" textContentType="name" error={errorOf("name")} />
-          </Animated.View>
+          </View>
         )}
         <AuthField
           label="E-mail"
@@ -170,15 +171,13 @@ export default function AuthScreen() {
           </Animated.View>
         )}
         {signup ? (
-          <Animated.View entering={FadeIn} exiting={FadeOut}>
-            <Consent checked={accepted} onToggle={() => setAccepted((a) => !a)} />
-          </Animated.View>
+          <Consent checked={accepted} onToggle={() => setAccepted((a) => !a)} />
         ) : (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.forgot}>
+          <View style={styles.forgot}>
             <AppText variant="footnote" color="accentText" accessibilityRole="link" onPress={() => router.push("/auth/forgot")}>
               Esqueci minha senha
             </AppText>
-          </Animated.View>
+          </View>
         )}
         {errorOf("form") && (
           <AppText variant="footnote" style={styles.formError} accessibilityLiveRegion="polite">
@@ -193,9 +192,21 @@ export default function AuthScreen() {
           glow
         />
       </Animated.View>
+      </Animated.View>
     </AuthShell>
   );
 }
+
+// Remounted per mode: the form comes back from a soft blur (blur is web-only; native gets fade + scale).
+// Plain object: StyleSheet.create on web rejects Reanimated's CSS animation props.
+const swap = {
+  animationName: {
+    from: { opacity: 0, transform: [{ scale: 0.97 }], ...Platform.select({ web: { filter: "blur(6px)" } }) },
+    to: { opacity: 1, transform: [{ scale: 1 }], ...Platform.select({ web: { filter: "blur(0px)" } }) },
+  },
+  animationDuration: "250ms",
+  animationTimingFunction: "ease-out",
+} as const;
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

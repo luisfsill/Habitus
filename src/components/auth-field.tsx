@@ -39,6 +39,7 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
     <View>
       <Animated.View style={[styles.box, { borderColor: border, shadowColor: colors.accent }, boxStyle]}>
         <Animated.Text
+          pointerEvents="none"
           style={[type.callout, styles.label, { color: focused ? colors.accentText : colors.secondaryLabel }, labelStyle]}
           numberOfLines={1}>
           {label}

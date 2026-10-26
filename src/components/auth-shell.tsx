@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,13 +20,15 @@ interface Props {
 /** Night-sky page with the title on top and a frosted card holding the form. */
 export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
+  // Phones keep the card low (thumb reach); wide screens center it.
+  const wide = useWindowDimensions().width >= 768;
   return (
     <View style={styles.root}>
       <HorizonBackground />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.content, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
+          contentContainerStyle={[styles.content, wide && styles.centered, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
           <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
             {title}
             {subtitle}
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000000" },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "flex-end", gap: space.xl, paddingHorizontal: space.lg, width: "100%", maxWidth: 460, alignSelf: "center" },
+  centered: { justifyContent: "center" },
   header: { gap: space.sm, paddingHorizontal: space.xs },
   cardShadow: { borderRadius: radius.lg + 4, shadowColor: "#3D7BFF", shadowOpacity: 0.25, shadowRadius: 40, shadowOffset: { width: 0, height: 0 } },
   card: {
