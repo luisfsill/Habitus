@@ -63,6 +63,13 @@
           #status-bar {
             display: block;
           }
+          /* Edge to edge: with a translucent status bar, 100% height stops one inset short of the screen bottom.
+             A fixed box uses the full screen. */
+          #root {
+            position: fixed;
+            inset: 0;
+            height: auto;
+          }
         }
       }
       /* Browser autofill paints saved e-mails/passwords on a light-blue box; keep the app's own field colours. */

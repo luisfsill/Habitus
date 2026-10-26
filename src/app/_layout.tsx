@@ -127,11 +127,12 @@ function RootStack() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
     const bar = document.getElementById("status-bar");
     if (!bar) return;
-    const night = !signedIn;
-    bar.style.backgroundColor = night ? "#000000" : colors.background;
-    bar.style.backgroundImage = night ? "none" : backdrops[scheme].backgroundImage;
-    bar.style.backgroundSize = "100vw 100vh";
-  }, [colors.background, scheme, signedIn]);
+    // shortcut: accent-coloured strip to see on the device whether it renders and how tall it is; restore
+    // `night ? "#000000" : colors.background` + the backdrop gradient once the iOS 27 blur is sorted.
+    if (isIPhone() && isStandalone()) bar.style.display = "block";
+    bar.style.backgroundColor = colors.accent;
+    bar.style.backgroundImage = "none";
+  }, [colors.background, colors.accent, scheme, signedIn]);
 
   if (!ready) return null;
 
