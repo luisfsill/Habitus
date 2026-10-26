@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming } from "react-native-reanimated";
@@ -91,7 +91,9 @@ function validate(mode: Mode, { name, email, password, accepted }: Form): FieldE
 
 export default function AuthScreen() {
   const auth = useAuth();
-  const [mode, setMode] = useState<Mode>("signup");
+  // The landing page links here with ?modo=entrar for people who already have an account.
+  const { modo } = useLocalSearchParams<{ modo?: string }>();
+  const [mode, setMode] = useState<Mode>(modo === "entrar" ? "signin" : "signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

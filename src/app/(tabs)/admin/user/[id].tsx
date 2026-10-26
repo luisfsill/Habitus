@@ -1,35 +1,30 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Linking, Platform, StyleSheet, Switch, View } from "react-native";
+import { Linking, Pressable, StyleSheet, TextInput, View } from "react-native";
 
+import { ActionRow } from "@/components/action-row";
 import { formatDate } from "@/components/admin-user-row";
 import { AppText } from "@/components/app-text";
-import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
-import { SegmentedControl } from "@/components/segmented-control";
-import { TextField } from "@/components/text-field";
-import { displayName, endOfDaySaoPaulo, extendAccess, type Profile, type Role, statusLabel } from "@/domain/access";
+import { StatColumns } from "@/components/stat-columns";
+import { ToggleSwitch } from "@/components/toggle-switch";
+import { accessStatus, displayName, endOfDaySaoPaulo, extendAccess, parseBrDate, type Profile, statusLabel } from "@/domain/access";
 import { isValidEmail } from "@/domain/auth-rules";
 import { deleteUser, listProfiles, resetPassword, setAccess, setRole, updateEmail, updateName } from "@/services/admin";
 import { useAuth } from "@/state/auth";
-import { HIT, space, useTheme } from "@/theme";
+import { confirm } from "@/state/use-sign-out";
+import { HIT, type Palette, radius, space, type, useTheme } from "@/theme";
 
-const ROLES: readonly { value: Role; label: string }[] = [
-  { value: "user", label: "Usuário comum" },
-  { value: "admin", label: "Administrador" },
-];
+const GRANTS = [30, 90, 365] as const;
 
-function confirm(title: string, message: string, action: string, onYes: () => void) {
-  if (Platform.OS === "web") {
-    if (globalThis.confirm?.(`${title}\n\n${message}`)) onYes();
-    return;
-  }
-  Alert.alert(title, message, [
-    { text: "Cancelar", style: "cancel" },
-    { text: action, style: "destructive", onPress: onYes },
-  ]);
-}
+const STATUS_COLOR: Record<ReturnType<typeof accessStatus>, keyof Palette> = {
+  admin: "label",
+  unlimited: "accentText",
+  active: "successText",
+  trial: "warm",
+  expired: "danger",
+};
 
 function newPassword(p: Profile, report: (message: string) => void) {
   resetPassword(p.id)
@@ -51,16 +46,96 @@ function removeAccount(p: Profile, report: (message: string) => void) {
   );
 }
 
-/** Everything about one account: name, e-mail, exact validity, role, password, deletion. */
+/** A label on the left and an editable value on the right; `onApply` adds an "Aplicar" button once there is text. */
+function FieldRow({ label, onApply, ...input }: { label: string; onApply?: () => void } & React.ComponentProps<typeof TextInput>) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.row}>
+      <AppText variant="body">{label}</AppText>
+      <TextInput
+        accessibilityLabel={label}
+        placeholderTextColor={colors.secondaryLabel}
+        returnKeyType="done"
+        onSubmitEditing={onApply}
+        {...input}
+        style={[type.body, styles.input, { color: colors.label }]}
+      />
+      {onApply && input.value ? (
+        <Pressable onPress={onApply} accessibilityRole="button" accessibilityLabel={`Aplicar ${label.toLowerCase()}`} hitSlop={8}>
+          <AppText variant="body" color="accentText" style={styles.bold}>
+            Aplicar
+          </AppText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/** Grants, custom days or date, unlimited switch and removal for one account. */
+function AccessSection({ p, now, run, report }: { p: Profile; now: Date; run: (action: () => Promise<unknown>, done: string) => Promise<void>; report: (message: string) => void }) {
+  const { colors } = useTheme();
+  const [days, setDays] = useState("");
+  const [until, setUntil] = useState("");
+  const access = (next: { until: string | null; unlimited: boolean }, done: string) => run(() => setAccess(p.id, { ...next, plan: "paid" }), done);
+  const grant = (n: number) => void access({ until: extendAccess(p.accessUntil, n, now), unlimited: false }, `+${n} dias adicionados.`);
+  const addDays = () => {
+    const n = Number.parseInt(days, 10);
+    if (!Number.isFinite(n) || n < 1) return report("Digite um número de dias (1 ou mais).");
+    grant(n);
+    setDays("");
+  };
+  const setDate = () => {
+    const day = parseBrDate(until);
+    if (!day) return report("Use o formato DD/MM/AAAA, por exemplo 31/12/2026.");
+    void access({ until: endOfDaySaoPaulo(day), unlimited: false }, `Válido até ${until.trim()}.`);
+    setUntil("");
+  };
+
+  return (
+    <Section title="Acesso" footer="Os dias somam à validade atual. Uma data nova substitui a validade.">
+      <View style={styles.grants}>
+        {GRANTS.map((n) => (
+          <Pressable
+            key={n}
+            onPress={() => grant(n)}
+            accessibilityRole="button"
+            accessibilityLabel={`Liberar mais ${n} dias`}
+            style={({ pressed }) => [styles.chip, { backgroundColor: colors.accentSoft, opacity: pressed ? 0.6 : 1 }]}>
+            <AppText variant="subheadline" color="accentText" style={styles.bold}>
+              +{n} dias
+            </AppText>
+          </Pressable>
+        ))}
+      </View>
+      <View>
+        <FieldRow label="Somar dias" value={days} onChangeText={setDays} onApply={addDays} keyboardType="number-pad" placeholder="ex.: 15" />
+        <FieldRow label="Válido até" value={until} onChangeText={setUntil} onApply={setDate} placeholder="DD/MM/AAAA" />
+      </View>
+      <View style={styles.row}>
+        <AppText variant="body">Acesso ilimitado</AppText>
+        <ToggleSwitch
+          value={p.unlimited}
+          onValueChange={(on) => void access({ until: p.accessUntil, unlimited: on }, on ? "Acesso ilimitado." : "Ilimitado desligado.")}
+          accessibilityLabel="Acesso ilimitado"
+        />
+      </View>
+      <ActionRow
+        label="Remover acesso"
+        icon={{ ios: "nosign", android: "block" }}
+        destructive
+        onPress={() => void run(() => setAccess(p.id, { until: now.toISOString(), unlimited: false, plan: p.plan }), "Acesso removido.")}
+      />
+    </Section>
+  );
+}
+
+/** Everything about one account: status at a glance, access, details, role and account actions. */
 export default function AdminUserScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
-  const { colors } = useTheme();
   const [p, setP] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [days, setDays] = useState("");
-  const [until, setUntil] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const self = session?.user.id === id;
 
@@ -99,82 +174,69 @@ export default function AdminUserScreen() {
     );
   }
 
-  const access = (next: { until: string | null; unlimited: boolean }, done: string) =>
-    run(() => setAccess(p.id, { ...next, plan: "paid" }), done);
-  const addDays = () => {
-    const n = Number.parseInt(days, 10);
-    if (!Number.isFinite(n) || n < 1) return setStatus("Digite um número de dias (1 ou mais).");
-    void access({ until: extendAccess(p.accessUntil, n, new Date()), unlimited: false }, `+${n} dias adicionados.`);
-    setDays("");
+  const now = new Date();
+  const saveName = () => {
+    if (name.trim() && name.trim() !== p.name) void run(() => updateName(p.id, name.trim()), "Nome salvo.");
   };
-  const setDate = () => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return setStatus("Use o formato AAAA-MM-DD, por exemplo 2026-12-31.");
-    void access({ until: endOfDaySaoPaulo(until), unlimited: false }, `Válido até ${until.split("-").reverse().join("/")}.`);
+  const saveEmail = () => {
+    if (email.trim() === p.email) return;
+    if (!isValidEmail(email)) return setStatus("E-mail inválido.");
+    void run(() => updateEmail(p.id, email.trim()), "E-mail trocado.");
   };
+
   return (
     <Screen title={displayName(p)} subtitle={`Conta criada em ${formatDate(p.createdAt)}`} underHeader>
+      <StatColumns
+        stats={[
+          { value: statusLabel(p, now), label: "status", color: STATUS_COLOR[accessStatus(p, now)] },
+          { value: p.unlimited ? "∞" : formatDate(p.accessUntil), label: "válido até" },
+          { value: p.role === "admin" ? "Admin" : "Usuário", label: "cargo" },
+        ]}
+      />
       {status && (
         <AppText variant="subheadline" color="accentText" selectable accessibilityLiveRegion="polite">
           {status}
         </AppText>
       )}
-      <Section title="Dados">
-        <TextField label="Nome" value={name} onChangeText={setName} autoCapitalize="words" />
-        <PrimaryButton label="Salvar nome" variant="tinted" onPress={() => void run(() => updateName(p.id, name), "Nome salvo.")} />
-        <TextField label="E-mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <PrimaryButton
-          label="Salvar e-mail"
-          variant="tinted"
-          onPress={() => (isValidEmail(email) ? void run(() => updateEmail(p.id, email.trim()), "E-mail trocado.") : setStatus("E-mail inválido."))}
-        />
+
+      <AccessSection p={p} now={now} run={run} report={setStatus} />
+
+      <Section title="Dados" footer="As mudanças salvam ao sair do campo.">
+        <View>
+          <FieldRow label="Nome" value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} autoCapitalize="words" placeholder="Nome" />
+          <FieldRow label="E-mail" value={email} onChangeText={setEmail} onBlur={saveEmail} onSubmitEditing={saveEmail} keyboardType="email-address" autoCapitalize="none" placeholder="email@exemplo.com" />
+        </View>
       </Section>
 
-      <Section title="Acesso" footer={`Status: ${statusLabel(p, new Date())}. Validade atual: ${p.unlimited ? "ilimitado" : formatDate(p.accessUntil)}.`}>
-        <View style={styles.inline}>
-          <TextField label="Adicionar dias" value={days} onChangeText={setDays} keyboardType="number-pad" placeholder="ex.: 15" />
-          <PrimaryButton label="Adicionar" variant="tinted" onPress={addDays} />
-        </View>
-        <View style={styles.inline}>
-          <TextField label="Válido até (AAAA-MM-DD)" value={until} onChangeText={setUntil} placeholder="2026-12-31" />
-          <PrimaryButton label="Definir" variant="tinted" onPress={setDate} />
-        </View>
+      <Section title="Cargo" footer={self ? "Você não pode mudar o seu próprio cargo." : "Administradores veem o painel Admin."}>
         <View style={styles.row}>
-          <AppText variant="body">Acesso ilimitado</AppText>
-          <Switch
-            value={p.unlimited}
-            onValueChange={(on) => void access({ until: p.accessUntil, unlimited: on }, on ? "Acesso ilimitado." : "Ilimitado desligado.")}
-            trackColor={{ true: colors.accent, false: colors.switchOff }}
-            thumbColor="#FFFFFF"
-            {...{ activeThumbColor: "#FFFFFF" }}
-            accessibilityLabel="Acesso ilimitado"
-          />
+          <AppText variant="body">Administrador</AppText>
+          {self ? (
+            <AppText variant="body" color="secondaryLabel">Sim</AppText>
+          ) : (
+            <ToggleSwitch
+              value={p.role === "admin"}
+              onValueChange={(on) => void run(() => setRole(p.id, on ? "admin" : "user"), on ? "Agora é administrador." : "Agora é usuário comum.")}
+              accessibilityLabel="Administrador"
+            />
+          )}
         </View>
-        <PrimaryButton
-          label="Remover acesso"
-          variant="plain"
-          destructive
-          onPress={() => void run(() => setAccess(p.id, { until: new Date().toISOString(), unlimited: false, plan: p.plan }), "Acesso removido.")}
-        />
-      </Section>
-
-      <Section title="Cargo" footer={self ? "Você não pode mudar o seu próprio cargo." : undefined}>
-        <SegmentedControl
-          label="Cargo"
-          options={ROLES}
-          value={p.role}
-          onChange={(role) => (self ? undefined : void run(() => setRole(p.id, role), role === "admin" ? "Agora é administrador." : "Agora é usuário comum."))}
-        />
       </Section>
 
       <Section title="Conta">
-        <PrimaryButton label="Gerar nova senha provisória" variant="tinted" onPress={() => newPassword(p, setStatus)} />
-        {!self && <PrimaryButton label="Excluir conta" variant="plain" destructive onPress={() => removeAccount(p, setStatus)} />}
+        <View>
+          <ActionRow label="Gerar nova senha provisória" icon={{ ios: "key", android: "key" }} onPress={() => newPassword(p, setStatus)} />
+          {!self && <ActionRow label="Excluir conta" icon={{ ios: "trash", android: "delete" }} destructive onPress={() => removeAccount(p, setStatus)} />}
+        </View>
       </Section>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  inline: { flexDirection: "row", alignItems: "flex-end", gap: space.sm, flexWrap: "wrap" },
-  row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md },
+  input: { flex: 1, textAlign: "right", minHeight: HIT },
+  grants: { flexDirection: "row", gap: space.sm },
+  chip: { flex: 1, minHeight: 40, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" },
+  bold: { fontWeight: "600" },
 });

@@ -8,6 +8,8 @@ export interface Trick {
   summary: string;
   /** Full instruction shown on the trick screen. */
   instruction: string;
+  /** "A ideia por trás": the idea behind the tip, told as an idea, never as a proven effect (AGENTS.md). */
+  why?: string;
   /** Notification body; the title is built by {@link notificationTitle}. */
   notificationBody: string;
   kind: TrickKind;
@@ -25,6 +27,7 @@ export const TRICKS: readonly Trick[] = [
     summary: "Sorria por alguns segundos.",
     instruction:
       "Sorria por alguns segundos, mesmo sem vontade. Relaxe os ombros, solte o rosto e deixe o sorriso aparecer.",
+    why: "Seu cérebro lê o sorriso como sinal de que está tudo bem e entra no clima, mesmo que você tenha começado sem vontade.",
     notificationBody: "Pare um instante e sorria por alguns segundos.",
     kind: "simple",
     symbol: { ios: "face.smiling", android: "sentiment_satisfied" },
@@ -35,6 +38,7 @@ export const TRICKS: readonly Trick[] = [
     summary: "Fique em pé, firme, por 2 minutos.",
     instruction:
       "Fique em pé, firme, abra o peito e respire profundamente. Mantenha a postura até o fim do timer.",
+    why: "O corpo ensina a mente. Em 120 segundos de postura aberta e respiração funda, você troca a tensão pela sensação de força.",
     notificationBody: "Levante-se e abra o peito por 2 minutos.",
     kind: "timer",
     durationSeconds: 120,
@@ -46,6 +50,7 @@ export const TRICKS: readonly Trick[] = [
     summary: "Diga suas metas no presente.",
     instruction:
       "Na frente do espelho, diga suas metas em voz alta, no presente, como se já fossem reais.",
+    why: "Dita no presente (“sou saudável, sou abundante”), a meta soa como uma ordem para o cérebro, que passa a buscar caminhos para cumpri-la.",
     notificationBody: "Vá até um espelho e diga suas metas em voz alta.",
     kind: "affirmations",
     symbol: { ios: "quote.bubble", android: "record_voice_over" },
@@ -56,6 +61,7 @@ export const TRICKS: readonly Trick[] = [
     summary: "Olhe fixamente para um objeto por 2 minutos.",
     instruction:
       "Escolha um objeto e concentre-se totalmente nele. Quando a mente se distrair, volte com gentileza ao objeto.",
+    why: "Fixar o olhar em um só ponto acalma o ruído da mente e coloca você em modo de concentração, quase sem perceber.",
     notificationBody: "Escolha um objeto e foque nele por 2 minutos.",
     kind: "timer",
     durationSeconds: 120,
@@ -67,6 +73,7 @@ export const TRICKS: readonly Trick[] = [
     summary: "Agradeça pelo que ainda está por vir.",
     instruction:
       "Agradeça pelo que você ainda não tem, como se já estivesse aqui. Escreva uma frase curta, se quiser.",
+    why: "Agradecer pelo que está por vir, como se já estivesse aqui, cria uma ordem interna que muda suas decisões, seu comportamento e seu destino.",
     notificationBody: "Agradeça por algo que ainda está a caminho.",
     kind: "gratitude",
     symbol: { ios: "heart.text.square", android: "volunteer_activism" },
@@ -99,5 +106,5 @@ export function isTrickIndex(value: unknown): value is TrickIndex {
 }
 
 export function notificationTitle(trick: Trick): string {
-  return `Hora do truque ${trick.index + 1}: ${trick.title}`;
+  return `Hora da dica ${trick.index + 1}: ${trick.title}`;
 }

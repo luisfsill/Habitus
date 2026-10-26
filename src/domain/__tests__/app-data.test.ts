@@ -24,7 +24,7 @@ describe("sanitizeData", () => {
       gratitude: { "2026-10-24": " Obrigado ", "2026-10-25": "" },
     });
     expect(data.onboarded).toBe(true);
-    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00", theme: "auto" });
+    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00", theme: "auto", water: { enabled: false, goal: 8, everyMinutes: 90 } });
     expect(data.sleepLog).toEqual({});
     expect(data.completions).toEqual({ "2026-10-24": [0, 2] });
     expect(data.gratitude).toEqual({ "2026-10-24": "Obrigado" });

@@ -10,7 +10,7 @@
 | Quero mudar… | Arquivo |
 |---|---|
 | Regra de horários / validação | `src/domain/schedule.ts` + `src/domain/__tests__/schedule.test.ts` |
-| Texto dos truques e notificações | `src/domain/tricks.ts` |
+| Texto das dicas e notificações | `src/domain/tricks.ts` |
 | Quais notificações são agendadas | `src/domain/notification-plan.ts` |
 | Como são agendadas no aparelho | `src/services/notifications.ts` |
 | "Feito"/"Adiar" | `src/domain/notification-actions.ts`, `src/services/notification-responses.ts` |
@@ -19,7 +19,7 @@
 
 ## Testar notificações rapidamente
 
-Ajustes → "Simular um dia em 5 minutos": agenda a abertura em 10 s e os 5 truques nos centros das fatias de 1 min (40 s, 100 s, 160 s, 220 s, 280 s). "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
+Ajustes → "Simular um dia em 5 minutos": agenda a abertura em 10 s e as 5 dicas nos centros das fatias de 1 min (40 s, 100 s, 160 s, 220 s, 280 s). "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
 
 ## Armadilhas conhecidas
 

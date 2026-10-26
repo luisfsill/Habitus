@@ -10,6 +10,7 @@ import { Section } from "@/components/section";
 import { StatColumns } from "@/components/stat-columns";
 import { TimelineRow } from "@/components/timeline-row";
 import { TrialBanner } from "@/components/trial-banner";
+import { WaterRow } from "@/components/water-row";
 import { WEEKDAY_NAMES } from "@/components/weekday-picker";
 import { firstName, type Profile } from "@/domain/access";
 import { currentStreak, doneCount, trickStatuses } from "@/domain/history";
@@ -17,6 +18,7 @@ import { scheduleFor } from "@/domain/app-data";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
 import { atMinutes, dayKey, formatCountdown, minutesOfDay, type Weekday } from "@/domain/time";
 import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
+import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
@@ -55,11 +57,22 @@ function TodayAccount({ profile }: { profile: Profile | null }) {
   );
 }
 
+/** Today's water row, only when the person turned water reminders on. */
+function TodayWater({ today }: { today: string }) {
+  const { data, addWater } = useAppState();
+  if (!data.settings.water.enabled) return null;
+  return (
+    <Section title="Água">
+      <WaterRow cups={cupsOn(data.water, today)} goal={data.settings.water.goal} onAdd={() => void addWater(1)} onRemove={() => void addWater(-1)} />
+    </Section>
+  );
+}
+
 function summary(count: number, activeToday: boolean): string {
-  if (count >= TRICK_COUNT) return "Dia completo! Você fez todos os truques de hoje.";
+  if (count >= TRICK_COUNT) return "Dia completo! Você fez todas as dicas de hoje.";
   if (!activeToday) return "Dia de descanso. Você pode praticar mesmo assim.";
   const left = TRICK_COUNT - count;
-  return left === 1 ? "Falta 1 truque hoje." : `Faltam ${left} truques hoje.`;
+  return left === 1 ? "Falta 1 dica hoje." : `Faltam ${left} dicas hoje.`;
 }
 
 export default function TodayScreen() {
@@ -98,7 +111,7 @@ export default function TodayScreen() {
       <View style={styles.summary}>
         <StatColumns
           stats={[
-            { value: `${count}/${TRICK_COUNT}`, label: "hoje", color: count >= TRICK_COUNT ? "successText" : "label", accessibilityLabel: `Hoje: ${count} de ${TRICK_COUNT} truques` },
+            { value: `${count}/${TRICK_COUNT}`, label: "hoje", color: count >= TRICK_COUNT ? "successText" : "label", accessibilityLabel: `Hoje: ${count} de ${TRICK_COUNT} dicas` },
             { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
             {
               value: String(level.level),
@@ -112,6 +125,8 @@ export default function TodayScreen() {
           {summary(count, activeToday)}
         </AppText>
       </View>
+
+      <TodayWater today={today} />
 
       <Section title="Linha do tempo">
         {TRICKS.map((trick, i) => (

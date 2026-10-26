@@ -107,7 +107,7 @@ export default function TrickScreen() {
 
   if (!isTrickIndex(index)) {
     return (
-      <Screen underHeader title="Truque não encontrado">
+      <Screen underHeader title="Dica não encontrada">
         <PrimaryButton label="Voltar" onPress={leave} />
       </Screen>
     );
@@ -125,13 +125,13 @@ export default function TrickScreen() {
   return (
     <Screen
       underHeader
-      subtitle={`Truque ${index + 1} de ${TRICKS.length}`}
+      subtitle={`Dica ${index + 1} de ${TRICKS.length}`}
       title={trick.title}
       footer={
         <PrimaryButton
-          label={done ? "Concluído hoje ✓" : "Concluir"}
+          label={done ? "Concluída hoje ✓" : "Concluir"}
           disabled={done}
-          accessibilityHint="Marca este truque como feito hoje"
+          accessibilityHint="Marca esta dica como feita hoje"
           onPress={() => void finish()}
         />
       }>
@@ -147,6 +147,16 @@ export default function TrickScreen() {
         onGratitude={setGratitudeText}
         onCommitGratitude={() => void setGratitude(gratitude)}
       />
+      {trick.why && (
+        <View>
+          <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
+            A IDEIA POR TRÁS
+          </AppText>
+          <AppText variant="body" color="secondaryLabel">
+            {trick.why}
+          </AppText>
+        </View>
+      )}
     </Screen>
   );
 }

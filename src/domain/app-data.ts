@@ -3,6 +3,7 @@ import type { Completions } from "./history";
 import { computeSchedule, DEFAULT_END, DEFAULT_START, type ScheduleResult } from "./schedule";
 import { ALL_WEEKDAYS, parseTime, type Weekday } from "./time";
 import { BEDTIME_TRICK, DEFAULT_AFFIRMATIONS, isTrickIndex } from "./tricks";
+import { DEFAULT_WATER, sanitizeWater, sanitizeWaterLog, type WaterDay, type WaterSettings } from "./water";
 
 export type ThemePreference = "auto" | "light" | "dark";
 const THEMES: readonly ThemePreference[] = ["auto", "light", "dark"];
@@ -17,6 +18,8 @@ export interface Settings {
   theme: ThemePreference;
   /** The bedtime the user told us ("HH:MM"); the starting point for learning. */
   bedtime: string;
+  /** Optional water reminders; off unless the person turns them on. */
+  water: WaterSettings;
 }
 
 export interface AppData {
@@ -28,6 +31,8 @@ export interface AppData {
   gratitude: Record<string, string>;
   /** Night dayKey → night minutes when the bedtime trick was done. */
   sleepLog: Record<string, number>;
+  /** dayKey → cups of water logged that day and when that count last changed. */
+  water: Record<string, WaterDay>;
   /** When `settings` last changed (ms); decides which device's settings win a sync. */
   settingsUpdatedAt: number;
   /** When "Resetar dados" last ran (ms); older copies on other devices are dropped in a sync. */
@@ -51,10 +56,12 @@ export function defaultData(): AppData {
       sound: true,
       theme: "auto",
       bedtime: DEFAULT_BEDTIME,
+      water: { ...DEFAULT_WATER },
     },
     completions: {},
     gratitude: {},
     sleepLog: {},
+    water: {},
     settingsUpdatedAt: 0,
     resetAt: 0,
     owner: null,
@@ -90,6 +97,7 @@ function sanitizeSettings(raw: unknown, fallback: Settings): Settings {
     sound: typeof raw.sound === "boolean" ? raw.sound : fallback.sound,
     theme: THEMES.includes(raw.theme as ThemePreference) ? (raw.theme as ThemePreference) : fallback.theme,
     bedtime: typeof raw.bedtime === "string" && parseBedtime(raw.bedtime) !== null ? raw.bedtime : fallback.bedtime,
+    water: sanitizeWater(raw.water, fallback.water),
   };
 }
 
@@ -138,6 +146,7 @@ export function sanitizeData(raw: unknown): AppData {
     completions: sanitizeCompletions(raw.completions),
     gratitude: sanitizeGratitude(raw.gratitude),
     sleepLog: sanitizeSleepLog(raw.sleepLog),
+    water: sanitizeWaterLog(raw.water),
     settingsUpdatedAt: timestamp(raw.settingsUpdatedAt),
     resetAt: timestamp(raw.resetAt),
     owner: typeof raw.owner === "string" ? raw.owner : null,

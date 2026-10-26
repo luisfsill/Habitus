@@ -22,12 +22,13 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 ## Agendamento
 
-- `computeSchedule(start, end, days, bedtime?)` (`src/domain/schedule.ts`) valida e devolve os minutos de abertura, dos 5 truques do dia e do 6º (hora de dormir, em "minutos noturnos": 00:30 = 24:30).
-- `estimateBedtime` (`src/domain/bedtime.ts`) aprende a hora de dormir a partir de `settings.bedtime` (resposta do usuário) e de `sleepLog` (noite → horário em que o truque 6 foi concluído, gravado por `withCompletion`). `scheduleFor(data, now)` junta tudo e é usado pela tela Hoje e pelo reagendamento.
-- `planNotifications(schedule, now, { completed })` (`src/domain/notification-plan.ts`) gera as notificações futuras dos próximos 7 dias, com ids estáveis (`AAAA-MM-DD:trick:i`), pulando truques já concluídos, com teto de 60.
+- `computeSchedule(start, end, days, bedtime?)` (`src/domain/schedule.ts`) valida e devolve os minutos de abertura, das 5 dicas do dia e da 6ª (hora de dormir, em "minutos noturnos": 00:30 = 24:30).
+- `estimateBedtime` (`src/domain/bedtime.ts`) aprende a hora de dormir a partir de `settings.bedtime` (resposta do usuário) e de `sleepLog` (noite → horário em que a dica 6 foi concluída, gravado por `withCompletion`). `scheduleFor(data, now)` junta tudo e é usado pela tela Hoje e pelo reagendamento.
+- `planNotifications(schedule, now, { completed })` (`src/domain/notification-plan.ts`) gera as notificações futuras dos próximos 7 dias, com ids estáveis (`AAAA-MM-DD:trick:i`), pulando dicas já concluídas, com teto de 60.
 - `rescheduleAll(data)` (`src/services/notifications.ts`) cancela as notificações do plano e agenda o plano de novo, com gatilhos `DATE`. Adiamentos (`…:snooze:…`) e testes (`test:…`) são preservados (`isOneOffId`). Roda ao iniciar, quando o app volta ao primeiro plano e a cada mudança de ajustes.
 - `planTestRun(now, 5)` comprime um "dia" em 5 minutos para teste manual (ignora a janela mínima de propósito) e é somado ao plano real.
-- Concluir um truque cancela a notificação dele e os adiamentos dele no mesmo dia.
+- Concluir uma dica cancela a notificação dela e os adiamentos dela no mesmo dia.
+- Água (`src/domain/water.ts`): `waterMinutes(start, end, every, trickMinutes)` dá os horários do dia, pulando os que caem a menos de 10 min de uma dica. `planNotifications(..., { water })` acrescenta notificações `kind: "water"` (ids `AAAA-MM-DD:water:minutos`) nos dias em que a meta ainda não foi batida e, com a água ligada, usa horizonte de 3 dias (`WATER_HORIZON_DAYS`). `addWater` (estado) reagenda quando a contagem cruza a meta. Tocar no lembrete abre a tela Hoje.
 
 ## Respostas às notificações
 
@@ -46,8 +47,10 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 - `public/index.html` (modo `web.output: single`) liga `manifest.json`, ícones e `sw.js`, e guarda o `beforeinstallprompt` em `window.__habitusInstall` antes do React montar.
 - No celular pelo navegador (`isMobileWeb() && !isStandalone()`), o layout raiz mostra só `InstallGate`: apresentação + "Instalar agora". O app em si roda no computador ou instalado.
+- No computador, sem login e em `/`, o layout raiz mostra `LandingPage` no lugar do Stack (sem o redirecionamento para `/auth`). Os botões fazem navegação completa (`window.location.assign`) para `/auth`, `/auth?modo=entrar` e `/legal/*`. Logado, `/` continua sendo a tela Hoje.
 - `useInstallPrompt` (`src/state`) decide o modo do cartão: `prompt` (Chrome/Edge/Android), `ios` (passo a passo), `manual` ou `hidden` (instalado/dispensado).
-- `src/services/web-reminders.ts` substitui o `expo-notifications` na web. Ele arma timers para as próximas 24 h e mostra a notificação pelo service worker, e `sw.js` abre `/trick/i` ao tocar.
+- Na web, os lembretes vão por Web Push quando possível (`src/services/web-push.ts`): com permissão concedida, `rescheduleAll` inscreve o navegador (chave pública `EXPO_PUBLIC_VAPID_PUBLIC_KEY`) e salva a inscrição em `push_subscriptions`; o plano vira linhas de `push_queue` (`pushRow`, mesmos ids do plano) e cancelar apaga as linhas. A Edge Function `push-send`, chamada de minuto em minuto pelo `pg_cron` (`supabase/push.sql`), envia as linhas vencidas e as apaga; atrasadas mais de 15 min são descartadas; inscrições que respondem 404/410 são removidas. `sw.js` mostra o push e abre `/trick/i` ao tocar. Ao sair da conta, o navegador é desinscrito (`forgetPushDevice`).
+- Sem Web Push (sem chave, sem service worker ou navegador sem suporte), `src/services/web-reminders.ts` arma timers para as próximas 24 h e mostra a notificação pelo service worker; só funciona com o app aberto ou minimizado há pouco.
 - `(tabs)/_layout.web.tsx` usa abas JS na parte de baixo, porque as abas nativas viram uma pílula no topo da página na web.
 
 ## Conta e sincronização
@@ -69,7 +72,7 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 ## Dados
 
-Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, settingsUpdatedAt, resetAt, owner, completions, gratitude, sleepLog }`, o mesmo JSON guardado em `user_data.data`. O truque 6 concluído depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
+Uma chave AsyncStorage `habitus:data:v1` com `{ version, onboarded, settings, settingsUpdatedAt, resetAt, owner, completions, gratitude, sleepLog, water }` (`water`: dia → `{ cups, at }`; `settings.water`: `{ enabled, goal, everyMinutes }`). Na sincronização, para cada dia vence a contagem alterada por último (`at`), para um "−1" não ser desfeito (`mergeWaterLog`), o mesmo JSON guardado em `user_data.data`. A dica 6 concluída depois da meia-noite é gravado na noite anterior (`trickDayKey`). Tudo que é lido passa por `sanitizeData`, que descarta campos inválidos sem perder os válidos.
 
 ## Notas de plataforma
 

@@ -21,6 +21,7 @@ import {
 import type { TrickIndex } from "@/domain/tricks";
 
 import { log } from "./log";
+import { ensurePushSubscription, pushActive, queuePush, unqueuePush } from "./web-push";
 import {
   addWebReminders,
   cancelWebReminder,
@@ -29,6 +30,7 @@ import {
   webPermissionState,
 } from "./web-reminders";
 
+// Channel ids keep the old word: renaming them would drop the sound choices Android already saved.
 const CHANNEL_SOUND = "truques";
 const CHANNEL_SILENT = "truques-silencioso";
 
@@ -53,12 +55,12 @@ export async function configureNotifications(): Promise<void> {
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(CHANNEL_SOUND, {
-      name: "Truques do dia",
+      name: "Dicas do dia",
       // Omitting `sound` keeps the system default; "default" is read as a custom file name.
       importance: Notifications.AndroidImportance.HIGH,
     });
     await Notifications.setNotificationChannelAsync(CHANNEL_SILENT, {
-      name: "Truques do dia (sem som)",
+      name: "Dicas do dia (sem som)",
       importance: Notifications.AndroidImportance.HIGH,
       sound: null,
     });
@@ -69,7 +71,7 @@ export async function configureNotifications(): Promise<void> {
   // Android handles them headless through the background task.
   const foreground = Platform.OS === "ios";
   await Notifications.setNotificationCategoryAsync(TRICK_CATEGORY, [
-    { identifier: ACTION_DONE, buttonTitle: "Feito", options: { opensAppToForeground: foreground } },
+    { identifier: ACTION_DONE, buttonTitle: "Feita", options: { opensAppToForeground: foreground } },
     { identifier: ACTION_SNOOZE, buttonTitle: "Adiar 10 min", options: { opensAppToForeground: foreground } },
   ]);
 }
@@ -108,7 +110,7 @@ export function openSystemSettings(): Promise<void> {
 }
 
 async function schedule(item: PlannedNotification): Promise<void> {
-  if (!supported) return addWebReminders([item]);
+  if (!supported) return pushActive() ? queuePush([item]) : addWebReminders([item]);
   const data: NotificationPayload = { kind: item.kind, dayKey: item.dayKey, trickIndex: item.trickIndex };
   await Notifications.scheduleNotificationAsync({
     identifier: item.id,
@@ -128,19 +130,24 @@ async function schedule(item: PlannedNotification): Promise<void> {
 }
 
 async function scheduleAll(items: readonly PlannedNotification[]): Promise<void> {
+  // One request for the whole web push queue instead of one per reminder.
+  if (!supported && pushActive()) return queuePush(items);
   for (const item of items) await schedule(item);
 }
 
 /** Cancels every scheduled notification whose id matches `predicate`. */
 async function cancelWhere(predicate: (id: string) => boolean): Promise<void> {
-  if (!supported) return cancelWebReminder(predicate);
+  if (!supported) {
+    cancelWebReminder(predicate);
+    return unqueuePush(predicate);
+  }
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const ids = scheduled.map((n) => n.identifier).filter(predicate);
   await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
 }
 
 /**
- * Rebuilds the next 7 days from current data, keeping snoozes and test
+ * Rebuilds the next days (7, or 3 with water reminders on) from current data, keeping snoozes and test
  * notifications. Returns how many plan notifications are now pending.
  */
 /** End of the account's access (null: no limit). Set by the app before rescheduling. */
@@ -152,11 +159,19 @@ export function setAccessCutoff(until: Date | null): void {
 
 export async function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
   soundEnabled = data.settings.sound;
+  // Web push first: the server sends the reminders, so they arrive with the PWA closed.
+  // It must be on before clearing, or stale rows (tips done elsewhere) would stay queued.
+  if (!supported && !pushActive() && (await getPermissionState()) === "granted") await ensurePushSubscription();
   await cancelWhere((id) => !isOneOffId(id));
   const result = scheduleFor(data, now);
   if (!data.onboarded || !result.ok) return 0;
   if ((await getPermissionState()) !== "granted") return 0;
-  const plan = planNotifications(result.schedule, now, { completed: completedKeys(data.completions), until: accessCutoff ?? undefined });
+  const { start, end, water } = data.settings;
+  const plan = planNotifications(result.schedule, now, {
+    completed: completedKeys(data.completions),
+    until: accessCutoff ?? undefined,
+    water: { settings: water, start, end, log: data.water },
+  });
   try {
     await scheduleAll(plan);
   } catch (error) {

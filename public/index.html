@@ -13,8 +13,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Habitus" />
-    <!-- The app paints under the iOS status bar; screens pad with the safe-area insets. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Opaque status bar: with black-translucent, iOS 26 lays a blur over the top of the page. Its colour follows theme-color, set from the app theme. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));

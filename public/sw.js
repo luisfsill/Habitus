@@ -1,4 +1,4 @@
-// Habitus service worker: offline fallback and notification taps.
+// Habitus service worker: offline fallback, server push reminders and notification taps.
 // Network-first on purpose, so a new deploy is picked up on the next load.
 const CACHE = "habitus-v1";
 
@@ -16,6 +16,25 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(async () => (await caches.match(request)) || (await caches.match("/"))),
+  );
+});
+
+// Reminders sent by the server (Supabase function push-send) while the app is closed.
+// iOS requires every push to show a notification.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Habitus", {
+      body: data.body || "",
+      icon: "/icon-192.png",
+      tag: data.tag,
+      data: { url: data.url || "/" },
+    }),
   );
 });
 

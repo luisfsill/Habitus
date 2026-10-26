@@ -3,6 +3,7 @@ import {
   MAX_PENDING_NOTIFICATIONS,
   planNotifications,
   planTestRun,
+  pushRow,
   snoozeNotification,
 } from "../notification-plan";
 import { computeSchedule, type DaySchedule } from "../schedule";
@@ -24,6 +25,26 @@ describe("planNotifications", () => {
     expect(plan.length).toBeLessThanOrEqual(64);
   });
 
+  it("with water on, plans 3 days and stays under the iOS cap", () => {
+    const water = { settings: { enabled: true, goal: 8, everyMinutes: 90 }, start: "08:00", end: "16:00", log: {} };
+    const plan = planNotifications(schedule(), saturdayMorning, { water });
+    const waterItems = plan.filter((n) => n.kind === "water");
+    expect(new Set(plan.map((n) => n.dayKey)).size).toBe(3);
+    // Tips are at 08:48, 10:24, 12:00, 13:36 and 15:12: none is within 10 min of these.
+    expect(waterItems.filter((n) => n.dayKey === "2026-10-24").map((n) => formatTime(minutesOfDay(n.date)))).toEqual(["09:30", "11:00", "12:30", "14:00", "15:30"]);
+    expect(plan.length).toBeLessThanOrEqual(64);
+  });
+
+  it("skips water on a day whose goal is met, and when water is off", () => {
+    const settings = { enabled: true, goal: 2, everyMinutes: 90 };
+    const met = planNotifications(schedule(), saturdayMorning, { water: { settings, start: "08:00", end: "16:00", log: { "2026-10-24": { cups: 2, at: 1 } } } });
+    expect(met.some((n) => n.kind === "water" && n.dayKey === "2026-10-24")).toBe(false);
+    expect(met.some((n) => n.kind === "water" && n.dayKey === "2026-10-25")).toBe(true);
+    const off = planNotifications(schedule(), saturdayMorning, { water: { settings: { ...settings, enabled: false }, start: "08:00", end: "16:00", log: {} } });
+    expect(off.some((n) => n.kind === "water")).toBe(false);
+    expect(off).toHaveLength(49);
+  });
+
   it("plans nothing after the access cutoff", () => {
     const until = new Date(2026, 9, 25, 10, 0);
     const plan = planNotifications(schedule(), saturdayMorning, { until });
@@ -35,13 +56,13 @@ describe("planNotifications", () => {
     const [opening] = planNotifications(schedule(), saturdayMorning);
     expect(opening.kind).toBe("opening");
     expect(formatTime(minutesOfDay(opening.date))).toBe("08:00");
-    expect(opening.body).toBe("Bom dia! Hoje você tem 6 truques para fazer. O primeiro chega às 08:48.");
+    expect(opening.body).toBe("Bom dia! Hoje você tem 6 dicas para fazer. A primeira chega às 08:48.");
   });
 
   it("uses the short trick text in the title and body", () => {
     const plan = planNotifications(schedule(), saturdayMorning);
     const powerPose = plan.find((n) => n.trickIndex === 1);
-    expect(powerPose?.title).toBe("Hora do truque 2: Postura de poder");
+    expect(powerPose?.title).toBe("Hora da dica 2: Postura de poder");
     expect(powerPose?.body).toBe("Levante-se e abra o peito por 2 minutos.");
   });
 
@@ -118,5 +139,13 @@ describe("isOneOffId", () => {
     expect(isOneOffId(snoozeNotification("2026-10-24", 2, now).id)).toBe(true);
     expect(planTestRun(now).every((n) => isOneOffId(n.id))).toBe(true);
     expect(planNotifications(schedule(), saturdayMorning).some((n) => isOneOffId(n.id))).toBe(false);
+  });
+});
+
+describe("pushRow", () => {
+  it("turns a planned reminder into a server queue row that opens the right screen", () => {
+    const [opening, tip] = planNotifications(schedule(), saturdayMorning);
+    expect(pushRow(tip)).toEqual({ id: "2026-10-24:trick:0", send_at: tip.date.toISOString(), title: tip.title, body: tip.body, url: "/trick/0" });
+    expect(pushRow(opening).url).toBe("/");
   });
 });

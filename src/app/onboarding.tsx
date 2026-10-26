@@ -82,7 +82,7 @@ function Window({ draft, onChange }: { draft: WindowDraft; onChange: (next: Wind
         <TimeField label="Fim do dia" value={draft.end} onChange={(end) => set({ end })} />
         <BedtimeField value={draft.bedtime} onChange={(bedtime) => set({ bedtime })} />
         <AppText variant="footnote" color="secondaryLabel">
-          O 6º truque chega na hora de dormir. Com o tempo, o Habitus aprende seu horário real pelo momento em que você o conclui.
+          A 6ª dica chega na hora de dormir. Com o tempo, o Habitus aprende seu horário real pelo momento em que você a conclui.
         </AppText>
         <AppText variant="footnote" color="secondaryLabel" style={styles.previewTitle}>
           SEUS HORÁRIOS
@@ -112,14 +112,14 @@ function Permission({ state }: { state: PermissionState }) {
         <AppText variant="body" align="center">
           {state === "denied"
             ? "As notificações estão desativadas. Você pode ativá-las nos Ajustes do aparelho a qualquer momento."
-            : "O Habitus avisa você na hora de cada truque, com uma notificação curta. Nada sai do seu aparelho: tudo é agendado localmente."}
+            : "O Habitus avisa você na hora de cada dica, com uma notificação curta. Nada sai do seu aparelho: tudo é agendado localmente."}
         </AppText>
       </View>
     </View>
   );
 }
 
-const TITLES = ["6 truques para o seu dia", "Quando é o seu dia?", "Lembretes na hora certa"];
+const TITLES = ["6 dicas para o seu dia", "Quando é o seu dia?", "Lembretes na hora certa"];
 const SUBTITLES = [
   "Pequenas práticas de bem-estar, espalhadas pelo dia. O Habitus lembra você de cada uma.",
   "Escolha o início e o fim do seu dia e a hora em que costuma dormir.",

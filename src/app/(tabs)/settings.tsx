@@ -10,6 +10,7 @@ import { PermissionBanners } from "@/components/permission-banner";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
+import { Stepper } from "@/components/stepper";
 import { ThemeTabs } from "@/components/theme-tabs";
 import { TimeField } from "@/components/time-field";
 import { ToggleSwitch } from "@/components/toggle-switch";
@@ -17,6 +18,7 @@ import { WeekdayPicker } from "@/components/weekday-picker";
 import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { formatTime, minutesOfDay } from "@/domain/time";
+import { formatEvery, WATER_EVERY, WATER_GOAL } from "@/domain/water";
 import { openSystemSettings, pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
 import { useAccess } from "@/state/access";
@@ -28,9 +30,9 @@ function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
   const when = formatTime(minutes);
   const learned =
     nights > 0
-      ? `Aprendido: ${when}, pelo horário em que você concluiu o truque nas últimas ${nights} noite${nights > 1 ? "s" : ""}.`
-      : `Hoje o lembrete chega às ${when}. O Habitus vai aprender seu horário real conforme você conclui o truque.`;
-  const early = missed > 0 ? " Como o truque ficou sem resposta recentemente, o aviso foi antecipado." : "";
+      ? `Aprendido: ${when}, pelo horário em que você concluiu a dica nas últimas ${nights} noite${nights > 1 ? "s" : ""}.`
+      : `Hoje o lembrete chega às ${when}. O Habitus vai aprender seu horário real conforme você conclui a dica.`;
+  const early = missed > 0 ? " Como a dica ficou sem resposta recentemente, o aviso foi antecipado." : "";
   return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
 }
 
@@ -137,7 +139,7 @@ export default function SettingsScreen() {
         onAllowExactAlarms={() => void askExactAlarms()}
       />
 
-      <Section title="Horário" footer="Os 5 primeiros truques são distribuídos igualmente entre o início e o fim. O 6º chega na hora de dormir.">
+      <Section title="Horário" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
         <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
         <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
         <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
@@ -151,7 +153,7 @@ export default function SettingsScreen() {
         <WeekdayPicker value={draft.days} onChange={(days) => void change({ days })} />
       </Section>
 
-      <Section title="Afirmações" footer="Aparecem no truque 3, Metas em voz alta. Escreva no presente.">
+      <Section title="Afirmações" footer="Aparecem na dica 3, Metas em voz alta. Escreva no presente.">
         <AffirmationsEditor value={data.settings.affirmations} onChange={(affirmations) => void change({ affirmations })} />
       </Section>
 
@@ -180,6 +182,43 @@ export default function SettingsScreen() {
             </AppText>
           )}
         </View>
+      </Section>
+
+      <Section
+        title="Água"
+        footer={
+          draft.water.enabled
+            ? "Os lembretes vêm entre o início e o fim do seu dia, fora dos horários das dicas, e param quando você bate a meta."
+            : "Opcional. Ligue para receber lembretes de beber água e marcar os copos na tela Hoje."
+        }>
+        <View style={styles.row}>
+          <AppText variant="body">Lembretes de água</AppText>
+          <ToggleSwitch
+            value={draft.water.enabled}
+            onValueChange={(enabled) => void change({ water: { ...draft.water, enabled } })}
+            accessibilityLabel="Lembretes de água"
+          />
+        </View>
+        {draft.water.enabled && (
+          <View>
+            <Stepper
+              label="Meta do dia"
+              value={`${draft.water.goal} copos`}
+              canMinus={draft.water.goal > WATER_GOAL.min}
+              canPlus={draft.water.goal < WATER_GOAL.max}
+              onMinus={() => void change({ water: { ...draft.water, goal: draft.water.goal - 1 } })}
+              onPlus={() => void change({ water: { ...draft.water, goal: draft.water.goal + 1 } })}
+            />
+            <Stepper
+              label="Lembrar a cada"
+              value={formatEvery(draft.water.everyMinutes)}
+              canMinus={draft.water.everyMinutes > WATER_EVERY.min}
+              canPlus={draft.water.everyMinutes < WATER_EVERY.max}
+              onMinus={() => void change({ water: { ...draft.water, everyMinutes: draft.water.everyMinutes - WATER_EVERY.step } })}
+              onPlus={() => void change({ water: { ...draft.water, everyMinutes: draft.water.everyMinutes + WATER_EVERY.step } })}
+            />
+          </View>
+        )}
       </Section>
 
       <Section title="Aparência" footer="Automático segue o modo claro ou escuro do aparelho.">

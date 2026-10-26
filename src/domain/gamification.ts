@@ -10,6 +10,8 @@ export const XP_RULES = {
   streakStep: 5,
   streakCap: 10,
   perfectWeek: 150,
+  /** A day the water goal was met (only when water reminders are used). */
+  waterGoal: 15,
 } as const;
 
 /** XP needed to go from `level` to `level + 1`; grows so early levels come fast. */
@@ -76,6 +78,8 @@ export interface Stats {
   currentStreak: number;
   bestStreak: number;
   gratitudeDays: number;
+  /** Days the water goal was met. */
+  waterDays: number;
 }
 
 /**
@@ -89,6 +93,7 @@ export function computeStats(
   activeDays: readonly Weekday[],
   today: Date,
 ): Stats {
+  const todayKey = dayKey(today);
   const days = Object.keys(completions).filter((k) => doneCount(completions, k) > 0).sort();
   const stats: Stats = {
     xp: 0,
@@ -98,10 +103,10 @@ export function computeStats(
     currentStreak: 0,
     bestStreak: 0,
     gratitudeDays: Object.keys(gratitude).length,
+    waterDays: 0,
   };
   if (days.length === 0) return stats;
 
-  const todayKey = dayKey(today);
   let streak = 0;
   for (let d = fromDayKey(days[0]); dayKey(d) <= todayKey; d = addDays(d, 1)) {
     const key = dayKey(d),
@@ -126,6 +131,16 @@ export function computeStats(
   }
   stats.currentStreak = streak;
   return stats;
+}
+
+/**
+ * Adds the water goal days to stats from {@link computeStats}.
+ * shortcut: judged against today's goal for the whole past, like activeDays there.
+ */
+export function withWater(stats: Stats, log: Readonly<Record<string, { cups: number }>>, goal: number, today: Date): Stats {
+  const todayKey = dayKey(today);
+  const waterDays = Object.entries(log).filter(([day, { cups }]) => day <= todayKey && cups >= goal).length;
+  return { ...stats, waterDays, xp: stats.xp + waterDays * XP_RULES.waterGoal };
 }
 
 /** Every active day of the week containing `date` is complete. */

@@ -96,7 +96,28 @@ npx supabase functions deploy admin-users --project-ref SEU_PROJECT_REF
 
 A função usa a chave secreta que o próprio Supabase fornece a ela. Você não precisa copiar nenhuma chave.
 
-## 8. Virar administrador
+## 8. Lembretes com o app fechado (Web Push)
+
+Sem este passo, no iPhone e no navegador os lembretes só chegam com o Habitus aberto. Faça uma vez:
+
+1. **Gere as chaves.** Na pasta do projeto, rode o comando abaixo. Ele mostra duas linhas, `VAPID_PUBLIC_KEY=…` e `VAPID_PRIVATE_KEY=…`. Guarde as duas; a privada é segredo.
+
+   ```bash
+   node scripts/vapid-keys.mjs
+   ```
+
+2. **Chave pública no app.** Em `.env.local` e na **Vercel → Settings → Environment Variables**, crie `EXPO_PUBLIC_VAPID_PUBLIC_KEY` com o valor de `VAPID_PUBLIC_KEY`. Na Vercel, faça um Redeploy.
+3. **Segredos da função.** Em **Edge Functions → Secrets**, crie:
+   - `VAPID_PUBLIC_KEY`: a chave pública;
+   - `VAPID_PRIVATE_KEY`: a chave privada;
+   - `VAPID_SUBJECT`: `mailto:` seguido do seu e-mail (ex.: `mailto:seu_email@gmail.com`).
+4. **Publique a função.** **Edge Functions → Deploy a new function → Via Editor**, nome `push-send` (exatamente assim), cole todo o conteúdo de [`supabase/functions/push-send/index.ts`](../supabase/functions/push-send/index.ts) e clique em **Deploy**. Depois, nos detalhes da função, **desligue "Verify JWT"** (ou "Enforce JWT verification"): quem chama é o agendador do banco, sem login. Ela só envia lembretes que já venceram, então isso não abre brecha.
+5. **Banco e agendador.** Abra [`supabase/push.sql`](../supabase/push.sql), troque `SEU_PROJECT_REF` pelo **Reference ID** do projeto (**Project Settings → General**), cole no **SQL Editor** e clique em **Run**. Se aparecer erro de permissão nas extensões, ligue `pg_cron` e `pg_net` em **Database → Extensions** e rode de novo.
+6. **No iPhone.** Abra o Habitus instalado, permita as notificações e use o app por alguns segundos. Em **Table Editor → push_subscriptions** deve aparecer uma linha, e em **push_queue** os próximos lembretes. Feche o app e espere o horário da próxima dica.
+
+Para conferir o agendador: **Integrations → Cron** (ou `select * from cron.job_run_details order by start_time desc limit 5;`) mostra uma execução por minuto. Os registros da função ficam em **Edge Functions → push-send → Logs**.
+
+## 9. Virar administrador
 
 Crie sua conta no app normalmente. Depois, no **SQL Editor**, rode (com o seu e-mail):
 

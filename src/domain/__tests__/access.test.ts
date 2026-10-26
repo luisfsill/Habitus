@@ -3,6 +3,7 @@ import {
   daysLeft,
   displayName,
   endOfDaySaoPaulo,
+  parseBrDate,
   extendAccess,
   firstName,
   formatPrice,
@@ -66,6 +67,17 @@ describe("extendAccess", () => {
 describe("endOfDaySaoPaulo", () => {
   it("ends the chosen day at 23:59:59.999 in São Paulo", () => {
     expect(endOfDaySaoPaulo("2026-11-30")).toBe("2026-12-01T02:59:59.999Z");
+  });
+});
+
+describe("parseBrDate", () => {
+  it("turns a Brazilian date into an ISO day", () => {
+    expect(parseBrDate(" 31/12/2026 ")).toBe("2026-12-31");
+  });
+  it("rejects days that do not exist and other formats", () => {
+    expect(parseBrDate("31/02/2026")).toBeNull();
+    expect(parseBrDate("2026-12-31")).toBeNull();
+    expect(parseBrDate("1/2/2026")).toBeNull();
   });
 });
 

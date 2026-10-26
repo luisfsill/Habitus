@@ -1,5 +1,5 @@
 import type { PermissionState } from "@/domain/notification-actions";
-import type { PlannedNotification } from "@/domain/notification-plan";
+import { type PlannedNotification, reminderUrl } from "@/domain/notification-plan";
 
 import { log } from "./log";
 
@@ -21,13 +21,9 @@ export async function requestWebPermission(): Promise<PermissionState> {
   return (await Notification.requestPermission()) === "granted" ? "granted" : "denied";
 }
 
-function urlFor(item: PlannedNotification): string {
-  return item.trickIndex === undefined ? "/" : `/trick/${item.trickIndex}`;
-}
-
 async function show(item: PlannedNotification): Promise<void> {
   if (webPermissionState() !== "granted") return;
-  const options = { body: item.body, icon: "/icon-192.png", tag: item.id, data: { url: urlFor(item) } };
+  const options = { body: item.body, icon: "/icon-192.png", tag: item.id, data: { url: reminderUrl(item) } };
   try {
     // Android Chrome only allows notifications from a service worker.
     const registration = await navigator.serviceWorker?.getRegistration();

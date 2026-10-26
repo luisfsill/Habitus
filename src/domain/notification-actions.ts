@@ -6,7 +6,7 @@ export const ACTION_SNOOZE = "snooze";
 
 /** Payload stored in each notification's `content.data`. */
 export interface NotificationPayload {
-  kind: "opening" | "trick";
+  kind: "opening" | "trick" | "water";
   dayKey: string;
   trickIndex?: TrickIndex;
 }
@@ -20,7 +20,7 @@ export type ResponseIntent =
 function readPayload(data: unknown): NotificationPayload | null {
   if (typeof data !== "object" || data === null) return null;
   const { kind, dayKey, trickIndex } = data as Record<string, unknown>;
-  if ((kind !== "opening" && kind !== "trick") || typeof dayKey !== "string") return null;
+  if ((kind !== "opening" && kind !== "trick" && kind !== "water") || typeof dayKey !== "string") return null;
   if (kind === "trick" && !isTrickIndex(trickIndex)) return null;
   return { kind, dayKey, trickIndex: kind === "trick" ? (trickIndex as TrickIndex) : undefined };
 }

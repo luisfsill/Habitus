@@ -1,4 +1,5 @@
 import { type AppData, defaultData } from "./app-data";
+import { mergeWaterLog } from "./water";
 
 /**
  * Combines this device's data with the copy on the server. A trick done on
@@ -25,6 +26,7 @@ export function mergeData(local: AppData, remote: AppData): AppData {
     completions,
     gratitude: { ...remote.gratitude, ...local.gratitude },
     sleepLog,
+    water: mergeWaterLog(local.water, remote.water),
   };
 }
 

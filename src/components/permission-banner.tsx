@@ -11,7 +11,7 @@ type Kind = "notifications" | "exact-alarms";
 const COPY: Record<Kind, { title: string; body: string; button: string; ios: string; android: string }> = {
   notifications: {
     title: "Notificações desativadas",
-    body: "Sem elas, o Habitus não consegue lembrar você dos truques na hora certa.",
+    body: "Sem elas, o Habitus não consegue lembrar você das dicas na hora certa.",
     button: "Abrir Ajustes",
     ios: "bell.slash.fill",
     android: "notifications_off",

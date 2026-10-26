@@ -1,5 +1,5 @@
 import { progressFrom, rewardBetween } from "../achievements";
-import { beltFor, computeStats, levelFor, nextBelt, XP_RULES, xpToNext } from "../gamification";
+import { beltFor, computeStats, levelFor, nextBelt, withWater, XP_RULES, xpToNext } from "../gamification";
 import { ALL_WEEKDAYS } from "../time";
 
 const full = [0, 1, 2, 3, 4, 5];
@@ -109,5 +109,15 @@ describe("badges and rewards", () => {
     const before = progressFrom({ ...computeStats({}, {}, ALL_WEEKDAYS, saturday), xp: 95 });
     const after = progressFrom({ ...before.stats, xp: 105 });
     expect(rewardBetween(before, after)?.levelUp).toBe(2);
+  });
+});
+
+describe("water XP", () => {
+  it("pays once per day the water goal is met, up to today", () => {
+    const today = new Date(2026, 9, 26, 12, 0);
+    const log = { "2026-10-24": { cups: 8 }, "2026-10-25": { cups: 5 }, "2026-10-26": { cups: 9 }, "2026-10-27": { cups: 8 } };
+    const stats = withWater(computeStats({}, {}, [0, 1, 2, 3, 4, 5, 6], today), log, 8, today);
+    expect(stats.waterDays).toBe(2);
+    expect(stats.xp).toBe(2 * XP_RULES.waterGoal);
   });
 });

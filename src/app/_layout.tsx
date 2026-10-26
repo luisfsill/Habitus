@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -6,6 +6,7 @@ import { Appearance, Platform, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
+import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
 import { RewardToast } from "@/components/reward-toast";
 import { AccessProvider, useAccess } from "@/state/access";
@@ -28,6 +29,34 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
 /** On a phone's browser the app is install-only; it runs from the home screen icon. */
 function installOnly(): boolean {
   return isMobileWeb() && !isStandalone();
+}
+
+/** A computer's browser, not the installed app: visitors get the landing page at "/". */
+function desktopWeb(): boolean {
+  return Platform.OS === "web" && !isMobileWeb() && !isStandalone();
+}
+
+/** Full page loads: the landing page renders instead of the navigator, so there is no router to push to. */
+function go(path: string) {
+  window.location.assign(path);
+}
+
+/** Screens shown instead of the app: install-only on a phone's browser, the landing page for desktop visitors at "/". */
+function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<typeof useInstallPrompt>) {
+  if (installOnly()) {
+    return (
+      <InstallGate
+        mode={install.mode === "hidden" ? "manual" : install.mode}
+        installed={install.installed}
+        iPhone={isIPhone()}
+        onInstall={() => void install.install()}
+      />
+    );
+  }
+  if (!signedIn && pathname === "/" && desktopWeb()) {
+    return <LandingPage onStart={() => go("/auth")} onSignIn={() => go("/auth?modo=entrar")} onLegal={(page) => go(`/legal/${page}`)} />;
+  }
+  return null;
 }
 
 /** Which part of the app the person may see right now. */
@@ -80,14 +109,17 @@ function RootStack() {
   const { colors, scheme } = useTheme();
   useNotificationRouting(ready && open && data.onboarded);
   const install = useInstallPrompt();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
 
   useEffect(() => {
-    // The iOS PWA status bar is translucent and shows the page background behind it.
-    if (Platform.OS === "web") document.body.style.backgroundColor = colors.background;
+    // The iOS PWA status bar takes theme-color; the body shows during overscroll.
+    if (Platform.OS !== "web") return;
+    document.body.style.backgroundColor = colors.background;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
   }, [colors.background]);
 
   if (!ready) return null;
@@ -97,16 +129,8 @@ function RootStack() {
 
   if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
 
-  if (installOnly()) {
-    return (
-      <InstallGate
-        mode={install.mode === "hidden" ? "manual" : install.mode}
-        installed={install.installed}
-        iPhone={isIPhone()}
-        onInstall={() => void install.install()}
-      />
-    );
-  }
+  const entry = entryScreen(signedIn, pathname, install);
+  if (entry) return entry;
 
   return (
     <ThemeProvider value={theme}>

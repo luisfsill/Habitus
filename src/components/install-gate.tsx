@@ -3,34 +3,25 @@ import { Image, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { radius, space, useTheme } from "@/theme";
+import { backdrops, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { GAINS } from "./benefits";
 import { Icon } from "./icon";
 import { InstallStepsSheet, type StepsKind } from "./install-steps-sheet";
 import { PrimaryButton } from "./primary-button";
+import { Section } from "./section";
 
-const FEATURES = [
-  {
-    icon: { ios: "sun.max.fill", android: "wb_sunny" },
-    title: "6 truques por dia",
-    text: "Sorrir, postura de poder, metas, foco, gratidão e um pedido antes de dormir.",
-  },
-  {
-    icon: { ios: "bell.badge.fill", android: "notifications_active" },
-    title: "Lembrete na hora certa",
-    text: "O Habitus avisa você em cada truque, dentro do seu horário.",
-  },
-  {
-    icon: { ios: "trophy.fill", android: "emoji_events" },
-    title: "XP, faixas e medalhas",
-    text: "Mantenha a sequência, suba de nível e desbloqueie conquistas.",
-  },
-  {
-    icon: { ios: "lock.fill", android: "lock" },
-    title: "Sem cadastro",
-    text: "Nada de conta ou senha: tudo fica guardado no seu celular.",
-  },
+const STEPS = [
+  "Instale e crie sua conta: os 7 primeiros dias são grátis.",
+  "Escolha o horário do seu dia e a hora de dormir.",
+  "O Habitus avisa cada dica na hora certa. Cada uma leva até 2 minutos.",
+] as const;
+
+const EXTRAS = [
+  { icon: { ios: "trophy", android: "emoji_events" }, text: "XP, faixas e medalhas para manter a sequência" },
+  { icon: { ios: "calendar", android: "calendar_month" }, text: "Histórico do mês, dia a dia" },
+  { icon: { ios: "icloud", android: "cloud_done" }, text: "Progresso salvo na sua conta, em qualquer aparelho" },
 ] as const;
 
 interface Props {
@@ -46,14 +37,14 @@ interface Props {
  * "Instalar agora". The app itself opens from the home screen icon.
  */
 export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const [sheet, setSheet] = useState(false);
 
   const press = () => (mode === "prompt" ? onInstall() : setSheet(true));
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, backdrops[scheme]]}>
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + space.xxl }]}>
         <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.hero}>
           <Image source={{ uri: "/icon-192.png" }} style={styles.logo} accessibilityIgnoresInvertColors accessible={false} />
@@ -61,32 +52,57 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
             Habitus
           </AppText>
           <AppText variant="body" color="secondaryLabel" align="center">
-            Pequenos truques de bem-estar ao longo do seu dia, com lembrete na hora certa.
+            Seis dicas rápidas ao longo do dia, com lembrete na hora certa. Um jeito simples de cuidar de você.
           </AppText>
         </Animated.View>
 
-        {FEATURES.map((f, i) => (
-          <Animated.View
-            key={f.title}
-            entering={FadeInDown.delay(120 + i * 80).springify().damping(18)}
-            style={[styles.feature, { backgroundColor: colors.surface }]}>
-            <View style={[styles.featureIcon, { backgroundColor: colors.accentSoft }]}>
-              <Icon ios={f.icon.ios} android={f.icon.android} size={26} color={colors.accent} />
-            </View>
-            <View style={styles.featureText}>
-              <AppText variant="headline">{f.title}</AppText>
-              <AppText variant="subheadline" color="secondaryLabel">
-                {f.text}
+        <Section title="Como funciona">
+          {STEPS.map((step, i) => (
+            <View key={step} style={styles.line}>
+              <View style={[styles.step, { backgroundColor: colors.accentSoft }]}>
+                <AppText variant="subheadline" color="accentText" style={styles.bold}>
+                  {i + 1}
+                </AppText>
+              </View>
+              <AppText variant="body" style={styles.flex}>
+                {step}
               </AppText>
             </View>
-          </Animated.View>
-        ))}
+          ))}
+        </Section>
+
+        <Section title="O que você ganha" footer="Quais são as 6 dicas? Você descobre ao entrar no app.">
+          {GAINS.map((gain) => (
+            <View key={gain.title} style={styles.line}>
+              <Icon ios={gain.icon.ios} android={gain.icon.android} size={24} color={colors.accent} />
+              <View style={styles.flex}>
+                <AppText variant="headline">{gain.title}</AppText>
+                <AppText variant="subheadline" color="secondaryLabel">
+                  {gain.text}
+                </AppText>
+              </View>
+            </View>
+          ))}
+        </Section>
+
+        <Section title="E mais">
+          <View style={styles.extras}>
+            {EXTRAS.map((extra) => (
+              <View key={extra.text} style={styles.line}>
+                <Icon ios={extra.icon.ios} android={extra.icon.android} size={20} color={colors.secondaryLabel} />
+                <AppText variant="subheadline" style={styles.flex}>
+                  {extra.text}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        </Section>
       </ScrollView>
 
       <View
         style={[
           styles.footer,
-          { paddingBottom: insets.bottom + space.lg, backgroundColor: colors.background, borderTopColor: colors.separator },
+          { paddingBottom: insets.bottom + space.lg, borderTopColor: colors.separator },
         ]}>
         {installed ? (
           <View style={styles.done} accessibilityRole="alert">
@@ -97,11 +113,11 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
           </View>
         ) : (
           <>
-            <AppText variant="footnote" color="secondaryLabel" align="center">
-              Gratuito · sem loja de apps · leva 5 segundos
+            <AppText variant="subheadline" align="center" style={styles.bold}>
+              7 dias grátis · sem cartão · sem loja de apps
             </AppText>
             <AppText variant="footnote" color="secondaryLabel" align="center">
-              Você cria sua conta depois de instalar, já dentro do app.
+              Depois de instalar, abra o Habitus e crie sua conta para começar o teste.
             </AppText>
             <PrimaryButton label="Instalar agora" onPress={press} accessibilityHint="Adiciona o Habitus à tela inicial" />
           </>
@@ -117,12 +133,14 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingHorizontal: space.lg, paddingBottom: space.xl, gap: space.md, maxWidth: 640, width: "100%", alignSelf: "center" },
-  hero: { alignItems: "center", gap: space.sm, marginBottom: space.lg },
+  content: { paddingHorizontal: space.xl, paddingBottom: space.xl, gap: space.xl, maxWidth: 640, width: "100%", alignSelf: "center" },
+  hero: { alignItems: "center", gap: space.sm },
   logo: { width: 96, height: 96, borderRadius: 22, marginBottom: space.sm },
-  feature: { flexDirection: "row", alignItems: "center", gap: space.md, padding: space.lg, borderRadius: radius.lg },
-  featureIcon: { width: 52, height: 52, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  featureText: { flex: 1, gap: 2 },
+  line: { flexDirection: "row", alignItems: "center", gap: space.md },
+  step: { width: 28, height: 28, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  extras: { gap: space.md },
+  flex: { flex: 1, gap: 2 },
+  bold: { fontWeight: "600" },
   footer: {
     gap: space.sm,
     paddingHorizontal: space.lg,

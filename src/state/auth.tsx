@@ -5,6 +5,7 @@ import { defaultData } from "@/domain/app-data";
 import { authErrorMessage, TERMS_VERSION } from "@/domain/auth-rules";
 import { log } from "@/services/log";
 import { rescheduleAll } from "@/services/notifications";
+import { forgetPushDevice } from "@/services/web-push";
 import { clearData, loadData, saveProfileCache } from "@/services/storage";
 import { supabase, supabaseConfigured } from "@/services/supabase";
 import { deleteAccountRemote, pushMerged } from "@/services/sync";
@@ -51,6 +52,7 @@ async function forgetLocal(): Promise<void> {
   await clearData();
   await saveProfileCache(null);
   await rescheduleAll(defaultData());
+  await forgetPushDevice();
   await supabase?.auth.signOut({ scope: "local" });
 }
 

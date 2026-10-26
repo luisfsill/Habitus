@@ -38,7 +38,7 @@
 | Telas no preview web (claro e escuro) | Validado | `docs/screenshots/*.png` |
 | Agendamento real (janela 20:30–21:30) | Validado no emulador Android 15 | `dumpsys alarm`: 42 alarmes, 7 dias × (20:30, 20:36, 20:48, 21:00, 21:12, 21:24) |
 | Entrega no horário | Validado | Com alarme exato: 21:00:00.069, 21:12:01.1, 21:24:01.1, adiamento +11 ms. Sem alarme exato: 20:36 → 20:38:55 |
-| Toque na notificação → tela do truque | Validado | Com o app encerrado (cold start), abriu "Foco total" |
+| Toque na notificação → tela da dica | Validado | Com o app encerrado (cold start), abriu "Foco total" |
 | "Feito" em segundo plano | Validado | Tarefa headless gravou a conclusão; Hoje passou para 1/5 |
 | "Adiar 10 min" com app encerrado | Validado (dev e release) | Alarme exato +10 min; sobreviveu à reabertura do app; entregue |
 | Timer de 2 min + háptico | Validado | 120 s; `dumpsys vibrator_manager` registrou o efeito de sucesso |

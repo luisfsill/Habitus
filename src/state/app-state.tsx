@@ -8,6 +8,7 @@ import { claimData, mergeData } from "@/domain/sync";
 import { computeSchedule, type ScheduleResult } from "@/domain/schedule";
 import { trickDayKey } from "@/domain/bedtime";
 import { dayKey } from "@/domain/time";
+import { cupsOn, nextCups } from "@/domain/water";
 import type { TrickIndex } from "@/domain/tricks";
 import { log } from "@/services/log";
 import { registerBackgroundActions } from "@/services/notification-responses";
@@ -41,6 +42,8 @@ interface AppStateValue {
   completeOnboarding: () => Promise<void>;
   completeTrick: (index: TrickIndex) => Promise<void>;
   setGratitude: (text: string) => Promise<void>;
+  /** One cup more or less today; replans the water reminders when the goal is crossed. */
+  addWater: (delta: 1 | -1) => Promise<void>;
   askPermission: () => Promise<PermissionState>;
   askExactAlarms: () => Promise<void>;
   /** True while some change has not reached the server yet. */
@@ -56,6 +59,36 @@ const Context = createContext<AppStateValue | null>(null);
 const PUSH_DELAY_MS = 2000;
 /** On a device with nothing saved for this account, wait this long for the server copy before showing onboarding. */
 const FIRST_SYNC_WAIT_MS = 8000;
+
+/** One cup more or less today. Crossing the goal replans today's water reminders. */
+function useAddWater({ dataRef, setData, setReward, commit, schedulePush }: {
+  dataRef: { current: AppData };
+  setData: (data: AppData) => void;
+  setReward: (reward: Reward | null) => void;
+  commit: (next: AppData) => Promise<void>;
+  schedulePush: () => void;
+}) {
+  return useCallback(
+    async (delta: 1 | -1) => {
+      const now = new Date();
+      const today = dayKey(now);
+      const current = dataRef.current;
+      const before = cupsOn(current.water, today);
+      const cups = nextCups(before, delta);
+      if (cups === before) return;
+      const next = { ...current, water: { ...current.water, [today]: { cups, at: now.getTime() } } };
+      setReward(rewardBetween(progressOf(current, now), progressOf(next, now)));
+      void Haptics.selectionAsync();
+      const goal = current.settings.water.goal;
+      if (before >= goal !== cups >= goal) return commit(next);
+      dataRef.current = next;
+      setData(next);
+      await saveData(next);
+      schedulePush();
+    },
+    [dataRef, setData, setReward, commit, schedulePush],
+  );
+}
 
 interface ProviderProps {
   children: ReactNode;
@@ -74,7 +107,6 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   const progress = useMemo(() => progressOf(data, new Date()), [data]);
-  const dismissReward = useCallback(() => setReward(null), []);
 
   /** Sends local data and takes in what other devices sent. Offline just leaves it pending. */
   const sync = useCallback(async () => {
@@ -114,6 +146,8 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
     },
     [schedulePush],
   );
+
+  const addWater = useAddWater({ dataRef, setData, setReward, commit, schedulePush });
 
   const refresh = useCallback(async () => {
     const [stored, state, exact] = await Promise.all([loadData(), getPermissionState(), hasExactAlarms()]);
@@ -167,7 +201,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
       exactAlarms,
       progress,
       reward,
-      dismissReward,
+      dismissReward: () => setReward(null),
       refresh,
       async updateSettings(patch) {
         const current = dataRef.current;
@@ -204,6 +238,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         await saveData(next);
         schedulePush();
       },
+      addWater,
       async askExactAlarms() {
         const granted = await requestExactAlarms();
         setExactAlarms(granted);
@@ -223,7 +258,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         await commit({ ...defaultData(), owner: userId, resetAt: Date.now() });
       },
     }),
-    [data, ready, syncPending, permission, exactAlarms, progress, reward, dismissReward, refresh, commit, schedulePush, userId],
+    [data, ready, syncPending, permission, exactAlarms, progress, reward, refresh, commit, schedulePush, userId, addWater],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

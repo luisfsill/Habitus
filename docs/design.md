@@ -25,7 +25,7 @@ Cores de apoio: verde (concluído) e âmbar `#B45309`/`#FBBF24` (sequência). To
 
 ## Aparência
 
-Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** ou **Escuro**. A escolha fica em `settings.theme`. `useTheme` lê a preferência por `ThemePreferenceContext`, fornecido no layout raiz. No iOS/Android, `Appearance.setColorScheme` também força os componentes nativos (seletor de horário, barra de abas, status bar). Na web, o contexto basta.
+Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** ou **Escuro**. A escolha fica em `settings.theme`. `useTheme` lê a preferência por `ThemePreferenceContext`, fornecido no layout raiz. No iOS/Android, `Appearance.setColorScheme` também força os componentes nativos (seletor de horário, barra de abas, status bar). Na web, o contexto basta; o layout raiz também pinta o `body` e o `theme-color` com a cor de fundo do tema. No PWA do iPhone a barra de status é opaca (`apple-mobile-web-app-status-bar-style: default`) e usa essa cor: com `black-translucent`, o iOS 26 desfoca o topo da página.
 
 ## Menu da conta
 
@@ -42,6 +42,22 @@ Som das notificações (Ajustes) usa `ToggleSwitch`: trilho cinza `#ddd` que fic
 ## Aparência em Ajustes
 
 `ThemeTabs`: porte para React Native da variante "tabs" do seletor de tema do designali (shadcn). Três abas com ícone e nome (Claro, Escuro, Automático) que ocupa a largura toda da seção (abas iguais de 38 pt, ícone 18); a pílula da aba ativa desliza com mola (stiffness 500, damping 30) e o balanço fica preso dentro do trilho. Só em Ajustes; o menu da conta na Hoje continua com o interruptor.
+
+## Admin: página do usuário
+
+A engrenagem na linha do usuário abre a página dele, no mesmo estilo de Ajustes: números no topo (`StatColumns`: status, validade, cargo); **Acesso** com atalhos +30/+90/+365 dias, campos "Somar dias" e "Válido até" (DD/MM/AAAA, com botão Aplicar), interruptor de acesso ilimitado (`ToggleSwitch`) e Remover acesso; **Dados** com nome e e-mail editáveis na própria linha (salvam ao sair do campo); **Cargo** com interruptor de Administrador; **Conta** com nova senha provisória e Excluir conta.
+
+## Landing page (computador, sem login)
+
+No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components/landing-page.tsx` e `landing-sections.tsx`) em vez de ir para o login. Mesmo estilo do app: fundo em gradiente, grades com divisórias finas, sem cards. Seções: navegação fixa no topo (Benefícios, Como funciona, Planos, Dúvidas, Entrar, Começar grátis); herói com título grande e um celular mostrando a tela Hoje com as dicas escondidas (cadeado), para manter a surpresa; Benefícios (os mesmos de `benefits.ts`); Como funciona em 3 passos; Recursos; Planos com os preços atuais e o teste de 7 dias; Dúvidas; chamada final e rodapé com Termos e Privacidade. "Começar grátis" abre `/auth` (criar conta) e "Entrar" abre `/auth?modo=entrar`. Os preços estão fixos no código porque a tabela `plans` só é lida por quem está logado.
+
+## Tela de instalação (celular no navegador)
+
+`InstallGate` segue o estilo do app: fundo em gradiente e listas com divisórias. Ícone, nome e uma frase; **Como funciona** em 3 passos numerados (conta com 7 dias grátis, horário, lembretes); **O que você ganha**, seis benefícios sem revelar as dicas (elas são surpresa dentro do app; o rodapé da seção avisa isso); **E mais** (XP e medalhas, histórico, progresso na conta). Rodapé: "7 dias grátis · sem cartão · sem loja de apps" e o botão Instalar agora. Os benefícios falam do que a pessoa sente (leveza, confiança, foco, calma), sem promessa de saúde nem "comprovado pela ciência".
+
+## Água
+
+`Stepper` (− valor +) para a meta e o intervalo em Ajustes; `WaterRow` na tela Hoje: gota, "N de M copos", "Faltam X" ou "Meta de hoje batida!", botões −1 e "+1 copo" (cheio, na cor de destaque) e uma barra fina que fica verde ao bater a meta. A seção só aparece com a água ligada.
 
 ## Barra de abas
 
@@ -60,7 +76,7 @@ A barra do admin ocupa a largura da janela, mas o conteúdo (marca, seções e c
   - Ações e links dentro de seções usam `ActionRow` (ícone + texto, seta quando abre outra tela; vermelho nas destrutivas) em vez de botões cheios.
   - `StatColumns`: números lado a lado em colunas separadas por divisórias verticais (Hoje, Histórico, Conquistas e Admin). Com `columns`, quebra em grade (2×2 no celular).
   - Calendário do Histórico em grade com linhas entre os dias: dia completo com fundo verde suave, parcial com um ponto verde, hoje sublinhado na cor de destaque.
-  - Linha do tempo como lista: horário, truque e, à direita, ✓ (feito), a contagem regressiva (próximo, em destaque) ou uma seta.
+  - Linha do tempo como lista: horário, dica e, à direita, ✓ (feita), a contagem regressiva (próxima, em destaque) ou uma seta.
   - Fundo do app inteiro: gradiente radial a partir do canto superior esquerdo (`backdrops` em `src/theme/index.ts`), azul-ardósia `#1e293b → #0f172a → #020617` no escuro e `#ffffff → #f1f5f9 → #cbd5e1` no claro. É o mesmo do trilho do interruptor de tema, do botão de conta e do menu. `background` guarda a cor do meio, usada onde o gradiente não renderiza. Superfícies (`surface`) só no que flutua: menu da conta, barra de abas, toasts e folhas. As telas de login mantêm o cartão de vidro sobre o fundo estrelado.
 - Alvos de toque de no mínimo 44 pt (os dias da semana têm 40 pt visíveis + `hitSlop`).
 - Contraste AA nos textos: secundário `#5B5B66` sobre o gradiente claro ≈ 6:1 no centro (`#f1f5f9`) e ≈ 4,6:1 no canto mais escuro (`#cbd5e1`); `#A1A1AA` sobre o gradiente escuro ≥ 5,7:1; branco sobre `#7C3AED` ≈ 5,7:1; verde de texto `#047857` sobre branco ≈ 5,5:1.

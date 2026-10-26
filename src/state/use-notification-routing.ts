@@ -9,7 +9,7 @@ import { applyResponse } from "@/services/notification-responses";
 import { useAppState } from "./app-state";
 
 /**
- * Taps open the trick screen; "Feito"/"Adiar" apply their side effect and
+ * Taps open the trick screen; "Feita"/"Adiar" apply their side effect and
  * refresh state. Also handles the response that cold-started the app.
  */
 export function useNotificationRouting(enabled: boolean) {

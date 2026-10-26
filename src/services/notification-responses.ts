@@ -16,7 +16,7 @@ export function intentFor(response: Notifications.NotificationResponse): Respons
 }
 
 /**
- * Applies the side effects of "Feito" / "Adiar" exactly once per response.
+ * Applies the side effects of "Feita" / "Adiar" exactly once per response.
  * Returns the intent so the UI can navigate or refresh.
  */
 export async function applyResponse(response: Notifications.NotificationResponse): Promise<ResponseIntent> {

@@ -58,6 +58,15 @@ export function endOfDaySaoPaulo(day: string): string {
   return new Date(Date.parse(`${day}T23:59:59.999-03:00`)).toISOString();
 }
 
+/** "31/12/2026" → "2026-12-31", or null when it is not a real calendar day. */
+export function parseBrDate(text: string): string | null {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(text.trim());
+  if (!m) return null;
+  const iso = `${m[3]}-${m[2]}-${m[1]}`;
+  const d = new Date(`${iso}T12:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.getUTCDate() === Number(m[1]) && d.getUTCMonth() + 1 === Number(m[2]) ? iso : null;
+}
+
 export function displayName(p: Pick<Profile, "name" | "email">): string {
   return p.name.trim() || p.email.split("@")[0];
 }

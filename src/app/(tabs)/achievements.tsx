@@ -33,10 +33,11 @@ function Badge({ badge }: { badge: BadgeState }) {
 }
 
 const RULES = [
-  `+${XP_RULES.trick} XP por truque concluído`,
-  `+${XP_RULES.perfectDay} XP por dia perfeito (todos os truques)`,
+  `+${XP_RULES.trick} XP por dica concluída`,
+  `+${XP_RULES.perfectDay} XP por dia perfeito (todas as dicas)`,
   `+${XP_RULES.streakStep} XP extra por dia de sequência, até +${XP_RULES.streakStep * XP_RULES.streakCap}`,
   `+${XP_RULES.perfectWeek} XP por semana perfeita (todos os dias ativos)`,
+  `+${XP_RULES.waterGoal} XP por dia com a meta de água batida (se você usar a água)`,
 ];
 
 export default function AchievementsScreen() {

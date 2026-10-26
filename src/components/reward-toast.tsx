@@ -21,7 +21,7 @@ function headline(reward: Reward): string {
   if (reward.belt) return `Nova patente: ${reward.belt.name}!`;
   if (reward.levelUp) return `Você subiu para o nível ${reward.levelUp}!`;
   if (reward.badges.length > 0) return `Nova medalha: ${reward.badges[0].title}`;
-  return "Truque concluído!";
+  return "Dica concluída!";
 }
 
 /** Floating "+10 XP" celebration, Duolingo-style. */

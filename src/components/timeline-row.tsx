@@ -16,7 +16,7 @@ interface Props {
   onPress: () => void;
 }
 
-const STATUS_LABEL: Record<TrickStatus, string> = { done: "Feito", next: "Próximo", pending: "Pendente" };
+const STATUS_LABEL: Record<TrickStatus, string> = { done: "Feita", next: "Próxima", pending: "Pendente" };
 
 /** One list row of the day: time, trick, and a check, countdown or chevron on the right. */
 export function TimelineRow({ trick, time, status, countdown, onPress }: Props) {
@@ -29,8 +29,8 @@ export function TimelineRow({ trick, time, status, countdown, onPress }: Props) 
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${time}, truque ${trick.index + 1}: ${trick.title}. ${STATUS_LABEL[status]}${countdown ? `, em ${countdown}` : ""}.`}
-      accessibilityHint="Abre o truque"
+      accessibilityLabel={`${time}, dica ${trick.index + 1}: ${trick.title}. ${STATUS_LABEL[status]}${countdown ? `, em ${countdown}` : ""}.`}
+      accessibilityHint="Abre a dica"
       style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
       <AppText variant="subheadline" color={next ? "accentText" : "secondaryLabel"} style={styles.time}>
         {time}

@@ -4,6 +4,7 @@ import { accessStatus, displayName, type Profile, statusLabel } from "@/domain/a
 import { radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Icon } from "./icon";
 
 export type Grant = 30 | 90 | 365 | "unlimited";
 const GRANTS: readonly { value: Grant; label: string }[] = [
@@ -71,10 +72,8 @@ export function AdminUserRow({ profile, now, onGrant, onOpen, busy }: Props) {
             </AppText>
           </Pressable>
         ))}
-        <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Mais opções" style={[styles.btn, { backgroundColor: colors.fill }]}>
-          <AppText variant="footnote" style={{ fontWeight: "700" }}>
-            ⋯
-          </AppText>
+        <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Configurar ${displayName(profile)}`} style={[styles.btn, { backgroundColor: colors.fill }]}>
+          <Icon ios="gearshape" android="settings" size={18} color={colors.label} />
         </Pressable>
       </View>
     </View>
