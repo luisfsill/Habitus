@@ -161,7 +161,8 @@ export async function rescheduleAll(data: AppData, now = new Date()): Promise<nu
   soundEnabled = data.settings.sound;
   // Web push first: the server sends the reminders, so they arrive with the PWA closed.
   // It must be on before clearing, or stale rows (tips done elsewhere) would stay queued.
-  if (!supported && !pushActive() && (await getPermissionState()) === "granted") await ensurePushSubscription();
+  // Not for signed-out data (sign-out passes defaultData): that would re-subscribe the device while leaving.
+  if (!supported && data.onboarded && !pushActive() && (await getPermissionState()) === "granted") await ensurePushSubscription();
   await cancelWhere((id) => !isOneOffId(id));
   const result = scheduleFor(data, now);
   if (!data.onboarded || !result.ok) return 0;

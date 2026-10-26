@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import { TransitionScreen, type TransitionPhase } from "@/components/transition-screen";
@@ -34,6 +35,8 @@ export function TransitionProvider({ children }: { children: ReactNode }) {
     const was = previous.current;
     previous.current = signedIn;
     if (was !== null && was !== signedIn) begin(signedIn ? "in" : "out");
+    // Signed out from "/": go to Entrar, not the landing page that "/" shows to visitors.
+    if (was === true && !signedIn) router.replace("/auth");
   }, [ready, signedIn, begin]);
 
   return (

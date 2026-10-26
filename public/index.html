@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Habitus" />
-    <!-- Opaque status bar: with black-translucent, iOS 26 lays a blur over the top of the page. Its colour follows theme-color, set from the app theme. -->
+    <!-- iOS 26+ ignores this tag and theme-color; kept for older iOS. The installed app's top edge is handled by #status-bar below. -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       if ("serviceWorker" in navigator) {
@@ -51,12 +51,30 @@
         caret-color: currentColor;
         transition: background-color 9999s ease-out 0s;
       }
+      /* Autofill fills the field before any input event; these animations tell AuthField so its label moves up. */
+      input:-webkit-autofill {
+        animation: autofill-start 1ms;
+      }
+      input:not(:-webkit-autofill) {
+        animation: autofill-end 1ms;
+      }
+      @keyframes autofill-start {
+        from { opacity: 1; }
+        to { opacity: 1; }
+      }
+      @keyframes autofill-end {
+        from { opacity: 1; }
+        to { opacity: 1; }
+      }
     </style>
   </head>
 
   <body>
     <!-- Use static rendering with Expo Router to support running without JavaScript. -->
     <noscript> You need to enable JavaScript to run this app. </noscript>
+    <!-- iOS 26+ blurs the top of installed web apps (Liquid Glass). WebKit drops the blur and fills the status bar
+         with the colour of an opaque fixed box at the top edge (≥6px tall, ≥80% wide): this strip. Painted from the app theme. -->
+    <div id="status-bar" style="position: fixed; top: 0; left: 0; right: 0; height: max(env(safe-area-inset-top), 8px); background: #000000; z-index: 2147483647; pointer-events: none; display: none"></div>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
   </body>

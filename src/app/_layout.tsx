@@ -120,11 +120,19 @@ function RootStack() {
   }, [ready]);
 
   useEffect(() => {
-    // The iOS PWA status bar takes theme-color; the body shows during overscroll.
+    // The body shows during overscroll; theme-color is for Android/older iOS. The status-bar strip (public/index.html)
+    // paints the app backdrop sized to the viewport so it blends in; account screens are the black night sky.
     if (Platform.OS !== "web") return;
     document.body.style.backgroundColor = colors.background;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
-  }, [colors.background]);
+    const bar = document.getElementById("status-bar");
+    if (!bar) return;
+    bar.style.display = isIPhone() && isStandalone() ? "block" : "none";
+    const night = !signedIn;
+    bar.style.backgroundColor = night ? "#000000" : colors.background;
+    bar.style.backgroundImage = night ? "none" : backdrops[scheme].backgroundImage;
+    bar.style.backgroundSize = "100vw 100vh";
+  }, [colors.background, scheme, signedIn]);
 
   if (!ready) return null;
 

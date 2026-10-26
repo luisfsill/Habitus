@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, TextInput, type TextInputProps, View } from "react-native";
+import { type ComponentRef, type RefObject, useEffect, useRef, useState } from "react";
+import { Platform, Pressable, StyleSheet, TextInput, type TextInputProps, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { HIT, radius, space, type, useTheme } from "@/theme";
@@ -16,18 +16,39 @@ interface Props extends Pick<TextInputProps, "autoComplete" | "autoCapitalize" |
   error?: string;
 }
 
+/**
+ * Web: true while the browser shows a saved value it has not handed to the page yet.
+ * The `autofill-start`/`autofill-end` animations come from public/index.html.
+ */
+function useAutofill(ref: RefObject<ComponentRef<typeof TextInput> | null>): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const input = ref.current as unknown as HTMLInputElement | null;
+    if (Platform.OS !== "web" || !input?.addEventListener) return;
+    const onStart = (event: AnimationEvent) => {
+      if (event.animationName === "autofill-start") setOn(true);
+      if (event.animationName === "autofill-end") setOn(false);
+    };
+    input.addEventListener("animationstart", onStart);
+    return () => input.removeEventListener("animationstart", onStart);
+  }, [ref]);
+  return on;
+}
+
 /** Text field whose label floats up and whose border lights up in cobalt while focused. */
 export function AuthField({ label, value, onChangeText, secure, error, ...input }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
+  const field = useRef<ComponentRef<typeof TextInput>>(null);
+  const autofilled = useAutofill(field);
   const lifted = useSharedValue(value ? 1 : 0);
   const glow = useSharedValue(0);
 
   useEffect(() => {
-    lifted.set(withTiming(focused || value ? 1 : 0, { duration: 180 }));
+    lifted.set(withTiming(focused || value || autofilled ? 1 : 0, { duration: 180 }));
     glow.set(withTiming(focused ? 1 : 0, { duration: 220 }));
-  }, [focused, value, lifted, glow]);
+  }, [focused, value, autofilled, lifted, glow]);
 
   const labelStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: -11 * lifted.get() }, { scale: 1 - 0.22 * lifted.get() }],
@@ -45,6 +66,7 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
           {label}
         </Animated.Text>
         <TextInput
+          ref={field}
           autoCapitalize="none"
           {...input}
           accessibilityLabel={label}
@@ -55,7 +77,8 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
           secureTextEntry={secure && hidden}
           autoCorrect={false}
           placeholderTextColor={colors.secondaryLabel}
-          style={[type.body, styles.input, { color: colors.label }]}
+          // Web: autofill forces `color` to black; the text fill colour wins over it.
+          style={[type.body, styles.input, { color: colors.label, WebkitTextFillColor: colors.label } as object]}
         />
         {secure && (
           <Pressable
