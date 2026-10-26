@@ -120,19 +120,14 @@ function RootStack() {
   }, [ready]);
 
   useEffect(() => {
-    // The body shows during overscroll; theme-color is for Android/older iOS. The status-bar strip (public/index.html)
-    // paints the app backdrop sized to the viewport so it blends in; account screens are the black night sky.
+    // The body shows during overscroll; theme-color is for Android/older iOS. iOS 26+ fills the status bar with the
+    // colour of the #status-bar strip (public/index.html): the page colour, or the black night sky of the account screens.
     if (Platform.OS !== "web") return;
     document.body.style.backgroundColor = colors.background;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
     const bar = document.getElementById("status-bar");
-    if (!bar) return;
-    // shortcut: accent-coloured strip to see on the device whether it renders and how tall it is; restore
-    // `night ? "#000000" : colors.background` + the backdrop gradient once the iOS 27 blur is sorted.
-    if (isIPhone() && isStandalone()) bar.style.display = "block";
-    bar.style.backgroundColor = colors.accent;
-    bar.style.backgroundImage = "none";
-  }, [colors.background, colors.accent, scheme, signedIn]);
+    if (bar) bar.style.backgroundColor = signedIn ? colors.background : "#000000";
+  }, [colors.background, signedIn]);
 
   if (!ready) return null;
 

@@ -55,8 +55,12 @@
         height: env(safe-area-inset-top);
         min-height: 12px;
         background-color: #000000;
+        /* WebKit reads the colour but the strip paints nothing, so the page shows through. */
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         z-index: 2147483647;
-        pointer-events: none;
+        /* No pointer-events: none here: WebKit's edge probe hit-tests the strip and skips elements that opt out. */
       }
       @media (display-mode: standalone) {
         @supports (-webkit-touch-callout: none) {
