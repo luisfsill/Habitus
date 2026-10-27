@@ -31,7 +31,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 - Desligada por padrão; a pessoa liga em Ajustes → Água. Meta do dia em copos (1–20, padrão 8) e intervalo dos lembretes (30 min a 4 h, padrão 1h30).
 - Lembretes a cada intervalo depois do início do dia, até o fim do dia; um lembrete a menos de 10 min de uma dica é pulado. Param no dia em que a meta é batida.
 - Com a água ligada, só os próximos 3 dias são agendados (em vez de 7), para caber no limite de ~64 do iOS. O app reagenda ao abrir.
-- Na tela Hoje, a seção Água mostra "N de M copos", uma barra e os botões −1 e +1 copo.
+- Na tela Hoje, a seção Água mostra "N de M copos", uma barra e os botões −1 🥛 e +1 🥛.
 - Sem metas "de saúde" (ex.: 2 litros): quem define a meta é a pessoa.
 
 ## Lembretes pessoais

@@ -39,7 +39,7 @@ function Phrase({ text }: { text: string }) {
       <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
         DIGA, DEVAGAR
       </AppText>
-      <AppText variant="title1" color="accentText" style={styles.phrase} accessibilityRole="text">
+      <AppText variant="title2" color="accentText" style={styles.phrase} accessibilityRole="text">
         “{text}”
       </AppText>
     </View>
@@ -99,7 +99,7 @@ function Practice({ trick, gratitude, onGratitude, onCommitGratitude }: Practice
   if (trick.kind === "timer" && trick.durationSeconds) {
     return (
       <View>
-        <CircularTimer seconds={trick.durationSeconds} />
+        <CircularTimer seconds={trick.durationSeconds} compact />
       </View>
     );
   }
@@ -119,7 +119,7 @@ function Why({ text, overVideo }: { text: string; overVideo: boolean }) {
       <AppText variant="footnote" color={color} style={[styles.label, overVideo && styles.overVideo]}>
         A IDEIA POR TRÁS
       </AppText>
-      <AppText variant="body" color={color} style={overVideo && styles.overVideo}>
+      <AppText variant="subheadline" color={color} style={overVideo && styles.overVideo}>
         {text}
       </AppText>
     </View>
@@ -203,7 +203,7 @@ export default function TrickScreen() {
       <ThemePreferenceContext.Provider value="dark">
         {/* The back arrow in the fire's ember orange instead of the app's blue. */}
         <Stack.Screen options={{ headerTintColor: FIRE_ORANGE }} />
-        <Screen underHeader backdrop={<Bonfire source={FIRE_VIDEO} input={fire} out={firePhase === "out"} playing={firePhase !== "intro"} />}>
+        <Screen underHeader dense backdrop={<Bonfire source={FIRE_VIDEO} input={fire} out={firePhase === "out"} playing={firePhase !== "intro"} />}>
           {firePhase === "intro" ? (
             <FireIntro
               subtitle={`Dica ${index + 1} de ${TRICKS.length}`}
@@ -226,6 +226,7 @@ export default function TrickScreen() {
     <ThemePreferenceContext.Provider value={dark ? "dark" : preference}>
     <Screen
       underHeader
+      dense
       backdrop={backdrop}
       subtitle={`Dica ${index + 1} de ${TRICKS.length}`}
       title={trick.title}
@@ -239,7 +240,7 @@ export default function TrickScreen() {
       }>
       {!dark && (
         <View style={[styles.hero, { backgroundColor: colors.accentSoft }]}>
-          <Icon ios={trick.symbol.ios} android={trick.symbol.android} size={44} color={colors.accent} />
+          <Icon ios={trick.symbol.ios} android={trick.symbol.android} size={32} color={colors.accent} />
         </View>
       )}
       <AppText variant="title3" style={styles.instruction}>
@@ -259,11 +260,11 @@ export default function TrickScreen() {
 
 const styles = StyleSheet.create({
   overVideo: { textShadowColor: "rgba(0,0,0,0.75)", textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } },
-  hero: { width: 88, height: 88, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
-  instruction: { fontWeight: "400", lineHeight: 28 },
-  label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.sm },
+  hero: { width: 64, height: 64, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  instruction: { fontWeight: "400", lineHeight: 26 },
+  label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.xs },
   affirmation: { marginVertical: space.xs },
-  phrase: { lineHeight: 38, marginVertical: space.sm },
+  phrase: { lineHeight: 30, marginVertical: space.xs },
   inlineButton: { marginTop: space.sm, alignItems: "flex-start" },
   input: { minHeight: 96, borderRadius: radius.md, padding: space.md, textAlignVertical: "top" },
 });

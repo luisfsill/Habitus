@@ -69,7 +69,11 @@ No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components
 
 ## Água
 
-`Stepper` (− valor +) para a meta e o intervalo em Ajustes; `WaterRow` na tela Hoje: gota, "N de M copos", "Faltam X" ou "Meta de hoje batida!", botões −1 e "+1 copo" (cheio, na cor de destaque) e uma barra fina que fica verde ao bater a meta. A seção só aparece com a água ligada. Cada "+1 copo" toca o som de uma gota e, na web, solta uma gota que cai no meio da tela e espalha ondas por ela; atrás da primeira onda a tela vira o fundo de um copo de água, com raios de luz, cáusticas e bolhas subindo, e tudo some em cerca de 4 s (`WaterSplash`: shader WebGL em `ui/water-splash-gl.ts`, com o mesmo brilho da água da barra de abas); no app nativo, uma versão simples com anéis. O som (`assets/sounds/drop.mp3`) é "Water droplet SFX", de mrstokes302 (arquivo `mrstokes302-water-droplet-sfx-mrstokes302-530199.mp3`, escolhido pelo dono do app).
+`Stepper` (− valor +) para a meta e o intervalo em Ajustes; `WaterRow` na tela Hoje: gota, "N de M copos", "Faltam X" ou "Meta de hoje batida!", botões "−1 🥛" (cinza) e "+1 🥛" (cheio, na cor de destaque) e uma barra fina que fica verde ao bater a meta. A seção só aparece com a água ligada. Cada "+1 copo" toca o som de uma gota e, na web, solta uma gota que cai no meio da tela e espalha ondas por ela; atrás da primeira onda a tela vira o fundo de um copo de água, com raios de luz, cáusticas e bolhas subindo, e tudo some em cerca de 4 s (`WaterSplash`: shader WebGL em `ui/water-splash-gl.ts`, com o mesmo brilho da água da barra de abas); no app nativo, uma versão simples com anéis. O som (`assets/sounds/drop.mp3`) é "Water droplet SFX", de mrstokes302 (arquivo `mrstokes302-water-droplet-sfx-mrstokes302-530199.mp3`, escolhido pelo dono do app).
+
+## Telas das dicas
+
+Cada dica cabe na tela sem rolar: `Screen` com `dense` (título `title1` em vez de `largeTitle`, blocos a 12 pt em vez de 24 pt, menos espaço reservado sob o conteúdo para o botão fixo). Nelas o timer é o compacto (anel de 150 pt), o ícone tem 64 pt, a frase da dica usa `title2` e "A ideia por trás" usa `subheadline`.
 
 ## Lembretes
 

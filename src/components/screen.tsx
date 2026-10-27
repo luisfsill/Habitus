@@ -17,6 +17,8 @@ interface Props {
   underHeader?: boolean;
   /** Full-screen layer behind the page (e.g. a video); the page and its footer bar turn transparent over it. */
   backdrop?: ReactNode;
+  /** Tighter page (smaller title, less space) so a short screen like a tip fits without scrolling. */
+  dense?: boolean;
 }
 
 /** Height of a transparent native stack header (back button row). */
@@ -25,32 +27,43 @@ const HEADER = Platform.select({ ios: 44, default: 56 });
 /** Width of the app column on wide (desktop/tablet) screens. */
 export const MAX_WIDTH = 640;
 
+/** Room above the title and below the content. */
+function pagePadding(insets: { top: number; bottom: number }, page: { dense?: boolean; underHeader?: boolean; footer: boolean }) {
+  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title block starts under that.
+  const top = Platform.OS === "web" && !page.dense ? space.xxl + space.sm : space.lg;
+  // Dense pages keep just the room the pinned footer button needs.
+  const bottom = page.dense ? (page.footer ? 84 : space.xl) : 100;
+  return { paddingTop: insets.top + top + (page.underHeader ? HEADER : 0), paddingBottom: insets.bottom + bottom };
+}
+
+function TitleBlock({ title, subtitle, accessory, dense }: Pick<Props, "title" | "subtitle" | "accessory" | "dense">) {
+  return (
+    <View style={styles.headerRow}>
+      <View style={styles.header}>
+        {subtitle && (
+          <AppText variant="subheadline" color="secondaryLabel">
+            {subtitle}
+          </AppText>
+        )}
+        {title && (
+          <AppText variant={dense ? "title1" : "largeTitle"} accessibilityRole="header">
+            {title}
+          </AppText>
+        )}
+      </View>
+      {accessory}
+    </View>
+  );
+}
+
 /** Scrollable page with an iOS-style large title. */
-export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop }: Props) {
+export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop, dense }: Props) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
-  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title block starts under that.
-  const top = Platform.OS === "web" ? space.xxl + space.sm : space.lg;
-  const content = [styles.content, { paddingTop: insets.top + top + (underHeader ? HEADER : 0), paddingBottom: insets.bottom + 100 }];
+  const content = [styles.content, dense && styles.dense, pagePadding(insets, { dense, underHeader, footer: Boolean(footer) })];
   const body = (
     <>
-      {(title || subtitle) && (
-        <View style={styles.headerRow}>
-          <View style={styles.header}>
-            {subtitle && (
-              <AppText variant="subheadline" color="secondaryLabel">
-                {subtitle}
-              </AppText>
-            )}
-            {title && (
-              <AppText variant="largeTitle" accessibilityRole="header">
-                {title}
-              </AppText>
-            )}
-          </View>
-          {accessory}
-        </View>
-      )}
+      {(title || subtitle) && <TitleBlock title={title} subtitle={subtitle} accessory={accessory} dense={dense} />}
       {children}
     </>
   );
@@ -81,6 +94,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   clear: { backgroundColor: "#04060E" },
   content: { paddingHorizontal: space.xl, gap: space.xl, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
+  dense: { gap: space.md },
   // zIndex keeps an open accessory menu above the content below it.
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: space.md, zIndex: 10 },
   header: { flex: 1, gap: 2 },

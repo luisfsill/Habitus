@@ -12,7 +12,9 @@ interface Props {
   onRemove: () => void;
 }
 
-/** Today's water: cups against the goal, a thin bar and one-tap +1. */
+const GLASS = "🥛";
+
+/** Today's water: cups against the goal, a thin bar and one-tap −1 / +1. */
 export function WaterRow({ cups, goal, onAdd, onRemove }: Props) {
   const { colors } = useTheme();
   const done = cups >= goal;
@@ -34,16 +36,18 @@ export function WaterRow({ cups, goal, onAdd, onRemove }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Tirar um copo"
           hitSlop={6}
-          style={[styles.minus, { backgroundColor: colors.fill, opacity: cups === 0 ? 0.4 : 1 }]}>
-          <Icon ios="minus" android="remove" size={16} color={colors.label} />
+          style={[styles.add, { backgroundColor: colors.fill, opacity: cups === 0 ? 0.4 : 1 }]}>
+          <AppText variant="subheadline" style={[styles.addText, { color: colors.label }]}>
+            −1 {GLASS}
+          </AppText>
         </Pressable>
         <Pressable
           onPress={onAdd}
           accessibilityRole="button"
           accessibilityLabel="Bebi um copo"
           style={({ pressed }) => [styles.add, { backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 }]}>
-          <AppText variant="subheadline" style={styles.addText}>
-            +1 copo
+          <AppText variant="subheadline" style={[styles.addText, styles.onAccent]}>
+            +1 {GLASS}
           </AppText>
         </Pressable>
       </View>
@@ -58,9 +62,9 @@ const styles = StyleSheet.create({
   wrap: { gap: space.sm },
   row: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: HIT },
   text: { flex: 1, gap: 2 },
-  minus: { width: 36, height: 36, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
   add: { height: 36, paddingHorizontal: space.md, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  addText: { color: "#FFFFFF", fontWeight: "700" },
+  addText: { fontWeight: "700" },
+  onAccent: { color: "#FFFFFF" },
   track: { height: 4, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
 });

@@ -70,7 +70,7 @@ export function FireIntro({ subtitle, title, instruction, why, onStarted }: Prop
         <AppText variant="subheadline" color="secondaryLabel">
           {subtitle}
         </AppText>
-        <AppText variant="largeTitle" accessibilityRole="header">
+        <AppText variant="title1" accessibilityRole="header">
           {title}
         </AppText>
       </Line>
@@ -84,7 +84,7 @@ export function FireIntro({ subtitle, title, instruction, why, onStarted }: Prop
           <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
             A IDEIA POR TRÁS
           </AppText>
-          <AppText variant="body" color="secondaryLabel">
+          <AppText variant="subheadline" color="secondaryLabel">
             {why}
           </AppText>
         </Line>
@@ -101,7 +101,7 @@ export function FireIntro({ subtitle, title, instruction, why, onStarted }: Prop
 
 const styles = StyleSheet.create({
   veil: { backgroundColor: "rgba(4,2,4,0.84)" },
-  card: { gap: space.xl },
+  card: { gap: space.lg },
   instruction: { fontWeight: "400", lineHeight: 28 },
   label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.sm },
   start: { alignSelf: "center", minWidth: 200 },
