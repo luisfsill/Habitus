@@ -3,25 +3,32 @@ import { Image, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, pinned, radius, space, useTheme } from "@/theme";
+import { backdrops, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { GAINS } from "./benefits";
 import { Icon } from "./icon";
 import { InstallStepsSheet, type StepsKind } from "./install-steps-sheet";
 import { PrimaryButton } from "./primary-button";
 import { Section } from "./section";
 
-const STEPS = [
-  "Instale e crie sua conta: os 7 primeiros dias são grátis.",
-  "Escolha o horário do seu dia e a hora de dormir.",
-  "O Habitus avisa cada dica na hora certa. Cada uma leva até 2 minutos.",
-] as const;
-
-const EXTRAS = [
-  { icon: { ios: "trophy", android: "emoji_events" }, text: "XP, faixas e medalhas para manter a sequência" },
-  { icon: { ios: "calendar", android: "calendar_month" }, text: "Histórico do mês, dia a dia" },
-  { icon: { ios: "icloud", android: "cloud_done" }, text: "Progresso salvo na sua conta, em qualquer aparelho" },
+// What the app does, first thing on the screen. The tips stay a surprise inside the app.
+const FEATURES = [
+  {
+    icon: { ios: "sparkles", android: "auto_awesome" },
+    title: "6 dicas de crescimento pessoal e mental",
+    text:
+      "Cada dica é uma pequena aventura de até 2 minutos: cenas vivas, sons da natureza e desafios que reagem a você, como apagar uma fogueira com um sopro. Ganhe XP, suba de faixa e colecione medalhas. Quais são as dicas? Surpresa: você descobre no app.",
+  },
+  {
+    icon: { ios: "drop.fill", android: "water_drop" },
+    title: "Lembrete de água",
+    text: "Defina sua meta de copos e receba avisos para beber água.",
+  },
+  {
+    icon: { ios: "bell.badge", android: "notifications_active" },
+    title: "Lembretes personalizados",
+    text: "Crie os seus, com aviso antes da hora e repetição.",
+  },
 ] as const;
 
 interface Props {
@@ -52,50 +59,22 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
             Habitus
           </AppText>
           <AppText variant="body" color="secondaryLabel" align="center">
-            Seis dicas rápidas ao longo do dia, com lembrete na hora certa. Um jeito simples de cuidar de você.
+            Lembretes que cuidam de você{"\n"}ao longo do dia.
           </AppText>
         </Animated.View>
 
-        <Section title="Como funciona">
-          {STEPS.map((step, i) => (
-            <View key={step} style={styles.line}>
-              <View style={[styles.step, { backgroundColor: colors.accentSoft }]}>
-                <AppText variant="subheadline" color="accentText" style={styles.bold}>
-                  {i + 1}
-                </AppText>
-              </View>
-              <AppText variant="body" style={styles.flex}>
-                {step}
-              </AppText>
-            </View>
-          ))}
-        </Section>
-
-        <Section title="O que você ganha" footer="Quais são as 6 dicas? Você descobre ao entrar no app.">
-          {GAINS.map((gain) => (
-            <View key={gain.title} style={styles.line}>
-              <Icon ios={gain.icon.ios} android={gain.icon.android} size={24} color={colors.accent} />
+        <Section title="O que o Habitus faz">
+          {FEATURES.map((feature) => (
+            <View key={feature.title} style={styles.line}>
+              <Icon ios={feature.icon.ios} android={feature.icon.android} size={24} color={colors.accent} />
               <View style={styles.flex}>
-                <AppText variant="headline">{gain.title}</AppText>
+                <AppText variant="headline">{feature.title}</AppText>
                 <AppText variant="subheadline" color="secondaryLabel">
-                  {gain.text}
+                  {feature.text}
                 </AppText>
               </View>
             </View>
           ))}
-        </Section>
-
-        <Section title="E mais">
-          <View style={styles.extras}>
-            {EXTRAS.map((extra) => (
-              <View key={extra.text} style={styles.line}>
-                <Icon ios={extra.icon.ios} android={extra.icon.android} size={20} color={colors.secondaryLabel} />
-                <AppText variant="subheadline" style={styles.flex}>
-                  {extra.text}
-                </AppText>
-              </View>
-            ))}
-          </View>
         </Section>
       </View>
 
@@ -140,8 +119,6 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", gap: space.sm },
   logo: { width: 96, height: 96, borderRadius: 22, marginBottom: space.sm },
   line: { flexDirection: "row", alignItems: "center", gap: space.md },
-  step: { width: 28, height: 28, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  extras: { gap: space.md },
   flex: { flex: 1, gap: 2 },
   bold: { fontWeight: "600" },
   footer: {

@@ -1,101 +1,39 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
   SlideInDown,
   SlideOutDown,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HIT, pinned, radius, space, useTheme } from "@/theme";
+import { pinned, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
+import { InstallPhone } from "./install-phone";
+import { SCENES, type StepsKind } from "./install-scenes";
 import { PrimaryButton } from "./primary-button";
 
-export type StepsKind = "ios" | "inapp" | "manual";
+export type { StepsKind } from "./install-scenes";
 
-interface Step {
-  icon: { ios: string; android: string };
-  title: string;
-  detail: string;
-}
-
-const CONTENT: Record<StepsKind, { title: string; steps: Step[] }> = {
-  ios: {
-    title: "Adicione à Tela de Início",
-    steps: [
-      {
-        icon: { ios: "square.and.arrow.up", android: "ios_share" },
-        title: "Toque em Compartilhar",
-        detail: "O quadrado com a seta para cima, na barra do Safari. Se não aparecer, toque antes em ⋯.",
-      },
-      {
-        icon: { ios: "plus.square", android: "add_box" },
-        title: "Escolha “Adicionar à Tela de Início”",
-        detail: "Se não aparecer de cara, role a lista para baixo.",
-      },
-      {
-        icon: { ios: "checkmark.circle.fill", android: "check_circle" },
-        title: "Toque em “Adicionar”",
-        detail: "Pronto: o Habitus aparece na sua tela inicial, como um app.",
-      },
-    ],
-  },
-  inapp: {
-    title: "Abra no navegador",
-    steps: [
-      {
-        icon: { ios: "ellipsis.circle", android: "more_horiz" },
-        title: "Toque em ⋯ no canto da tela",
-        detail: "Este navegador (Instagram, WhatsApp…) não instala apps.",
-      },
-      {
-        icon: { ios: "safari", android: "open_in_browser" },
-        title: "Escolha “Abrir no navegador”",
-        detail: "Ou copie o link abaixo e cole no Safari (iPhone) ou no Chrome (Android).",
-      },
-      {
-        icon: { ios: "arrow.down.app", android: "install_mobile" },
-        title: "Toque em “Instalar agora” de novo",
-        detail: "No navegador, a instalação funciona.",
-      },
-    ],
-  },
-  manual: {
-    title: "Instale pelo menu do navegador",
-    steps: [
-      {
-        icon: { ios: "ellipsis", android: "more_vert" },
-        title: "Toque em ⋮ (o menu do navegador)",
-        detail: "Fica no canto da barra de endereço.",
-      },
-      {
-        icon: { ios: "plus.square", android: "add_to_home_screen" },
-        title: "Escolha “Instalar app” ou “Adicionar à tela inicial”",
-        detail: "O nome muda um pouco de navegador para navegador.",
-      },
-      {
-        icon: { ios: "checkmark.circle.fill", android: "check_circle" },
-        title: "Confirme",
-        detail: "O Habitus aparece na sua tela inicial, como um app.",
-      },
-    ],
-  },
-};
+/** Milliseconds each step stays on screen before the demo moves on by itself. */
+const STEP_MS = 3800;
 
 /** Bouncing arrow toward the Safari toolbar at the bottom of an iPhone. */
 function ToolbarHint() {
   const { colors } = useTheme();
+  const reduce = useReducedMotion();
   const y = useSharedValue(0);
   useEffect(() => {
-    y.set(withRepeat(withTiming(8, { duration: 600 }), -1, true));
-  }, [y]);
+    if (!reduce) y.set(withRepeat(withTiming(8, { duration: 600 }), -1, true));
+  }, [y, reduce]);
   const bounce = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
   return (
     <View style={styles.hint} accessible accessibilityLabel="A barra do Safari fica embaixo da tela">
@@ -119,8 +57,26 @@ interface Props {
 export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { title, steps } = CONTENT[kind];
+  const { height } = useWindowDimensions();
+  const reduce = useReducedMotion();
+  const { title, bar, scenes } = SCENES[kind];
+  const [step, setStep] = useState(0);
+  // Plays by itself until the person taps; then it waits for them.
+  const [auto, setAuto] = useState(true);
   const [copied, setCopied] = useState(false);
+  const last = step === scenes.length - 1;
+  const scene = scenes[step];
+
+  useEffect(() => {
+    if (!auto || reduce || last) return;
+    const id = setTimeout(() => setStep((s) => s + 1), STEP_MS);
+    return () => clearTimeout(id);
+  }, [auto, reduce, last, step]);
+
+  const go = (to: number) => {
+    setAuto(false);
+    setStep(to);
+  };
 
   return (
     <View style={[StyleSheet.absoluteFill, pinned]}>
@@ -133,27 +89,27 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
         accessibilityViewIsModal
         style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + space.lg }]}>
         <View style={[styles.grabber, { backgroundColor: colors.separator }]} />
-        <AppText variant="title2" accessibilityRole="header">
+        <AppText variant="title2" align="center" accessibilityRole="header">
           {title}
         </AppText>
-        {steps.map((step, i) => (
-          <View key={step.title} style={styles.step}>
-            <View style={[styles.number, { backgroundColor: colors.accent }]}>
-              <AppText variant="headline" style={{ color: colors.onAccent }} maxFontSizeMultiplier={1.2}>
-                {i + 1}
-              </AppText>
-            </View>
-            <View style={styles.text}>
-              <AppText variant="headline">{step.title}</AppText>
-              <AppText variant="subheadline" color="secondaryLabel">
-                {step.detail}
-              </AppText>
-            </View>
-            <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
-              <Icon ios={step.icon.ios} android={step.icon.android} size={26} color={colors.accent} />
-            </View>
-          </View>
-        ))}
+        {/* Leaves room for the text and buttons on short screens (iPhone SE). */}
+        <InstallPhone bar={bar} scene={scene} height={Math.max(200, Math.min(300, height - 420))} onPress={() => go(last ? 0 : step + 1)} />
+        <Animated.View key={step} entering={FadeIn.duration(250)} style={styles.caption} accessibilityLiveRegion="polite">
+          <AppText variant="footnote" color="secondaryLabel" align="center">
+            Passo {step + 1} de {scenes.length}
+          </AppText>
+          <AppText variant="headline" align="center">
+            {scene.title}
+          </AppText>
+          <AppText variant="subheadline" color="secondaryLabel" align="center">
+            {scene.detail}
+          </AppText>
+        </Animated.View>
+        <View style={styles.dots} accessible={false}>
+          {scenes.map((s, i) => (
+            <View key={s.title} style={[styles.dot, { backgroundColor: i === step ? colors.accent : colors.separator }, i === step && styles.dotOn]} />
+          ))}
+        </View>
         {kind === "inapp" && (
           <PrimaryButton
             label={copied ? "Link copiado!" : "Copiar link"}
@@ -161,7 +117,16 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
             onPress={() => void navigator.clipboard?.writeText(window.location.origin).then(() => setCopied(true))}
           />
         )}
-        <PrimaryButton label="Entendi" onPress={onClose} />
+        <View style={styles.buttons}>
+          {step > 0 && (
+            <View style={styles.grow}>
+              <PrimaryButton label="Voltar" variant="tinted" onPress={() => go(step - 1)} />
+            </View>
+          )}
+          <View style={styles.grow}>
+            <PrimaryButton label={last ? "Entendi" : "Próximo"} onPress={last ? onClose : () => go(step + 1)} />
+          </View>
+        </View>
         {showToolbarHint && <ToolbarHint />}
       </Animated.View>
     </View>
@@ -182,12 +147,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.lg,
     paddingHorizontal: space.lg,
     paddingTop: space.sm,
-    gap: space.lg,
+    gap: space.md,
   },
   grabber: { width: 40, height: 5, borderRadius: 3, alignSelf: "center", marginBottom: space.xs },
-  step: { flexDirection: "row", alignItems: "center", gap: space.md },
-  number: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  text: { flex: 1, gap: 2 },
-  icon: { width: HIT + 8, height: HIT + 8, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  caption: { gap: 2, minHeight: 84 },
+  dots: { flexDirection: "row", justifyContent: "center", gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotOn: { width: 20 },
+  buttons: { flexDirection: "row", gap: space.md },
+  grow: { flex: 1 },
   hint: { alignItems: "center", gap: 2 },
 });

@@ -35,6 +35,8 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
  * unless the address carries ?instalar, which shows the install screen for a look.
  */
 function installOnly(): boolean {
+  // TEMPORÁRIO: em desenvolvimento a tela de instalação aparece sempre (celular ou computador). Voltar ao ?instalar depois.
+  if (__DEV__ && Platform.OS === "web" && !isStandalone()) return true;
   const forced = __DEV__ && Platform.OS === "web" && window.location.search.includes("instalar");
   return (!__DEV__ || forced) && isMobileWeb() && !isStandalone();
 }
