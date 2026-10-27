@@ -13,12 +13,11 @@ import { DesktopFrame } from "@/components/desktop-frame";
 import { RewardToast } from "@/components/reward-toast";
 import { useStackHeader } from "@/components/stack-header";
 import { WaterBackdrop } from "@/components/water-backdrop";
-import { playDrop } from "@/services/sound";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
 import { framedOnDesktop, inDesktopFrame, leaveLoginModal, mirrorToWindow } from "@/state/desktop-frame";
-import { TransitionProvider } from "@/state/transition";
+import { TransitionProvider, useCurtainHold } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
 import { WebSafeAreaInsets } from "@/state/web-safe-area";
@@ -37,12 +36,12 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
 
 /**
  * On a phone's browser the app is install-only; it runs from the home screen icon.
- * Not in development (npm run dev, on localhost or the LAN address): there it opens right away for testing,
- * unless the address carries ?instalar, which shows the install screen for a look.
+ * In development (npm run dev, on localhost or the LAN address) only a signed-out "/" shows the install screen,
+ * with sign-in working, so both the install steps and the app can be tested in the phone's browser.
  */
-function installOnly(): boolean {
-  const forced = __DEV__ && Platform.OS === "web" && window.location.search.includes("instalar");
-  return (!__DEV__ || forced) && isMobileWeb() && !isStandalone();
+function installOnly(signedIn: boolean, pathname: string): boolean {
+  if (!isMobileWeb() || isStandalone() || pathname.startsWith("/legal")) return false;
+  return !__DEV__ || (!signedIn && pathname === "/");
 }
 
 /** A computer's browser, not the installed app: visitors get the landing page at "/" (inside the desktop frame they sign in instead). */
@@ -59,7 +58,7 @@ function go(path: string) {
 function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<typeof useInstallPrompt>) {
   const onLegal = (page: "terms" | "privacy") => go(`/legal/${page}`);
   // The landing's legal links open as pages of their own.
-  if (installOnly() && !pathname.startsWith("/legal")) {
+  if (installOnly(signedIn, pathname)) {
     return (
       <InstallGate
         mode={install.mode === "hidden" ? "manual" : install.mode}
@@ -67,12 +66,12 @@ function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<ty
         iPhone={isIPhone()}
         onInstall={() => void install.install()}
         onLegal={onLegal}
-        playDrop={playDrop}
+        canSignIn={__DEV__}
       />
     );
   }
   if (!signedIn && pathname === "/" && desktopWeb()) {
-    return <DesktopLanding onLegal={onLegal} playDrop={playDrop} />;
+    return <DesktopLanding onLegal={onLegal} />;
   }
   return null;
 }
@@ -142,6 +141,8 @@ function RootStack() {
   const pathname = usePathname();
   const backToToday = useStackHeader("Hoje");
 
+  useCurtainHold(!ready);
+
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);
@@ -171,7 +172,6 @@ function RootStack() {
 
   if (!ready) return null;
 
-  const theme = navigationTheme(colors, scheme);
   const home = homeRoute(signedIn, open, data.onboarded);
 
   if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
@@ -179,7 +179,7 @@ function RootStack() {
   if (entry) return entry;
 
   return (
-    <ThemeProvider value={theme}>
+    <ThemeProvider value={navigationTheme(colors, scheme)}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <AppWater pathname={pathname} scheme={scheme} night={night} />
       <Stack screenOptions={{ headerShown: false, contentStyle: stackBackdrop(scheme) }}>

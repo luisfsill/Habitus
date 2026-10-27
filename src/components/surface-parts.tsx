@@ -60,10 +60,12 @@ export function NavLink({ label, onPress }: { label: string; onPress: () => void
   );
 }
 
-/** Rises gently into place the first time it scrolls into view. */
-export function Reveal({ children, style }: { children: ReactNode; style?: ViewStyle }) {
+export const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** True from the first time the view scrolls into sight (at once with "reduce motion"). Pass the ref to the View. */
+export function useInView() {
   const ref = useRef<ComponentRef<typeof View>>(null);
-  const [shown, setShown] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const [shown, setShown] = useState(reducedMotion);
   useEffect(() => {
     const el = ref.current as unknown as HTMLElement | null;
     if (shown || !el) return;
@@ -71,6 +73,12 @@ export function Reveal({ children, style }: { children: ReactNode; style?: ViewS
     io.observe(el);
     return () => io.disconnect();
   }, [shown]);
+  return { ref, shown };
+}
+
+/** Rises gently into place the first time it scrolls into view. */
+export function Reveal({ children, style }: { children: ReactNode; style?: ViewStyle }) {
+  const { ref, shown } = useInView();
   return (
     <View
       ref={ref}
@@ -79,6 +87,31 @@ export function Reveal({ children, style }: { children: ReactNode; style?: ViewS
       {children}
     </View>
   );
+}
+
+/**
+ * Counts up to `to` once `run` turns true, then glides to each new `to` from where it is (ease-out, ~1.2 s).
+ * Shows `to` straight away with "reduce motion".
+ */
+export function useCountUp(to: number, run: boolean, ms = 1200): number {
+  const [value, setValue] = useState(0);
+  // Where the count is now, so a new target starts from there instead of from 0.
+  const current = useRef(0);
+  useEffect(() => {
+    if (!run || reducedMotion()) return;
+    let frame = 0;
+    const from = current.current;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      current.current = Math.round(from + (to - from) * (1 - (1 - p) ** 3));
+      setValue(current.current);
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [to, run, ms]);
+  return reducedMotion() ? to : value;
 }
 
 const styles = StyleSheet.create({

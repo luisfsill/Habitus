@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Platform, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
+import { backdrops, HIT, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Icon } from "./icon";
 import { WaterBackdrop } from "./water-backdrop";
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   footer?: ReactNode;
   /** Shown to the right of the title block (e.g. the account menu). */
   accessory?: ReactNode;
+  /** A "‹ label" link above the title, for a screen outside the tabs' own flow (the admin area). */
+  back?: { label: string; onPress: () => void };
   /** Leave room for a transparent stack header above the large title. */
   underHeader?: boolean;
   /** Full-screen layer behind the page (e.g. a video); the page and its footer bar turn transparent over it. */
@@ -37,10 +40,23 @@ function pagePadding(insets: { top: number; bottom: number }, page: { dense?: bo
   return { paddingTop: insets.top + top + (page.underHeader ? HEADER : 0), paddingBottom: insets.bottom + bottom };
 }
 
-function TitleBlock({ title, subtitle, accessory, dense }: Pick<Props, "title" | "subtitle" | "accessory" | "dense">) {
+function BackLink({ label, onPress }: NonNullable<Props["back"]>) {
+  const { colors } = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={`Voltar para ${label}`} hitSlop={8} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+      <Icon ios="chevron.left" android="chevron_left" size={22} color={colors.accentText} />
+      <AppText variant="body" color="accentText" style={styles.backLabel}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+function TitleBlock({ title, subtitle, accessory, dense, back }: Pick<Props, "title" | "subtitle" | "accessory" | "dense" | "back">) {
   return (
     <View style={styles.headerRow}>
       <View style={styles.header}>
+        {back && <BackLink {...back} />}
         {subtitle && (
           <AppText variant="subheadline" color="secondaryLabel">
             {subtitle}
@@ -58,13 +74,13 @@ function TitleBlock({ title, subtitle, accessory, dense }: Pick<Props, "title" |
 }
 
 /** Scrollable page with an iOS-style large title. */
-export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop, dense }: Props) {
+export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop, dense, back }: Props) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const content = [styles.content, dense && styles.dense, pagePadding(insets, { dense, underHeader, footer: Boolean(footer) })];
   const body = (
     <>
-      {(title || subtitle) && <TitleBlock title={title} subtitle={subtitle} accessory={accessory} dense={dense} />}
+      {(title || subtitle) && <TitleBlock title={title} subtitle={subtitle} accessory={accessory} dense={dense} back={back} />}
       {children}
     </>
   );
@@ -101,6 +117,9 @@ const styles = StyleSheet.create({
   // zIndex keeps an open accessory menu above the content below it.
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: space.md, zIndex: 10 },
   header: { flex: 1, gap: 2 },
+  back: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", minHeight: HIT, marginLeft: -6, marginTop: -space.sm },
+  backLabel: { fontWeight: "600" },
+  pressed: { opacity: 0.6 },
   // Same column as the content, so buttons do not stretch across a desktop screen.
   footer: { paddingHorizontal: space.xl, paddingTop: space.sm, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
   footerBar: { left: 0, right: 0, bottom: 0, alignItems: "center" },

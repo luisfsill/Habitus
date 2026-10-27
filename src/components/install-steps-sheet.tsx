@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Pressable, StyleSheet, useWindowDimensions, View, type ViewStyle } from "react-native";
+import { GestureDetector, usePanGesture } from "react-native-gesture-handler";
 import Animated, {
+  Easing,
   FadeIn,
   FadeOut,
   SlideInDown,
@@ -9,8 +11,10 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withRepeat,
+  withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { pinned, radius, space, useColumnGutter, useTheme } from "@/theme";
@@ -25,6 +29,43 @@ export type { StepsKind } from "./install-scenes";
 
 /** Milliseconds each step stays on screen before the demo moves on by itself. */
 const STEP_MS = 3800;
+/** Dragged down this far, or flicked down this fast, the sheet closes; otherwise it springs back. */
+const CLOSE_DRAG = 100;
+const CLOSE_SPEED = 800;
+
+const GRAB_SLOP = 6;
+
+/**
+ * The grabber pulls the sheet down and the backdrop fades with it. Let go far or fast enough and it glides the rest
+ * of the way at the finger's speed, then closes; otherwise it springs back.
+ * `dragged` turns off the exit animations, which would otherwise start again from the open position (the jump back up).
+ */
+function useDragToClose(onClose: () => void, distance: number) {
+  const y = useSharedValue(0);
+  const [dragged, setDragged] = useState(false);
+  useEffect(() => {
+    if (dragged) onClose();
+  }, [dragged, onClose]);
+  const pan = usePanGesture({
+    activeOffsetY: GRAB_SLOP,
+    onUpdate: (e) => {
+      // Minus the slop, so the sheet starts from where it is instead of jumping to the finger.
+      y.set(Math.max(0, e.translationY - GRAB_SLOP));
+    },
+    onDeactivate: (e) => {
+      if (y.get() > CLOSE_DRAG || e.velocityY > CLOSE_SPEED) {
+        const left = distance - y.get();
+        const ms = Math.min(320, Math.max(160, (left / Math.max(e.velocityY, 1400)) * 1000));
+        y.set(withTiming(distance, { duration: ms, easing: Easing.out(Easing.quad) }, (done) => done && scheduleOnRN(setDragged, true)));
+      } else {
+        y.set(withSpring(0, { damping: 22, stiffness: 260 }));
+      }
+    },
+  });
+  const follow = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
+  const dim = useAnimatedStyle(() => ({ opacity: 1 - Math.min(1, y.get() / distance) }));
+  return { pan, follow, dim, dragged };
+}
 
 /** Bouncing arrow toward the Safari toolbar at the bottom of an iPhone. */
 function ToolbarHint() {
@@ -67,6 +108,7 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
   const [copied, setCopied] = useState(false);
   const last = step === scenes.length - 1;
   const scene = scenes[step];
+  const drag = useDragToClose(onClose, height);
 
   useEffect(() => {
     if (!auto || reduce || last) return;
@@ -81,15 +123,22 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
 
   return (
     <View style={[StyleSheet.absoluteFill, pinned]}>
-      <Animated.View entering={FadeIn} exiting={FadeOut} style={[StyleSheet.absoluteFill, styles.backdrop]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Fechar instruções" />
+      <Animated.View entering={FadeIn} exiting={drag.dragged ? undefined : FadeOut} style={StyleSheet.absoluteFill}>
+        <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, drag.dim]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Fechar instruções" />
+        </Animated.View>
       </Animated.View>
       <Animated.View
         entering={SlideInDown.springify().damping(18)}
-        exiting={SlideOutDown.duration(200)}
+        exiting={drag.dragged ? undefined : SlideOutDown.duration(200)}
         accessibilityViewIsModal
-        style={[styles.sheet, { left: gutter, right: gutter, backgroundColor: colors.surface, paddingBottom: insets.bottom + space.lg }]}>
-        <View style={[styles.grabber, { backgroundColor: colors.separator }]} />
+        style={[styles.sheet, { left: gutter, right: gutter, backgroundColor: colors.surface, paddingBottom: insets.bottom + space.lg }, drag.follow]}>
+        <GestureDetector gesture={drag.pan}>
+          {/* A tall, full-width strip around the bar, so a thumb finds it easily; touch-action keeps the browser from scrolling instead. */}
+          <View style={[styles.grab, { touchAction: "none", cursor: "grab" } as ViewStyle]} accessibilityLabel="Arraste para baixo para fechar">
+            <View style={[styles.grabber, { backgroundColor: colors.separator }]} />
+          </View>
+        </GestureDetector>
         <AppText variant="title2" align="center" accessibilityRole="header">
           {title}
         </AppText>
@@ -142,10 +191,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingHorizontal: space.lg,
-    paddingTop: space.sm,
     gap: space.md,
   },
-  grabber: { width: 40, height: 5, borderRadius: 3, alignSelf: "center", marginBottom: space.xs },
+  grab: { alignSelf: "stretch", paddingTop: space.sm, paddingBottom: space.md, marginBottom: -space.md, alignItems: "center" },
+  grabber: { width: 40, height: 5, borderRadius: 3 },
   caption: { gap: 2, minHeight: 84 },
   dots: { flexDirection: "row", justifyContent: "center", gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },

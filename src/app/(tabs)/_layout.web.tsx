@@ -4,7 +4,6 @@ import { StyleSheet, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
 import { playSplash, settleWater, stirWater } from "@/services/sound";
-import { useAccess } from "@/state/access";
 import { MAX_WIDTH, pinned, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
@@ -23,7 +22,8 @@ type Tab = (typeof TABS)[number];
 
 function Bar({ tabs }: { tabs: readonly Tab[] }) {
   const { switchTab, getTrigger } = useTabTrigger({ name: "index" });
-  const active = Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
+  // In the admin area (reached from the account menu) no tab is lit, so any tab leads back.
+  const active = getTrigger("admin")?.isFocused ? -1 : Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
   const { colors, scheme } = useTheme();
   const items = tabs.map((tab, i) => ({
     key: tab.key,
@@ -39,9 +39,8 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
 }
 
 export default function WebTabsLayout() {
-  const { isAdmin } = useAccess();
-  // Only administrators see the Admin tab; for everyone else it is not a link at all (the admin layout also redirects).
-  const shown = TABS.filter((tab) => tab.key !== "admin" || isAdmin);
+  // The admin tab is registered but never drawn: administrators open it from the account menu (the admin layout also redirects others).
+  const shown = TABS.filter((tab) => tab.key !== "admin");
   return (
     <Tabs>
       <TabSlot />

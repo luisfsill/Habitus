@@ -7,7 +7,7 @@ import { radius, space, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 import { GAINS } from "./benefits";
 import { Icon } from "./icon";
-import { Reveal, SurfaceButton } from "./surface-parts";
+import { css, SurfaceButton, useCountUp, useInView } from "./surface-parts";
 
 // shortcut: prices mirror supabase/admin.sql; the plans table is readable only when signed in. Open it to anon if admins change prices often.
 const PLANS = [
@@ -19,21 +19,23 @@ const PLANS = [
 const STEPS = [
   { title: "Crie sua conta", text: "Nome, e-mail e senha. Os 7 primeiros dias são grátis, sem cartão." },
   { title: "Escolha seu horário", text: "Diga quando seu dia começa e termina e a hora em que você dorme." },
-  { title: "Receba as dicas", text: "O Habitus avisa cada dica na hora certa. Cada uma leva até 2 minutos." },
+  { title: "Receba os avisos", text: "Dicas, água e seus lembretes chegam na hora certa. Ligue a água e crie lembretes quando quiser." },
 ] as const;
 
 const FEATURES = [
-  { icon: { ios: "bell.badge", android: "notifications_active" }, title: "Lembretes na hora certa", text: "Distribuídos ao longo do seu dia, sem você precisar lembrar." },
-  { icon: { ios: "trophy", android: "emoji_events" }, title: "XP, faixas e medalhas", text: "Cada dica feita conta. Suba de nível e mantenha a sequência." },
+  { icon: { ios: "bell.badge", android: "notifications_active" }, title: "Ações na notificação", text: "Marque como feito ou adie 10 minutos sem abrir o app." },
+  { icon: { ios: "trophy", android: "emoji_events" }, title: "XP, faixas e medalhas", text: "Dicas, dias perfeitos e a meta de água viram XP. Suba de nível." },
   { icon: { ios: "calendar", android: "calendar_month" }, title: "Histórico do mês", text: "Veja num calendário os dias completos e os parciais." },
-  { icon: { ios: "icloud", android: "cloud_done" }, title: "Na sua conta", text: "Seu progresso fica salvo e aparece em qualquer aparelho." },
-  { icon: { ios: "drop.fill", android: "water_drop" }, title: "Lembrete de água", text: "Defina sua meta de copos e receba avisos para beber água." },
+  { icon: { ios: "icloud", android: "cloud_done" }, title: "Na sua conta", text: "Progresso, água e lembretes salvos em qualquer aparelho." },
+  { icon: { ios: "moon", android: "dark_mode" }, title: "Claro ou escuro", text: "O app segue a aparência do seu celular, ou a que você escolher." },
   { icon: { ios: "iphone", android: "smartphone" }, title: "Sem loja de apps", text: "Instale pelo navegador do celular em poucos segundos." },
 ] as const;
 
 const FAQ = [
   { q: "Preciso de cartão para testar?", a: "Não. Você cria a conta e usa tudo por 7 dias, sem cartão." },
   { q: "Quais são as 6 dicas?", a: "É surpresa: você descobre ao entrar no app, uma de cada vez, ao longo do dia." },
+  { q: "Sou obrigado a usar o lembrete de água?", a: "Não. Ele vem desligado. Se quiser, você liga em Ajustes e escolhe a meta de copos e o intervalo." },
+  { q: "Que lembretes eu posso criar?", a: "Qualquer um: contas, aniversários, ligações, compromissos. Com notas, até 5 avisos antes e repetição se precisar." },
   { q: "Funciona no celular?", a: "Sim. Abra o site no celular e toque em Instalar agora. O Habitus vira um app na sua tela inicial." },
   { q: "Como funciona a renovação?", a: "Os planos são por tempo e não renovam sozinhos. Para renovar, você escolhe um plano e fala com a gente pelo WhatsApp." },
 ] as const;
@@ -95,27 +97,84 @@ function Feature({ icon, title, text }: { icon: { ios: string; android: string }
   );
 }
 
-/** Benefits as a magazine list: thin number, strong title, one line of text, hairlines between. */
-export function Benefits({ wide }: { wide: boolean }) {
+/** Icon and line rows, used by the water and reminder sections. */
+export function Bullets({ items }: { items: readonly { icon: string; text: string }[] }) {
   const { colors } = useTheme();
   return (
-    <Block id="beneficios" kicker="Benefícios" title="O que muda no seu dia">
-      <View style={[styles.list, { borderColor: colors.separator }]}>
-        {GAINS.map((gain, i) => (
-          <Reveal key={gain.title} style={{ ...styles.gain, ...(wide ? styles.gainWide : null), borderColor: colors.separator }}>
-            <AppText color="accentText" style={styles.gainNumber}>
-              {String(i + 1).padStart(2, "0")}
-            </AppText>
-            <AppText style={[styles.gainTitle, wide && styles.gainTitleWide]}>{gain.title}</AppText>
-            <AppText variant="body" color="secondaryLabel" style={[styles.gainText, wide && styles.gainTextWide]}>
-              {gain.text}
-            </AppText>
-          </Reveal>
+    <View style={styles.bullets}>
+      {items.map((item) => (
+        <View key={item.text} style={styles.bullet}>
+          <Icon ios="circle" android={item.icon} size={22} color={colors.accentText} />
+          <AppText variant="body" style={styles.flex}>
+            {item.text}
+          </AppText>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const RING = 2 * Math.PI * 84;
+const SLICE = RING / 6;
+
+/** Six arcs that fill one after another, like the day's ring in the app. */
+function DayRing({ shown }: { shown: boolean }) {
+  const { colors } = useTheme();
+  const done = useCountUp(6, shown, 1600);
+  return (
+    <View style={styles.ring}>
+      <svg width={220} height={220} viewBox="0 0 220 220" aria-hidden>
+        <circle cx={110} cy={110} r={84} fill="none" stroke={colors.ringTrack} strokeWidth={18} />
+        {Array.from({ length: 6 }, (_, i) => (
+          <circle
+            key={i}
+            cx={110}
+            cy={110}
+            r={84}
+            fill="none"
+            stroke={colors.accentText}
+            strokeWidth={18}
+            strokeDasharray={`${SLICE - 6} ${RING}`}
+            strokeDashoffset={shown ? 0 : SLICE - 6}
+            transform={`rotate(${-90 + i * 60} 110 110)`}
+            style={{ transition: `stroke-dashoffset 450ms ease-out ${i * 260}ms` }}
+          />
         ))}
+      </svg>
+      <View style={styles.ringCenter}>
+        <AppText style={styles.ringValue}>{done}/6</AppText>
+        <AppText variant="footnote" color="secondaryLabel">
+          {done === 6 ? "dia perfeito" : "hoje"}
+        </AppText>
       </View>
-      <AppText variant="subheadline" color="secondaryLabel" align="center">
-        Quais são as 6 dicas? Você descobre ao entrar no app.
-      </AppText>
+    </View>
+  );
+}
+
+/** The six tips in short: what they bring, not what they are (a surprise inside the app). */
+export function Tips({ wide }: { wide: boolean }) {
+  const { colors } = useTheme();
+  const { ref, shown } = useInView();
+  return (
+    <Block id="dicas" kicker="As 6 dicas" title="Seis pausas. Até 2 minutos cada.">
+      <View ref={ref} style={[styles.tips, wide && styles.tipsWide]}>
+        <DayRing shown={shown} />
+        <View style={[styles.tipsText, wide && styles.flex]}>
+          <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
+            Pequenos gestos espalhados pelo seu horário, do começo do dia até a hora de dormir. Quais são? Você descobre ao entrar.
+          </AppText>
+          <View style={styles.gains}>
+            {GAINS.map((gain, i) => (
+              <View
+                key={gain.title}
+                style={[styles.gainItem, css({ opacity: shown ? 1 : 0, transform: `translateY(${shown ? 0 : 12}px)`, transition: `opacity 500ms ${i * 260}ms, transform 500ms ${i * 260}ms` })]}>
+                <Icon ios={gain.icon.ios} android={gain.icon.android} size={22} color={colors.accentText} />
+                <AppText variant="headline">{gain.title}</AppText>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
     </Block>
   );
 }
@@ -235,14 +294,18 @@ const styles = StyleSheet.create({
   bottom: { borderBottomWidth: StyleSheet.hairlineWidth },
   step: { gap: space.sm },
   number: { width: 36, height: 36, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", marginBottom: space.xs },
-  list: { borderTopWidth: 1 },
-  gain: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", gap: space.lg, paddingVertical: space.xl, borderBottomWidth: 1 },
-  gainWide: { flexWrap: "nowrap", gap: space.xxl },
-  gainNumber: { width: 64, flexShrink: 0, fontSize: 40, lineHeight: 44, fontWeight: "200" },
-  gainTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700" },
-  gainTitleWide: { width: 320, flexShrink: 0 },
-  gainText: { flexBasis: "100%" },
-  gainTextWide: { flex: 1, flexBasis: 0, minWidth: 0 },
+  flex: { flex: 1 },
+  bullets: { gap: space.md },
+  bullet: { flexDirection: "row", alignItems: "center", gap: space.md },
+  lede: { fontWeight: "400", lineHeight: 30 },
+  tips: { gap: space.xxl, alignItems: "center" },
+  tipsWide: { flexDirection: "row", gap: space.xxl * 2 },
+  tipsText: { gap: space.xl, alignSelf: "stretch" },
+  ring: { width: 220, height: 220, alignItems: "center", justifyContent: "center" },
+  ringCenter: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
+  ringValue: { fontSize: 44, lineHeight: 48, fontWeight: "700", letterSpacing: -1 },
+  gains: { flexDirection: "row", flexWrap: "wrap", rowGap: space.lg },
+  gainItem: { width: "50%", flexDirection: "row", alignItems: "center", gap: space.sm, paddingRight: space.md },
   plans: { borderTopWidth: 1, borderBottomWidth: 1 },
   plansWide: { flexDirection: "row" },
   plan: { flex: 1, gap: space.xs, paddingVertical: space.xxl, paddingHorizontal: space.xl },

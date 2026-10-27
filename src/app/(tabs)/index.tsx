@@ -5,7 +5,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
-import { InstallCard } from "@/components/install-card";
 import { PermissionBanners } from "@/components/permission-banner";
 import { ReminderHero } from "@/components/reminder-hero";
 import { ReminderRow } from "@/components/reminder-row";
@@ -30,7 +29,6 @@ import { openSystemSettings } from "@/services/notifications";
 import { playDrop } from "@/services/sound";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
-import { useInstallPrompt } from "@/state/use-install-prompt";
 import { useNow } from "@/state/use-now";
 import { TabAccount } from "@/state/tab-account";
 import { space } from "@/theme";
@@ -120,7 +118,6 @@ function summary(count: number, activeToday: boolean): string {
 
 export default function TodayScreen() {
   const { data, permission, exactAlarms, askExactAlarms, progress } = useAppState();
-  const install = useInstallPrompt();
   const now = useNow(1000);
   const today = dayKey(now);
   const { days } = data.settings;
@@ -144,9 +141,6 @@ export default function TodayScreen() {
     <>
     <Screen title={title(now, profile)} subtitle={dateLine(now)} accessory={<TabAccount />}>
       <TrialBanner profile={profile} now={now} onSeePlans={() => router.push("/renovar")} />
-      {install.mode !== "hidden" && (
-        <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
-      )}
       <PermissionBanners
         permission={permission}
         exactAlarms={exactAlarms}

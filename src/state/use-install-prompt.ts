@@ -90,7 +90,6 @@ export function useInstallPrompt() {
     return outcome === "accepted";
   }, []);
 
-  const dismiss = useCallback(() => setMode("hidden"), []);
 
-  return { mode: installed ? "hidden" : mode, installed, install, dismiss };
+  return { mode: installed ? "hidden" : mode, installed, install };
 }

@@ -10,6 +10,8 @@ import { clearData, loadData, saveProfileCache } from "@/services/storage";
 import { supabase, supabaseConfigured } from "@/services/supabase";
 import { deleteAccountRemote, pushMerged } from "@/services/sync";
 
+import { leaveToLanding } from "./desktop-frame";
+
 export type AuthResult = { ok: true } | { ok: false; message: string };
 
 interface AuthValue {
@@ -20,7 +22,8 @@ interface AuthValue {
   session: Session | null;
   /** True between a valid reset code and the new password: keeps the account screens up. */
   recovering: boolean;
-  signUp: (name: string, email: string, password: string) => Promise<AuthResult>;
+  /** `invite`: a code from an admin; a valid one replaces the 7-day trial with its license. */
+  signUp: (name: string, email: string, password: string, invite?: string) => Promise<AuthResult>;
   verifySignup: (email: string, code: string) => Promise<AuthResult>;
   resendSignup: (email: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult | { needsCode: true }>;
@@ -54,6 +57,7 @@ async function forgetLocal(): Promise<void> {
   await rescheduleAll(defaultData());
   await forgetPushDevice();
   await supabase?.auth.signOut({ scope: "local" });
+  leaveToLanding();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -94,12 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ready,
       session,
       recovering,
-      async signUp(name, email, password) {
+      async signUp(name, email, password, invite) {
         try {
           const { data, error } = await auth().signUp({
             email: email.trim(),
             password,
-            options: { data: { name: name.trim(), terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } },
+            options: { data: { name: name.trim(), invite, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() } },
           });
           if (error) return { ok: false, message: authErrorMessage(error) };
           // With e-mail confirmation on, an existing address comes back as a user with no identities.

@@ -14,6 +14,7 @@ import { UndoToast } from "@/components/undo-toast";
 import { accessStatus, type AccessStatus, displayName, extendAccess, matchesSearch, type Profile } from "@/domain/access";
 import { createUser, listProfiles, setAccess } from "@/services/admin";
 import { useAccess } from "@/state/access";
+import { TabAccount } from "@/state/tab-account";
 import { useSignOut } from "@/state/use-sign-out";
 import { HIT, radius, space, type, useTheme } from "@/theme";
 
@@ -107,19 +108,21 @@ export default function AdminUsersScreen() {
       {wide && me && (
         <AdminTopBar
           section="users"
-          onSection={(s) => s === "plans" && router.push("/admin/plans")}
+          onSection={(s) => s !== "users" && router.push(`/admin/${s}`)}
           name={displayName(me)}
           email={me.email}
           menu={[
             { label: "Voltar para o app", icon: { ios: "house", android: "home" }, onPress: () => router.navigate("/") },
             { label: "Meu perfil", icon: { ios: "person.crop.circle", android: "account_circle" }, onPress: () => router.navigate("/settings") },
             { label: "Planos e preços", icon: { ios: "creditcard", android: "credit_card" }, onPress: () => router.push("/admin/plans") },
+            { label: "Convites", icon: { ios: "envelope", android: "email" }, onPress: () => router.push("/admin/invites") },
             { label: "Termos e Privacidade", icon: { ios: "doc.text", android: "description" }, onPress: () => router.push("/legal/terms") },
             { label: "Sair", icon: { ios: "rectangle.portrait.and.arrow.right", android: "logout" }, destructive: true, onPress: () => void leave() },
           ]}
         />
       )}
-      <Screen title={wide ? undefined : "Admin"}>
+      {/* Narrow (a phone, the desktop frame): no top bar, so a way back to Hoje and the avatar sit by the title. */}
+      <Screen {...(wide ? {} : { title: "Admin", back: { label: "Hoje", onPress: () => router.navigate("/") }, accessory: <TabAccount /> })}>
         <StatColumns
           columns={wide ? 4 : 2}
           stats={[
@@ -166,7 +169,10 @@ export default function AdminUsersScreen() {
             onClose={() => setCreating(false)}
           />
         ) : (
-          <PrimaryButton label="Criar usuário" variant="tinted" onPress={() => setCreating(true)} />
+          <View style={styles.actions}>
+            <PrimaryButton label="Criar usuário" icon={{ ios: "person.badge.plus", android: "person_add" }} variant="tinted" onPress={() => setCreating(true)} />
+            <PrimaryButton label="Criar convite" icon={{ ios: "envelope", android: "mail" }} variant="tinted" onPress={() => router.push("/admin/invites")} />
+          </View>
         )}
 
         {error && <AppText variant="footnote" color="danger">{error}</AppText>}
@@ -199,5 +205,6 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   search: { minHeight: HIT + 8, borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: space.lg, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 0 } },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: space.xs },
+  actions: { gap: space.sm },
   chip: { paddingHorizontal: space.md, minHeight: 32, justifyContent: "center", borderRadius: radius.pill },
 });

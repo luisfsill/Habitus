@@ -4,7 +4,6 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanim
 
 import { AppText } from "@/components/app-text";
 import { BedtimeField } from "@/components/bedtime-field";
-import { InstallCard } from "@/components/install-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
@@ -15,7 +14,6 @@ import { computeSchedule } from "@/domain/schedule";
 import { TRICKS } from "@/domain/tricks";
 import { openSystemSettings, type PermissionState } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
-import { useInstallPrompt } from "@/state/use-install-prompt";
 import { radius, space, useTheme } from "@/theme";
 
 const STEPS = 3;
@@ -41,12 +39,7 @@ function Dots({ step }: { step: number }) {
 
 function Intro() {
   const { colors } = useTheme();
-  const install = useInstallPrompt();
   return (
-    <>
-    {install.mode !== "hidden" && (
-      <InstallCard mode={install.mode} onInstall={() => void install.install()} onDismiss={install.dismiss} />
-    )}
     <View>
       <View style={styles.tricks}>
         {TRICKS.map((t) => (
@@ -62,7 +55,6 @@ function Intro() {
         ))}
       </View>
     </View>
-    </>
   );
 }
 

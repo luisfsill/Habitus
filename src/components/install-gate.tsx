@@ -7,7 +7,7 @@ import { pinned, radius, space, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
 import { InstallStepsSheet, type StepsKind } from "./install-steps-sheet";
-import { LandingModal } from "./landing-modal";
+import { LandingModal, LoginFrame } from "./landing-modal";
 import { LandingPage } from "./landing-page";
 import { css, SurfaceButton } from "./surface-parts";
 
@@ -20,7 +20,8 @@ interface Props {
   iPhone: boolean;
   onInstall: () => void;
   onLegal: (page: "terms" | "privacy") => void;
-  playDrop: () => void;
+  /** Development: "Entrar" and "Começar" open the sign-in screen, as on a computer, while the install stays testable. */
+  canSignIn?: boolean;
 }
 
 function Installed() {
@@ -39,10 +40,12 @@ function Installed() {
  * A phone's browser: the landing page, but the app only runs installed. "Entrar" and "Começar" explain that and
  * offer the install; a bar pinned to the bottom keeps "Instalar o app" one tap away.
  */
-export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, playDrop }: Props) {
+export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, canSignIn = false }: Props) {
   const insets = useSafeAreaInsets();
   const [ask, setAsk] = useState(false);
   const [steps, setSteps] = useState(false);
+  const [login, setLogin] = useState<"signup" | "signin" | null>(null);
+  const start = (next: "signup" | "signin") => (canSignIn ? setLogin(next) : setAsk(true));
 
   const install = () => {
     setAsk(false);
@@ -51,7 +54,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, playD
   };
 
   return (
-    <LandingPage onStart={() => setAsk(true)} onSignIn={() => setAsk(true)} onLegal={onLegal} playDrop={playDrop}>
+    <LandingPage onStart={() => start("signup")} onSignIn={() => start("signin")} onLegal={onLegal} onInstall={installed ? undefined : install}>
       {/* Room for the bar under the footer. */}
       <View style={{ height: BAR_HEIGHT + insets.bottom }} />
       {/* Hidden under the steps sheet, whose own buttons sit where it would. */}
@@ -91,6 +94,12 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, playD
               </>
             )}
           </View>
+        </LandingModal>
+      )}
+
+      {login && (
+        <LandingModal label="Entrar no Habitus" onClose={() => setLogin(null)}>
+          <LoginFrame mode={login} />
         </LandingModal>
       )}
 

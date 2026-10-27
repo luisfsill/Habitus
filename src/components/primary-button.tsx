@@ -5,6 +5,8 @@ import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, w
 
 import { HIT, type Palette, radius, space, type, useTheme } from "@/theme";
 
+import { Icon } from "./icon";
+
 interface Props {
   label: string;
   onPress: () => void;
@@ -18,6 +20,8 @@ interface Props {
   shake?: number;
   /** The main call to action of a screen: a brighter water blue. */
   glow?: boolean;
+  /** Shown before the label. */
+  icon?: { ios: string; android: string };
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -67,7 +71,7 @@ function looks(variant: NonNullable<Props["variant"]>, colors: Palette, { destru
  * Pill of the "water glass" theme. Filled: clear water blue with a rim of light; tinted: frosted glass; plain: just
  * the label. Pressing sends a ripple out from the finger.
  */
-export function PrimaryButton({ label, onPress, variant = "filled", disabled, accessibilityHint, destructive, loading, shake, glow }: Props) {
+export function PrimaryButton({ label, onPress, variant = "filled", disabled, accessibilityHint, destructive, loading, shake, glow, icon }: Props) {
   const { colors } = useTheme();
   const scale = useSharedValue(1);
   const shift = useSharedValue(0);
@@ -101,14 +105,17 @@ export function PrimaryButton({ label, onPress, variant = "filled", disabled, ac
         void Haptics.selectionAsync();
         onPress();
       }}
-      style={[styles.base, pill, { opacity: disabled ? 0.45 : 1 }, animated]}>
+      style={[styles.base, icon && styles.withIcon, pill, { opacity: disabled ? 0.45 : 1 }, animated]}>
       {ripple.node}
       {loading ? (
         <ActivityIndicator color={text} />
       ) : (
-        <Animated.Text maxFontSizeMultiplier={1.8} style={[type.headline, { color: text }]}>
-          {label}
-        </Animated.Text>
+        <>
+          {icon && <Icon ios={icon.ios} android={icon.android} size={20} color={text} />}
+          <Animated.Text maxFontSizeMultiplier={1.8} style={[type.headline, { color: text }]}>
+            {label}
+          </Animated.Text>
+        </>
       )}
     </AnimatedPressable>
   );
@@ -125,5 +132,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  withIcon: { flexDirection: "row", gap: space.sm },
   ripple: { position: "absolute", width: RIPPLE, height: RIPPLE, borderRadius: RIPPLE / 2 },
 });

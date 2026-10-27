@@ -39,7 +39,7 @@ No terminal do Expo, `a` abre no emulador Android e `i` abre no simulador iOS (s
 
 O Habitus é um PWA: dá para instalar pelo navegador, sem loja, no Android e no iPhone.
 
-- **No computador:** o app funciona direto no navegador. O cartão **Instale o Habitus** é opcional.
+- **No computador:** o app funciona direto no navegador.
 - **No computador, sem login:** `/` mostra a landing page (benefícios, como funciona, recursos, planos e dúvidas) com os botões Começar grátis e Entrar.
 - **No celular, pelo navegador:** o app mostra só uma tela de apresentação (como funciona em 3 passos, os benefícios das 6 dicas, sem revelar quais são, e o teste de 7 dias com cadastro) com o botão **Instalar agora** embaixo. Para usar, é preciso instalar e abrir pelo ícone da tela inicial. Isso vale também para links diretos.
   - **Android (Chrome, Edge, Samsung Internet):** o botão abre a janela de instalação do próprio navegador.

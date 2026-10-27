@@ -57,10 +57,9 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 4. Histórico: sequência de dias, calendário mensal, percentual da semana.
 5. Ajustes: horários, hora de dormir, dias, afirmações, som, testes de notificação, água (ligar, meta, intervalo), aparência (auto/claro/escuro), conta (Termos, Política, sair, excluir conta), reset.
 6. Conquistas: nível, faixa, estatísticas, medalhas e regras de XP.
-7. Web/PWA: cartão "Instale o Habitus" com "Instalar agora" na tela inicial.
-8. Conta: criar conta (nome, e-mail, senha) ou entrar, código de 6 dígitos por e-mail, esqueci minha senha, aceite dos Termos de uso e da Política de privacidade. No celular a conta é criada depois de instalar.
-9. Acesso: 7 dias grátis no cadastro; depois, planos por tempo (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90). Vencido, só a tela "Seu plano acabou" com renovação pelo WhatsApp. Aviso nos 3 últimos dias do teste.
-10. Admin (aba e `/admin`, só administradores): busca por nome/e-mail, liberação +30/+90/+365/ilimitado com Desfazer, ficha com dados, validade exata, cargo, nova senha e exclusão, criação de usuário com senha provisória, planos e preços.
+7. Conta: criar conta (nome, e-mail, senha) ou entrar, código de 6 dígitos por e-mail, esqueci minha senha, aceite dos Termos de uso e da Política de privacidade. No celular a conta é criada depois de instalar.
+8. Acesso: 7 dias grátis no cadastro; depois, planos por tempo (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90). Vencido, só a tela "Seu plano acabou" com renovação pelo WhatsApp. Aviso nos 3 últimos dias do teste.
+9. Admin (`/admin`, só administradores, pelo item "Área admin" do menu do avatar): busca por nome/e-mail, liberação +30/+90/+365/ilimitado com Desfazer, ficha com dados, validade exata, cargo, nova senha e exclusão, criação de usuário com senha provisória, planos e preços, e convites (30 dias, 6 meses, 1 ano ou ilimitado): link `/auth?modo=criar&convite=CÓDIGO` e mensagem pronta para copiar; quem cria a conta com o código já entra com a licença. O código também pode ser digitado em "Tenho um código de convite" no cadastro (no celular o link cai na tela de instalar).
 
 ## Fora de escopo
 

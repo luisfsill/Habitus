@@ -93,6 +93,9 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress
   const { colors, scheme } = useTheme();
   const fill = backdrops[scheme];
   const [open, setOpen] = useState(false);
+  // Picking an item closes the menu without its fade: the screen behind may be left (a tab stays mounted), and a
+  // fade still running there would play again, menu open, on the way back.
+  const [instant, setInstant] = useState(false);
   const wrap = useRef<ComponentRef<typeof View>>(null);
   const [flash, setFlash] = useState(0);
   // The chevron turns to show the menu is open.
@@ -120,8 +123,12 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress
   }, [open]);
 
   const choose = (item: AccountMenuItem) => {
-    setOpen(false);
-    item.onPress();
+    setInstant(true);
+    // Next frame: the menu has rendered without its exit animation, so it is simply gone.
+    requestAnimationFrame(() => {
+      setOpen(false);
+      item.onPress();
+    });
   };
 
   return (
@@ -130,6 +137,7 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress
         onPress={() => {
           void Haptics.selectionAsync();
           setFlash((n) => n + 1);
+          setInstant(false);
           setOpen((o) => !o);
         }}
         accessibilityRole="button"
@@ -156,7 +164,7 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress
       {open && (
         <Animated.View
           entering={MENU_IN}
-          exiting={MENU_OUT}
+          exiting={instant ? undefined : MENU_OUT}
           accessibilityRole="menu"
           style={[styles.menu, fill, { borderColor: colors.separator, shadowColor: colors.shadow }]}>
           <View style={styles.menuHead}>

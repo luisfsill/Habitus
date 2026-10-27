@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, type StyleProp, StyleSheet,
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { inLoginModal } from "@/state/desktop-frame";
 import { radius, space } from "@/theme";
 
 import { WaterBackdrop } from "./water-backdrop";
@@ -27,11 +28,15 @@ function Body({ style, children }: { style: StyleProp<ViewStyle>; children: Reac
   );
 }
 
-/** Deep-water page with the title on top and a frosted glass card holding the form. */
+/**
+ * Deep-water page with the title on top and a frosted glass card holding the form.
+ * In the landing page's dialog the dialog is the card already, so the form sits on it without one.
+ */
 export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
   // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title starts under that.
   const top = Platform.OS === "web" ? space.xxl + space.sm : space.xxl;
+  const bare = inLoginModal();
   return (
     // Web: the root layout's water canvas shows through (dark on these screens); native paints its own.
     <View style={[styles.root, Platform.OS !== "web" && styles.native]}>
@@ -42,11 +47,16 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
             {title}
             {subtitle}
           </Animated.View>
-          <Animated.View entering={FadeInDown.delay(150).duration(700).springify()} style={styles.cardShadow}>
-            <View style={styles.card}>
-              <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.cardBody}>{children}</View>
-            </View>
+          <Animated.View entering={FadeInDown.delay(150).duration(700).springify()} style={!bare && styles.cardShadow}>
+            {bare ? (
+              <View style={styles.bareBody}>{children}</View>
+            ) : (
+              <View style={styles.card}>
+                {/* Rounded itself: Chrome paints a backdrop-filter past its parent's rounded clip, leaving square corners. */}
+                <BlurView intensity={40} tint="dark" style={[StyleSheet.absoluteFill, styles.blur]} />
+                <View style={styles.cardBody}>{children}</View>
+              </View>
+            )}
           </Animated.View>
           {footer && <Animated.View entering={FadeInDown.delay(300).springify()}>{footer}</Animated.View>}
         </Body>
@@ -70,5 +80,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(125,211,252,0.16)",
     borderTopColor: "rgba(255,255,255,0.28)",
   },
+  blur: { borderRadius: radius.lg + 3 },
   cardBody: { padding: space.lg + 2, gap: space.md },
+  bareBody: { gap: space.md, paddingHorizontal: space.xs },
 });

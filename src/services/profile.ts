@@ -26,3 +26,11 @@ export async function fetchPlans(): Promise<Plan[]> {
   if (error) throw serviceError(error);
   return (data as unknown[]).map(parsePlan).filter((p): p is Plan => p !== null);
 }
+
+/** License days of a usable invite (null = unlimited), or undefined when the code is not valid. */
+export async function checkInvite(code: string): Promise<number | null | undefined> {
+  const result = await requireSupabase().rpc("check_invite", { invite_code: code });
+  if (result.error) throw serviceError(result.error);
+  const data = result.data as unknown;
+  return data === null ? undefined : ((data as { days: number | null }).days ?? null);
+}

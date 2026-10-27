@@ -84,3 +84,25 @@ export function hasStoredSession(): boolean {
     return false;
   }
 }
+
+const LOGIN_CURTAIN_KEY = "habitus:login-curtain";
+
+/** Web: signed in from the landing's dialog, whose page then reloads. Kept for this tab only, across that reload. */
+export function markLoginCurtain() {
+  try {
+    sessionStorage.setItem(LOGIN_CURTAIN_KEY, "1");
+  } catch {
+    // Storage blocked: the app opens without the curtain.
+  }
+}
+
+/** Whether the page was reloaded by a sign-in in the landing's dialog; reading clears it. */
+export function takeLoginCurtain(): boolean {
+  try {
+    const marked = sessionStorage.getItem(LOGIN_CURTAIN_KEY) !== null;
+    sessionStorage.removeItem(LOGIN_CURTAIN_KEY);
+    return marked;
+  } catch {
+    return false;
+  }
+}

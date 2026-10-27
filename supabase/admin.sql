@@ -37,13 +37,51 @@ create policy "read own profile or admin" on public.profiles
   for select to authenticated using ((select auth.uid()) = id or (select public.is_admin()));
 -- Sem políticas de insert/update/delete: só as funções abaixo mudam perfis.
 
--- Conta nova: perfil com 7 dias de teste grátis.
+-- Convites ------------------------------------------------------------------
+-- Código de uso único que o admin gera; quem cria a conta com ele já entra com a licença.
+
+create table if not exists public.invites (
+  code text primary key,
+  days int check (days is null or days > 0), -- null = ilimitado
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  used_by uuid references auth.users (id) on delete set null,
+  used_at timestamptz
+);
+
+alter table public.invites enable row level security;
+
+drop policy if exists "admin reads invites" on public.invites;
+create policy "admin reads invites" on public.invites for select to authenticated using ((select public.is_admin()));
+
+-- Conta nova: perfil com 7 dias de teste grátis, ou com a licença do convite válido que veio no cadastro.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
+declare
+  invite_code text := upper(regexp_replace(coalesce(new.raw_user_meta_data ->> 'invite', ''), '[^A-Za-z0-9]', '', 'g'));
+  invite_days int;
+  invited boolean := false;
 begin
-  insert into public.profiles (id, name, email, access_until)
-  values (new.id, left(trim(coalesce(new.raw_user_meta_data ->> 'name', '')), 80), new.email, now() + interval '7 days')
+  if invite_code <> '' then
+    update public.invites set used_by = new.id, used_at = now()
+    where code = invite_code and used_at is null and expires_at > now()
+    returning days into invite_days;
+    invited := found;
+  end if;
+  insert into public.profiles (id, name, email, plan, unlimited, access_until)
+  values (
+    new.id,
+    left(trim(coalesce(new.raw_user_meta_data ->> 'name', '')), 80),
+    new.email,
+    case when invited then 'paid' else 'trial' end,
+    invited and invite_days is null,
+    case
+      when not invited then now() + interval '7 days'
+      when invite_days is null then null
+      else now() + make_interval(days => invite_days)
+    end
+  )
   on conflict (id) do nothing;
   return new;
 end;
@@ -161,6 +199,36 @@ begin
 end;
 $$;
 
+-- Convite novo, válido por 7 dias e de uso único; invite_days null = ilimitado.
+create or replace function public.admin_create_invite(invite_days int)
+returns text language plpgsql security definer set search_path = ''
+as $$
+declare new_code text := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
+begin
+  perform public.require_admin();
+  insert into public.invites (code, days, expires_at) values (new_code, invite_days, now() + interval '7 days');
+  return new_code;
+end;
+$$;
+
+-- Excluir um convite o invalida na hora; a licença de quem já se cadastrou com ele continua.
+create or replace function public.admin_delete_invite(invite_code text)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  perform public.require_admin();
+  delete from public.invites where code = invite_code;
+end;
+$$;
+
+-- A tela de cadastro confere o convite antes de criar a conta: {"days": n | null}, ou null se não vale.
+create or replace function public.check_invite(invite_code text)
+returns jsonb language sql stable security definer set search_path = ''
+as $$
+  select jsonb_build_object('days', days) from public.invites
+  where code = upper(regexp_replace(invite_code, '[^A-Za-z0-9]', '', 'g')) and used_at is null and expires_at > now();
+$$;
+
 -- Qualquer conta pode mudar o próprio nome (Ajustes > Conta).
 create or replace function public.update_my_name(new_name text)
 returns void language sql security definer set search_path = ''
@@ -175,13 +243,17 @@ begin
     'is_admin()', 'has_access()', 'require_admin()',
     'admin_set_access(uuid, timestamptz, boolean, text)', 'admin_set_role(uuid, text)',
     'admin_update_name(uuid, text)', 'admin_delete_user(uuid)',
-    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)'
+    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int)', 'admin_delete_invite(text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
   end loop;
 end;
 $$;
+
+-- Quem ainda não tem conta confere o convite na tela de cadastro.
+revoke execute on function public.check_invite(text) from public;
+grant execute on function public.check_invite(text) to anon, authenticated;
 
 -- Para virar administrador, troque o e-mail e rode só esta linha:
 -- update public.profiles set role = 'admin', unlimited = true where email = 'SEU_EMAIL@gmail.com';

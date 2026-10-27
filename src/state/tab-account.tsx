@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 import { useWindowDimensions } from "react-native";
 
 import { AccountMenu } from "@/components/account-menu";
@@ -14,9 +14,10 @@ import { useSignOut } from "./use-sign-out";
 /** The account button in the top-right corner of every tab. */
 export function TabAccount() {
   const { data, updateSettings } = useAppState();
-  const { profile } = useAccess();
+  const { profile, isAdmin } = useAccess();
   const { session } = useAuth();
   const signOut = useSignOut();
+  const inAdmin = usePathname().startsWith("/admin");
   // On a phone the name and e-mail would push the title onto three lines.
   const compact = useWindowDimensions().width < 520;
   const email = session?.user.email;
@@ -30,6 +31,12 @@ export function TabAccount() {
       onTheme={(theme) => void updateSettings({ theme })}
       menu={[
         { label: "Renovar plano", icon: { ios: "arrow.clockwise.circle", android: "autorenew" }, onPress: () => router.push("/renovar") },
+        // Inside the admin area, the way back to the app takes the admin item's place.
+        ...(inAdmin
+          ? [{ label: "Voltar para o app", icon: { ios: "house", android: "home" }, onPress: () => router.navigate("/") }]
+          : isAdmin
+            ? [{ label: "Área admin", icon: { ios: "shield", android: "admin_panel_settings" }, onPress: () => router.navigate("/admin") }]
+            : []),
         { label: "Sair", icon: { ios: "rectangle.portrait.and.arrow.right", android: "logout" }, destructive: true, onPress: () => void signOut() },
       ]}
     />

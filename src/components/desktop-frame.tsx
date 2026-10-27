@@ -16,6 +16,7 @@ export function DesktopFrame({ src }: { src: string }) {
       <iframe
         src={src}
         title="Habitus"
+        data-frame=""
         // The fire tip listens to the microphone; sounds play from the frame.
         allow="microphone; autoplay"
         style={{ width: FRAME_WIDTH, height: "100vh", border: "none", display: "block", boxShadow: "0 0 48px rgba(0,0,0,0.35)" }}
