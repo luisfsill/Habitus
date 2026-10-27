@@ -32,11 +32,13 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
   // Phones keep the card low (thumb reach); wide screens center it.
   const wide = useWindowDimensions().width >= 768;
+  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title starts under that.
+  const top = Platform.OS === "web" ? space.xxl + space.sm : space.xxl;
   return (
     <View style={styles.root}>
       <HorizonBackground />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Body style={[styles.content, wide && styles.centered, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
+        <Body style={[styles.content, wide && styles.centered, { paddingTop: insets.top + top, paddingBottom: insets.bottom + space.xl }]}>
           <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
             {title}
             {subtitle}

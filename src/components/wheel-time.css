@@ -1,0 +1,28 @@
+/* Look of the web hour/minute wheels (wheel-time.web.tsx). Colours come from the app theme as CSS variables. */
+.wt {
+  width: 100%;
+  max-width: 240px;
+  margin: 4px auto 8px;
+  /* The same system font react-native-web gives Text; plain divs would fall back to the browser's serif. */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.wt-wrapper {
+  font-variant-numeric: tabular-nums;
+}
+.wt-option {
+  color: var(--wt-dim);
+  font-size: 20px;
+}
+/* One band across both wheels, like iOS: square inner corners. */
+.wt-highlight {
+  background-color: var(--wt-fill);
+  color: var(--wt-label);
+  font-size: 22px;
+  font-weight: 600;
+}
+.wt-wrapper > [data-rwp]:first-child .wt-highlight {
+  border-radius: 10px 0 0 10px;
+}
+.wt-wrapper > [data-rwp]:last-child .wt-highlight {
+  border-radius: 0 10px 10px 0;
+}

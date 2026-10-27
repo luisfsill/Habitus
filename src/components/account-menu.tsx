@@ -6,7 +6,7 @@ import { backdrops, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle, TRACK_W } from "./theme-toggle";
 
 export interface AccountMenuItem {
   label: string;
@@ -114,7 +114,10 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props)
             <View key={item.label}>
               {item.destructive && <View style={[styles.sep, { backgroundColor: colors.separator }]} />}
               <Pressable onPress={() => choose(item)} accessibilityRole="menuitem" style={styles.item}>
-                <Icon ios={item.icon.ios} android={item.icon.android} size={20} color={item.destructive ? colors.danger : colors.secondaryLabel} />
+                {/* Same width as the theme switch above, so every label starts on one line. */}
+                <View style={[styles.lead, onTheme && { width: TRACK_W }]}>
+                  <Icon ios={item.icon.ios} android={item.icon.android} size={20} color={item.destructive ? colors.danger : colors.secondaryLabel} />
+                </View>
                 <AppText variant="body" color={item.destructive ? "danger" : "label"} style={item.destructive && styles.bold}>
                   {item.label}
                 </AppText>
@@ -139,7 +142,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 54,
-    // Hugs its widest row (usually the e-mail) instead of a fixed width.
+    // Hugs its widest row (usually the e-mail) instead of a fixed width; the floor keeps "Renovar plano" on one line.
+    minWidth: 250,
     maxWidth: 280,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -152,5 +156,6 @@ const styles = StyleSheet.create({
   menuHead: { padding: space.md, gap: 2 },
   tag: { alignSelf: "flex-start", paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, marginTop: 6 },
   item: { flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.md, paddingVertical: 10, borderRadius: radius.sm },
+  lead: { alignItems: "center" },
   sep: { height: StyleSheet.hairlineWidth, marginVertical: 6, marginHorizontal: 4 },
 });

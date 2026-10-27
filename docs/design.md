@@ -29,7 +29,7 @@ Ajustes → Aparência: **Automático** (segue o aparelho, padrão), **Claro** o
 
 ## Entrar e sair
 
-Ao entrar (login, código confirmado ou nova senha) e ao sair, uma cortina cobre o app (`src/components/transition-screen.tsx`): o mesmo céu noturno do login, um emoji grande que flutua, o título ("Preparando o aplicativo" / "Até logo") e passos que aparecem um a um e ganham o check verde (`checkmark.circle.fill`), com vibração de sucesso no último. A cortina sobe quando a conta muda de estado (ou antes, ao tocar em Sair, para cobrir a sincronização) e desce com um fade só depois que a animação terminou e o app já está no estado novo (`TransitionProvider`, `src/state/transition.tsx`). Nunca aparece ao abrir o app com sessão salva.
+Ao entrar (login, código confirmado ou nova senha) e ao sair, uma cortina cobre o app (`src/components/transition-screen.tsx`): o mesmo céu noturno do login, um anel azul girando com o contador de passos ("1/3"), o título ("Preparando o aplicativo" / "Saindo da conta") e uma lista em que o passo atual tem um spinner pequeno, os seguintes ficam apagados e os concluídos viram um check verde. No fim o anel vira um círculo verde com check, o título muda para "Tudo pronto" / "Até a próxima" e o aparelho vibra (sucesso). Sem emoji; com "reduzir movimento" os spinners ficam parados. A cortina sobe quando a conta muda de estado (ou antes, ao tocar em Sair, para cobrir a sincronização) e desce com um fade só depois que a animação terminou e o app já está no estado novo (`TransitionProvider`, `src/state/transition.tsx`). Nunca aparece ao abrir o app com sessão salva.
 
 ## Menu da conta
 
@@ -43,6 +43,10 @@ O botão de conta (`AccountMenu`: avatar com iniciais, nome e e-mail) é o mesmo
 
 Som das notificações (Ajustes) usa `ToggleSwitch`: trilho cinza `#ddd` que fica verde `#05c46b` ao ligar e bolinha branca que desliza em 300 ms (ease-in-out), 48 × 24 pt. Os interruptores do admin (planos e usuário) ainda são o `Switch` nativo.
 
+## Horários
+
+`TimeField` (Início, Fim e Hora de dormir, em Ajustes e no onboarding) usa uma roleta de horas e minutos. No iOS é o `DateTimePicker` compacto e no Android o diálogo do sistema. Na web, tocar no horário abre logo abaixo da linha duas rodas que giram com o dedo, com inércia e em loop (`WheelTime`, sobre `@ncdai/react-wheel-picker`), com uma faixa só marcando a hora escolhida, como no iPhone; tocar de novo fecha. O teclado numérico do iPhone não tem a tecla ":", por isso nada de campo digitado. Cores e fonte vêm do tema por variáveis CSS (`wheel-time.css`).
+
 ## Aparência em Ajustes
 
 `ThemeTabs`: porte para React Native da variante "tabs" do seletor de tema do designali (shadcn). Três abas com ícone e nome (Claro, Escuro, Automático) que ocupa a largura toda da seção (abas iguais de 38 pt, ícone 18); a pílula da aba ativa desliza com mola (stiffness 500, damping 30) e o balanço fica preso dentro do trilho. Só em Ajustes; o menu da conta na Hoje continua com o interruptor.
@@ -55,6 +59,10 @@ A engrenagem na linha do usuário abre a página dele, no mesmo estilo de Ajuste
 
 No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components/landing-page.tsx` e `landing-sections.tsx`) em vez de ir para o login. Mesmo estilo do app: fundo liso, grades com divisórias finas, sem cards. Seções: navegação fixa no topo (Benefícios, Como funciona, Planos, Dúvidas, Entrar, Começar grátis); herói com título grande e um celular mostrando a tela Hoje com as dicas escondidas (cadeado), para manter a surpresa; Benefícios (os mesmos de `benefits.ts`); Como funciona em 3 passos; Recursos; Planos com os preços atuais e o teste de 7 dias; Dúvidas; chamada final e rodapé com Termos e Privacidade. "Começar grátis" abre `/auth?modo=criar` (criar conta) e "Entrar" abre `/auth`, que começa na aba Entrar. Os preços estão fixos no código porque a tabela `plans` só é lida por quem está logado.
 
+## Renovação de plano
+
+`/renovar` usa a `AuthShell` (céu noturno, como o login; o `body` também fica preto nessa rota). Título "Planos do Habitus" (com plano) ou "Seu teste grátis acabou"/"Seu plano acabou"; com plano, um botão redondo de voltar fica acima do título, não no rodapé. No cartão: os planos (`PlanCard`), "Renovar pelo WhatsApp" e, sem acesso, "Já paguei, atualizar". No rodapé só "Sair" e, sem acesso, "Excluir conta"; os links de termos e privacidade saíram (estão em Ajustes e na landing).
+
 ## Tela de instalação (celular no navegador)
 
 `InstallGate` segue o estilo do app: fundo liso e listas com divisórias. Ícone, nome e uma frase; **Como funciona** em 3 passos numerados (conta com 7 dias grátis, horário, lembretes); **O que você ganha**, seis benefícios sem revelar as dicas (elas são surpresa dentro do app; o rodapé da seção avisa isso); **E mais** (XP e medalhas, histórico, progresso na conta). Rodapé fixo na parte de baixo da tela (`pinned`), visível sem rolar: "7 dias grátis · sem cartão · sem loja de apps" e o botão Instalar agora. Em desenvolvimento a tela só aparece com `?instalar` no endereço. Os benefícios falam do que a pessoa sente (leveza, confiança, foco, calma), sem promessa de saúde nem "comprovado pela ciência".
@@ -65,7 +73,7 @@ No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components
 
 ## Rolagem na web
 
-Na web a página rola como documento, não dentro de uma lista: `Screen`, `AuthShell`, `InstallGate` e `LandingPage` usam `View` em vez de `ScrollView`, o `body` não tem `overflow: hidden` e as telas da pilha, que são absolutas, transbordam e esticam a área rolável. É o que faz o Safari do iPhone recolher a barra de endereço e deixar o conteúdo ir até as bordas, como em um site. O que precisa ficar parado usa `pinned` (`src/theme/index.ts`, `position: fixed` na web e `absolute` no app nativo): barra de abas, rodapé do `Screen` (com a cor de fundo, para o conteúdo passar por baixo), toasts, folha de instalação e cortina de transição. Ao trocar de tela o layout raiz volta ao topo (`window.scrollTo(0, 0)`).
+Na web a página rola como documento, não dentro de uma lista: `Screen`, `AuthShell`, `InstallGate` e `LandingPage` usam `View` em vez de `ScrollView`, o `body` não tem `overflow: hidden` e as telas da pilha, que são absolutas, transbordam e esticam a área rolável. É o que faz o Safari do iPhone recolher a barra de endereço e deixar o conteúdo ir até as bordas, como em um site. O que precisa ficar parado usa `pinned` (`src/theme/index.ts`, `position: fixed` na web e `absolute` no app nativo): barra de abas, rodapé do `Screen` (com a cor de fundo, para o conteúdo passar por baixo), toasts, folha de instalação e cortina de transição. Toda tela do `Screen` tem altura mínima de `100lvh + 1px` na web, então até uma página curta rola: no app instalado do iPhone, um documento que não rola é diagramado um inset do topo mais baixo, e a barra de abas fixa subia nas abas curtas (Histórico) e descia nas longas. Ao trocar de tela o layout raiz volta ao topo (`window.scrollTo(0, 0)`).
 
 ## Barra de abas
 

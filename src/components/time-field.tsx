@@ -1,10 +1,12 @@
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { Platform, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useState } from "react";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { formatTime, parseTime } from "@/domain/time";
-import { HIT, radius, space, type, useTheme } from "@/theme";
+import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { WheelTime } from "./wheel-time";
 
 interface Props {
   label: string;
@@ -26,6 +28,7 @@ function fromDate(date: Date): string {
 /** A settings-style row: label on the left, native time picker on the right. */
 export function TimeField({ label, value, onChange }: Props) {
   const { colors } = useTheme();
+  const [open, setOpen] = useState(false);
   const onPicked = (_event: unknown, date: Date) => onChange(fromDate(date));
 
   let control;
@@ -55,24 +58,28 @@ export function TimeField({ label, value, onChange }: Props) {
       </Pressable>
     );
   } else {
+    // The web: a pill that opens hour/minute wheels below the row (a typed field has no ":" key on the iPhone).
     control = (
-      <TextInput
-        accessibilityLabel={label}
-        defaultValue={value}
-        maxLength={5}
-        inputMode="numeric"
-        onChangeText={(text) => parseTime(text) !== null && onChange(text)}
-        style={[styles.pill, styles.webInput, type.headline, styles.digits, { backgroundColor: colors.fill, color: colors.label }]}
-      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${value}`}
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((shown) => !shown)}
+        style={[styles.pill, { backgroundColor: open ? colors.accent : colors.fill }]}>
+        <AppText variant="headline" style={[styles.digits, open && styles.onAccent]}>{value}</AppText>
+      </Pressable>
     );
   }
 
   return (
-    <View style={styles.row}>
-      <AppText variant="body" style={styles.label}>
-        {label}
-      </AppText>
-      {control}
+    <View>
+      <View style={styles.row}>
+        <AppText variant="body" style={styles.label}>
+          {label}
+        </AppText>
+        {control}
+      </View>
+      {open && <WheelTime value={value} onChange={onChange} />}
     </View>
   );
 }
@@ -95,6 +102,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   label: { flex: 1 },
-  webInput: { width: 96, flexGrow: 0 },
   digits: { fontVariant: ["tabular-nums"] },
+  onAccent: { color: "#FFFFFF" },
 });

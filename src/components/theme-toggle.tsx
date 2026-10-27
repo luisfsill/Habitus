@@ -10,7 +10,7 @@ import { Icon } from "./icon";
 
 // Port of the "cinematic theme switcher" (shadcn/framer-motion) to Reanimated,
 // at about half its size so it sits in proportion inside the account menu.
-const TRACK_W = 56;
+export const TRACK_W = 56;
 const TRACK_H = 32;
 const BORDER = 1;
 const PAD = 3;
@@ -104,9 +104,6 @@ export function ThemeToggle({ onChange }: Props) {
         onChange(dark ? "light" : "dark");
       }}
       style={styles.row}>
-      <AppText variant="body" style={styles.label}>
-        {dark ? "Escuro" : "Claro"}
-      </AppText>
       <Animated.View style={[styles.track, look.track, track]}>
         <View style={styles.icons} pointerEvents="none">
           <Icon ios="sun.max" android="light_mode" size={11} color={look.sun} />
@@ -119,14 +116,13 @@ export function ThemeToggle({ onChange }: Props) {
           <Icon ios={dark ? "moon.fill" : "sun.max.fill"} android={dark ? "dark_mode" : "light_mode"} size={11} color={look.icon} />
         </Animated.View>
       </Animated.View>
+      <AppText variant="body">{dark ? "Escuro" : "Claro"}</AppText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.md, paddingVertical: space.xs },
-  // Pushes the switch to the right edge of the menu row.
-  label: { flex: 1 },
   track: { width: TRACK_W, height: TRACK_H, borderRadius: TRACK_H / 2, borderWidth: BORDER, padding: PAD, justifyContent: "center" },
   icons: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 7 },
   thumb: { width: THUMB, height: THUMB, borderRadius: THUMB / 2, borderWidth: BORDER, alignItems: "center", justifyContent: "center", overflow: "hidden" },

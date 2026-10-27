@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { type DimensionValue, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { backdrops, pinned, space, useTheme } from "@/theme";
@@ -56,7 +56,7 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
   // On the web the page itself scrolls (so mobile Safari tucks its bars away); the footer pins to the viewport.
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.root, backdrops[scheme]]}>
+      <View style={[styles.root, styles.webRoot, backdrops[scheme]]}>
         <View style={content}>{body}</View>
         {foot && <View style={[pinned, styles.footerBar, { backgroundColor: colors.background }]}>{foot}</View>}
       </View>
@@ -74,6 +74,9 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // Every page scrolls, even a short one: the installed iPhone app lays out a document that does not scroll one
+  // top inset shorter, which lifted the fixed tab bar on short tabs (Histórico) and dropped it on long ones.
+  webRoot: { minHeight: "calc(100lvh + 1px)" as DimensionValue },
   content: { paddingHorizontal: space.xl, gap: space.xl, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
   // zIndex keeps an open accessory menu above the content below it.
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: space.md, zIndex: 10 },

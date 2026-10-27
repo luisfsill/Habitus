@@ -1,16 +1,17 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Platform, StyleSheet, View } from "react-native";
+import { Alert, Linking, Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { AuthShell } from "@/components/auth-shell";
+import { Icon } from "@/components/icon";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { displayName, hasAccess as profileHasAccess, type Plan, renewWhatsAppUrl } from "@/domain/access";
 import { fetchPlans } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
-import { space, ThemePreferenceContext } from "@/theme";
+import { HIT, radius, space, ThemePreferenceContext } from "@/theme";
 
 function confirm(message: string, onYes: () => void) {
   // Alert has no buttons on the web; the browser dialog stands in.
@@ -63,6 +64,7 @@ function RenewScreen() {
   const plan = plans.find((p) => p.id === selected);
   const trial = profile?.plan === "trial";
   const title = hasAccess ? "Planos do Habitus" : trial ? "Seu teste grátis acabou" : "Seu plano acabou";
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
   const renew = () => {
     if (!profile || !plan) return;
@@ -93,7 +95,19 @@ function RenewScreen() {
 
   return (
     <AuthShell
-      title={<AppText variant="largeTitle" style={styles.title}>{title}</AppText>}
+      title={
+        <>
+          {/* With a plan this screen sits on top of the app: a round back button, up where the thumb lands last. */}
+          {hasAccess && (
+            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Voltar" hitSlop={8} style={styles.back}>
+              <Icon ios="chevron.left" android="arrow_back" size={22} color="#FFFFFF" />
+            </Pressable>
+          )}
+          <AppText variant="largeTitle" style={styles.title}>
+            {title}
+          </AppText>
+        </>
+      }
       subtitle={
         <AppText variant="callout" color="secondaryLabel">
           Escolha um plano e fale com a gente pelo WhatsApp. Assim que o pagamento for confirmado, o app é liberado.
@@ -101,9 +115,6 @@ function RenewScreen() {
       }
       footer={
         <View style={styles.links}>
-          {hasAccess && <PrimaryButton variant="plain" label="Voltar" onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} />}
-          <PrimaryButton variant="plain" label="Termos de uso" onPress={() => router.push("/legal/terms")} />
-          <PrimaryButton variant="plain" label="Política de privacidade" onPress={() => router.push("/legal/privacy")} />
           <PrimaryButton variant="plain" label="Sair" onPress={() => void leave()} />
           {!hasAccess && <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={remove} />}
         </View>
@@ -132,5 +143,16 @@ export default function RenewRoute() {
 
 const styles = StyleSheet.create({
   title: { color: "#FFFFFF", fontWeight: "800" },
+  back: {
+    width: HIT,
+    height: HIT,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: space.sm,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.14)",
+  },
   links: { gap: space.xs },
 });

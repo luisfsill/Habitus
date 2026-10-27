@@ -93,9 +93,10 @@ function homeRoute(signedIn: boolean, open: boolean, onboarded: boolean) {
   return onboarded ? "/" : "/onboarding";
 }
 
-/** Only the account screens (AuthShell) are the black night sky; the install screen and legal pages are themed. */
+/** The AuthShell screens (account and plan renewal) are the black night sky; install screen and legal pages are themed. */
 function nightSky(signedIn: boolean, entry: boolean, pathname: string): boolean {
-  return !signedIn && !entry && pathname.startsWith("/auth");
+  if (entry) return false;
+  return pathname.startsWith("/renovar") || (!signedIn && pathname.startsWith("/auth"));
 }
 
 /** First open without internet: the plan cannot be checked yet. */
