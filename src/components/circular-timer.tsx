@@ -10,6 +10,10 @@ import { ProgressRing } from "./progress-ring";
 
 interface Props {
   seconds: number;
+  /** Called once when the countdown reaches zero. */
+  onFinish?: () => void;
+  /** Smaller ring, for screens with a scene under it. */
+  compact?: boolean;
 }
 
 type Phase = "idle" | "running" | "paused" | "finished";
@@ -19,11 +23,16 @@ function label(remaining: number): string {
 }
 
 /** Countdown ring. Time comes from timestamps, so a late tick never drifts. */
-export function CircularTimer({ seconds }: Props) {
+export function CircularTimer({ seconds, onFinish, compact }: Props) {
   const { colors } = useTheme();
   const [remaining, setRemaining] = useState(seconds);
   const [phase, setPhase] = useState<Phase>("idle");
   const endsAt = useRef(0);
+  // A ref, so a new callback each render does not restart the countdown.
+  const finished = useRef(onFinish);
+  useEffect(() => {
+    finished.current = onFinish;
+  }, [onFinish]);
 
   useEffect(() => {
     if (phase !== "running") return;
@@ -33,6 +42,7 @@ export function CircularTimer({ seconds }: Props) {
       if (left === 0) {
         clearInterval(id);
         setPhase("finished");
+        finished.current?.();
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     }, 250);
@@ -55,8 +65,8 @@ export function CircularTimer({ seconds }: Props) {
     <View style={styles.wrap}>
       <ProgressRing
         progress={1 - remaining / seconds}
-        size={220}
-        stroke={14}
+        size={compact ? 150 : 220}
+        stroke={compact ? 10 : 14}
         duration={phase === "running" ? 950 : 300}
         color={phase === "finished" ? colors.success : colors.accent}
         accessibilityLabel={phase === "finished" ? "Tempo concluído" : spoken}>

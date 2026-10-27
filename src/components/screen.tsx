@@ -15,6 +15,8 @@ interface Props {
   accessory?: ReactNode;
   /** Leave room for a transparent stack header above the large title. */
   underHeader?: boolean;
+  /** Full-screen layer behind the page (e.g. a video); the page and its footer bar turn transparent over it. */
+  backdrop?: ReactNode;
 }
 
 /** Height of a transparent native stack header (back button row). */
@@ -24,7 +26,7 @@ const HEADER = Platform.select({ ios: 44, default: 56 });
 export const MAX_WIDTH = 640;
 
 /** Scrollable page with an iOS-style large title. */
-export function Screen({ title, subtitle, children, footer, accessory, underHeader }: Props) {
+export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop }: Props) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title block starts under that.
@@ -52,18 +54,21 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
       {children}
     </>
   );
+  const fill = backdrop ? styles.clear : backdrops[scheme];
   const foot = footer && <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>{footer}</View>;
   // On the web the page itself scrolls (so mobile Safari tucks its bars away); the footer pins to the viewport.
   if (Platform.OS === "web") {
     return (
-      <View style={[styles.root, backdrops[scheme]]}>
+      <View style={[styles.root, fill]}>
+        {backdrop}
         <View style={content}>{body}</View>
-        {foot && <View style={[pinned, styles.footerBar, { backgroundColor: colors.background }]}>{foot}</View>}
+        {foot && <View style={[pinned, styles.footerBar, { backgroundColor: backdrop ? "transparent" : colors.background }]}>{foot}</View>}
       </View>
     );
   }
   return (
-    <View style={[styles.root, backdrops[scheme]]}>
+    <View style={[styles.root, fill]}>
+      {backdrop}
       <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={content}>
         {body}
       </ScrollView>
@@ -74,6 +79,7 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  clear: { backgroundColor: "#04060E" },
   content: { paddingHorizontal: space.xl, gap: space.xl, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
   // zIndex keeps an open accessory menu above the content below it.
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: space.md, zIndex: 10 },

@@ -58,11 +58,11 @@ export const TRICKS: readonly Trick[] = [
   {
     index: 3,
     title: "Foco total",
-    summary: "Olhe fixamente para um objeto por 2 minutos.",
+    summary: "Olhe para a fogueira por 2 minutos.",
     instruction:
-      "Escolha um objeto e concentre-se totalmente nele. Quando a mente se distrair, volte com gentileza ao objeto.",
+      "Fixe o olhar na fogueira e acompanhe as chamas. Quando a mente se distrair, volte com gentileza para o fogo. No fim, sopre para apagar.",
     why: "Fixar o olhar em um só ponto acalma o ruído da mente e coloca você em modo de concentração, quase sem perceber.",
-    notificationBody: "Escolha um objeto e foque nele por 2 minutos.",
+    notificationBody: "Acenda a fogueira e foque nela por 2 minutos.",
     kind: "timer",
     durationSeconds: 120,
     symbol: { ios: "scope", android: "center_focus_strong" },

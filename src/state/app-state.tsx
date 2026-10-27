@@ -23,6 +23,7 @@ import {
   rescheduleAll,
   setAccessCutoff,
 } from "@/services/notifications";
+import { playCelebration } from "@/services/sound";
 import { clearData, loadData, saveData } from "@/services/storage";
 import { pushMerged } from "@/services/sync";
 
@@ -37,6 +38,9 @@ interface AppStateValue {
   /** Last celebration to show ("+10 XP", level-up, new badge), if any. */
   reward: Reward | null;
   dismissReward: () => void;
+  /** The tip just finished, while its full-screen celebration plays. */
+  celebration: TrickIndex | null;
+  dismissCelebration: () => void;
   /** Validates the merged settings; saves and reschedules only when valid. */
   updateSettings: (patch: Partial<Settings>) => Promise<ScheduleResult>;
   completeOnboarding: () => Promise<void>;
@@ -97,12 +101,23 @@ interface ProviderProps {
   accessCutoff: number | null;
 }
 
+/** The "+10 XP" toast and the full-screen scene of the tip just finished; a new scene plays its sound. */
+function useCelebrations() {
+  const [reward, setReward] = useState<Reward | null>(null);
+  const [celebration, setScene] = useState<TrickIndex | null>(null);
+  const setCelebration = useCallback((index: TrickIndex | null) => {
+    if (index !== null) playCelebration(index);
+    setScene(index);
+  }, []);
+  return { reward, setReward, celebration, setCelebration };
+}
+
 export function AppStateProvider({ children, userId, accessCutoff }: ProviderProps) {
   const [data, setData] = useState<AppData>(defaultData);
   const [ready, setReady] = useState(false);
   const [permission, setPermission] = useState<PermissionState>("undetermined");
   const [exactAlarms, setExactAlarms] = useState(true);
-  const [reward, setReward] = useState<Reward | null>(null);
+  const { reward, setReward, celebration, setCelebration } = useCelebrations();
   const [syncPending, setSyncPending] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
@@ -202,6 +217,8 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
       progress,
       reward,
       dismissReward: () => setReward(null),
+      celebration,
+      dismissCelebration: () => setCelebration(null),
       refresh,
       async updateSettings(patch) {
         const current = dataRef.current;
@@ -222,6 +239,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         const next = withCompletion(dataRef.current, today, index, now);
         setReward(rewardBetween(progressOf(dataRef.current, now), progressOf(next, now)));
+        setCelebration(index);
         dataRef.current = next;
         setData(next);
         await saveData(next);
@@ -258,7 +276,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         await commit({ ...defaultData(), owner: userId, resetAt: Date.now() });
       },
     }),
-    [data, ready, syncPending, permission, exactAlarms, progress, reward, refresh, commit, schedulePush, userId, addWater],
+    [data, ready, syncPending, permission, exactAlarms, progress, reward, setReward, celebration, setCelebration, refresh, commit, schedulePush, userId, addWater],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

@@ -8,6 +8,7 @@ import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
 import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
+import { Celebration } from "@/components/celebration";
 import { RewardToast } from "@/components/reward-toast";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
@@ -115,7 +116,7 @@ function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
 }
 
 function RootStack() {
-  const { ready: dataReady, data, reward, dismissReward } = useAppState();
+  const { ready: dataReady, data, reward, dismissReward, celebration, dismissCelebration } = useAppState();
   const gates = useGates();
   const { signedIn, open } = gates;
   const ready = dataReady && gates.ready;
@@ -186,6 +187,7 @@ function RootStack() {
         </Stack.Protected>
         <Stack.Screen name="legal" />
       </Stack>
+      {celebration !== null && <Celebration key={celebration} trick={celebration} onDone={dismissCelebration} />}
       {reward && <RewardToast reward={reward} onHide={dismissReward} />}
     </ThemeProvider>
   );

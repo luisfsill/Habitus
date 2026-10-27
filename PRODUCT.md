@@ -9,7 +9,7 @@ Pessoas que querem criar o hábito de pequenas práticas mentais ao longo do dia
 1. **Sorria** — sorrir por alguns segundos, mesmo sem vontade.
 2. **Postura de poder (2 min)** — em pé, firme, peito aberto, respirando fundo. Timer de 120 s.
 3. **Metas em voz alta** — dizer as metas no presente, diante do espelho. Afirmações editáveis.
-4. **Foco total (2 min)** — olhar fixamente para um objeto. Timer de 120 s.
+4. **Foco total (2 min)** — olhar fixamente para a fogueira e, no fim, soprar para apagar. Timer de 120 s.
 5. **Gratidão antecipada** — agradecer pelo que ainda não chegou. Frase curta opcional.
 
 6. **Antes de dormir** — já deitado, dizer: "Deus, universo, vida: me surpreenda positivamente amanhã." Chega na hora de dormir aprendida.

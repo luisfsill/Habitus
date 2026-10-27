@@ -1,4 +1,6 @@
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
@@ -10,6 +12,7 @@ import { StatColumns } from "@/components/stat-columns";
 import { TimelineRow } from "@/components/timeline-row";
 import { TrialBanner } from "@/components/trial-banner";
 import { WaterRow } from "@/components/water-row";
+import { WaterSplash } from "@/components/water-splash";
 import { WEEKDAY_NAMES } from "@/components/weekday-picker";
 import { firstName, type Profile } from "@/domain/access";
 import { currentStreak, doneCount, trickStatuses } from "@/domain/history";
@@ -19,6 +22,7 @@ import { atMinutes, dayKey, formatCountdown, minutesOfDay, type Weekday } from "
 import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
 import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
+import { playDrop } from "@/services/sound";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
 import { useInstallPrompt } from "@/state/use-install-prompt";
@@ -36,13 +40,19 @@ function dateLine(d: Date): string {
   return `${WEEKDAY_NAMES[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()]}`;
 }
 
-/** Today's water row, only when the person turned water reminders on. */
-function TodayWater({ today }: { today: string }) {
+/** Today's water row, only when the person turned water reminders on. Each cup drops a splash and a "gluk". */
+function TodayWater({ today, onDrink }: { today: string; onDrink: () => void }) {
   const { data, addWater } = useAppState();
   if (!data.settings.water.enabled) return null;
+  const drink = () => {
+    void addWater(1);
+    playDrop();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onDrink();
+  };
   return (
     <Section title="Água">
-      <WaterRow cups={cupsOn(data.water, today)} goal={data.settings.water.goal} onAdd={() => void addWater(1)} onRemove={() => void addWater(-1)} />
+      <WaterRow cups={cupsOn(data.water, today)} goal={data.settings.water.goal} onAdd={drink} onRemove={() => void addWater(-1)} />
     </Section>
   );
 }
@@ -73,8 +83,11 @@ export default function TodayScreen() {
   const countdown = nextAt ? formatCountdown(nextAt.getTime() - now.getTime()) : undefined;
   const { profile } = useAccess();
   const { level, belt } = progress;
+  // Bumped on each cup: a new key replays the splash from the start.
+  const [splash, setSplash] = useState(0);
 
   return (
+    <>
     <Screen title={title(now, profile)} subtitle={dateLine(now)} accessory={<TabAccount />}>
       <TrialBanner profile={profile} now={now} onSeePlans={() => router.push("/renovar")} />
       {install.mode !== "hidden" && (
@@ -105,7 +118,7 @@ export default function TodayScreen() {
         </AppText>
       </View>
 
-      <TodayWater today={today} />
+      <TodayWater today={today} onDrink={() => setSplash((n) => n + 1)} />
 
       <Section title="Linha do tempo">
         {TRICKS.map((trick, i) => (
@@ -120,6 +133,9 @@ export default function TodayScreen() {
         ))}
       </Section>
     </Screen>
+    {/* Outside the scroll view, so it covers the whole screen. */}
+    {splash > 0 && <WaterSplash key={splash} onDone={() => setSplash(0)} />}
+    </>
   );
 }
 

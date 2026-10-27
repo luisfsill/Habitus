@@ -1,6 +1,8 @@
 import { type ComponentRef, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
+import Animated, { Easing, FadeInRight, FadeOutRight, interpolateColor, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
+import Svg, { Circle } from "react-native-svg";
 
 import { backdrops, radius, space, useTheme } from "@/theme";
 
@@ -26,18 +28,79 @@ interface Props {
   onTheme?: (theme: "light" | "dark") => void;
   /** Avatar only (narrow screens); name and e-mail still show inside the menu. */
   compact?: boolean;
+  /** 0…1, today's tips done: fills the ring around the avatar. Omitted, only the track shows. */
+  progress?: number;
 }
 
-export function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+const RING = 40;
+const RING_STROKE = 3;
+
+const SHINE_GLOW = "#9CC2FF";
+
+// The menu slides in from the right and leaves the same way.
+const MENU_IN = FadeInRight.duration(300).easing(Easing.out(Easing.cubic));
+const MENU_OUT = FadeOutRight.duration(220).easing(Easing.in(Easing.cubic));
+
+/**
+ * Glass circle with a person icon, inside a ring that fills with today's progress.
+ * Each tap (`flash` goes up) sends a streak of light across the glass and lights its rim.
+ */
+function Avatar({ progress = 0, flash }: { progress?: number; flash: number }) {
+  const { colors, scheme } = useTheme();
+  const rim = scheme === "dark" ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.1)";
+  const shine = useSharedValue(0);
+  useEffect(() => {
+    if (flash > 0) shine.set(withSequence(withTiming(0, { duration: 0 }), withTiming(1, { duration: 650, easing: Easing.out(Easing.quad) })));
+  }, [flash, shine]);
+  const rimStyle = useAnimatedStyle(() => ({ borderColor: interpolateColor(shine.get(), [0, 0.4, 1], [rim, SHINE_GLOW, rim]) }));
+  const streakStyle = useAnimatedStyle(() => ({
+    opacity: shine.get() > 0 && shine.get() < 1 ? 1 : 0,
+    transform: [{ translateX: -28 + shine.get() * 56 }, { skewX: "-20deg" }],
+  }));
+  const r = (RING - RING_STROKE) / 2;
+  const length = 2 * Math.PI * r;
+  const done = Math.min(Math.max(progress, 0), 1);
+  const glass = { backgroundColor: scheme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)" };
+  return (
+    <View style={styles.ring}>
+      <Svg width={RING} height={RING} style={StyleSheet.absoluteFill}>
+        <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={colors.ringTrack} strokeWidth={RING_STROKE} fill="none" />
+        {done > 0 && (
+          <Circle
+            cx={RING / 2}
+            cy={RING / 2}
+            r={r}
+            stroke={colors.accent}
+            strokeWidth={RING_STROKE}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${length} ${length}`}
+            strokeDashoffset={length * (1 - done)}
+            transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+          />
+        )}
+      </Svg>
+      <Animated.View style={[styles.avatar, glass, rimStyle]}>
+        <Icon ios="person.fill" android="person" size={18} color={colors.label} />
+        <Animated.View pointerEvents="none" style={[styles.streak, streakStyle]} />
+      </Animated.View>
+    </View>
+  );
 }
 
-/** Account button (initials, name, e-mail) that opens a menu of account actions. */
-export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props) {
+/** Account button (avatar, name, e-mail) that opens a menu of account actions. */
+export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress }: Props) {
   const { colors, scheme } = useTheme();
   const fill = backdrops[scheme];
   const [open, setOpen] = useState(false);
   const wrap = useRef<ComponentRef<typeof View>>(null);
+  const [flash, setFlash] = useState(0);
+  // The chevron turns to show the menu is open.
+  const turn = useSharedValue(0);
+  useEffect(() => {
+    turn.set(withSpring(open ? 1 : 0, { damping: 14, stiffness: 220 }));
+  }, [open, turn]);
+  const chevronStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.get() * 180}deg` }] }));
 
   // Web only (this menu lives in the web layouts): a click outside, or Escape, closes it.
   useEffect(() => {
@@ -64,16 +127,16 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props)
   return (
     <View ref={wrap} style={styles.wrap}>
       <Pressable
-        onPress={() => setOpen((o) => !o)}
+        onPress={() => {
+          void Haptics.selectionAsync();
+          setFlash((n) => n + 1);
+          setOpen((o) => !o);
+        }}
         accessibilityRole="button"
         accessibilityLabel={`Conta de ${name}`}
         accessibilityState={{ expanded: open }}
         style={[styles.account, compact && styles.compact, fill]}>
-        <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-          <AppText variant="footnote" style={styles.avatarText}>
-            {initials(name)}
-          </AppText>
-        </View>
+        <Avatar progress={progress} flash={flash} />
         {!compact && (
           <>
             <View style={styles.who}>
@@ -84,14 +147,16 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props)
                 {email}
               </AppText>
             </View>
-            <Icon ios="chevron.down" android="expand_more" size={14} color={colors.secondaryLabel} />
+            <Animated.View style={chevronStyle}>
+              <Icon ios="chevron.down" android="expand_more" size={14} color={colors.secondaryLabel} />
+            </Animated.View>
           </>
         )}
       </Pressable>
       {open && (
         <Animated.View
-          entering={FadeIn.duration(120)}
-          exiting={FadeOut.duration(100)}
+          entering={MENU_IN}
+          exiting={MENU_OUT}
           accessibilityRole="menu"
           style={[styles.menu, fill, { borderColor: colors.separator, shadowColor: colors.shadow }]}>
           <View style={styles.menuHead}>
@@ -133,8 +198,9 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact }: Props)
 const styles = StyleSheet.create({
   wrap: { zIndex: 10 },
   account: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 6, paddingLeft: 6, paddingRight: space.md, borderRadius: radius.md },
-  avatar: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFFFFF", fontWeight: "800" },
+  ring: { width: RING, height: RING, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  streak: { position: "absolute", top: -6, bottom: -6, width: 10, backgroundColor: "rgba(255,255,255,0.55)" },
   who: { maxWidth: 180 },
   compact: { paddingVertical: 4, paddingLeft: 4, paddingRight: 4, borderRadius: radius.pill },
   bold: { fontWeight: "700" },
