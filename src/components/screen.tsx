@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Platform, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, pinned, space, useTheme } from "@/theme";
+import { backdrops, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { WaterBackdrop } from "./water-backdrop";
@@ -27,9 +27,6 @@ const WEB_GLASS = { backdropFilter: "blur(16px) saturate(1.4)", WebkitBackdropFi
 
 /** Height of a transparent native stack header (back button row). */
 const HEADER = Platform.select({ ios: 44, default: 56 });
-
-/** Width of the app column on wide (desktop/tablet) screens. */
-export const MAX_WIDTH = 640;
 
 /** Room above the title and below the content. */
 function pagePadding(insets: { top: number; bottom: number }, page: { dense?: boolean; underHeader?: boolean; footer: boolean }) {

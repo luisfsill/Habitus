@@ -10,6 +10,7 @@ import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
 import { RewardToast } from "@/components/reward-toast";
+import { useStackHeader } from "@/components/stack-header";
 import { WaterBackdrop } from "@/components/water-backdrop";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
@@ -132,6 +133,7 @@ function RootStack() {
   useNotificationRouting(ready && open && data.onboarded);
   const install = useInstallPrompt();
   const pathname = usePathname();
+  const backToToday = useStackHeader("Hoje");
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -177,24 +179,9 @@ function RootStack() {
         </Stack.Protected>
         <Stack.Protected guard={open && data.onboarded} redirectTo={home}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="trick/[id]"
-            options={{
-              headerShown: true,
-              headerTitle: "",
-              headerBackTitle: "Hoje",
-              headerTransparent: true,
-              headerTintColor: colors.accent,
-            }}
-          />
-          <Stack.Screen
-            name="lembretes/index"
-            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Hoje", headerTransparent: true, headerTintColor: colors.accent }}
-          />
-          <Stack.Screen
-            name="lembretes/[id]"
-            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Lembretes", headerTransparent: true, headerTintColor: colors.accent }}
-          />
+          <Stack.Screen name="trick/[id]" options={backToToday} />
+          <Stack.Screen name="lembretes/index" options={backToToday} />
+          <Stack.Screen name="lembretes/[id]" options={{ ...backToToday, headerBackTitle: "Lembretes" }} />
         </Stack.Protected>
         <Stack.Protected guard={open && !data.onboarded} redirectTo={home}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from "react-native";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { pinned, radius, space, useTheme } from "@/theme";
+import { pinned, radius, space, useColumnGutter, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 
@@ -13,6 +13,7 @@ const VISIBLE_MS = 7000;
 export function UndoToast({ message, onUndo, onHide }: { message: string; onUndo?: () => void; onHide: () => void }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const edge = useColumnGutter() + space.lg;
   useEffect(() => {
     const timer = setTimeout(onHide, VISIBLE_MS);
     return () => clearTimeout(timer);
@@ -22,7 +23,7 @@ export function UndoToast({ message, onUndo, onHide }: { message: string; onUndo
       entering={FadeInDown.springify()}
       exiting={FadeOutDown}
       accessibilityLiveRegion="polite"
-      style={[styles.toast, pinned, { bottom: insets.bottom + 90, backgroundColor: colors.surface, borderColor: colors.successText }]}>
+      style={[styles.toast, pinned, { bottom: insets.bottom + 90, left: edge, right: edge, backgroundColor: colors.surface, borderColor: colors.successText }]}>
       <AppText variant="subheadline" style={styles.text}>
         ✓ {message}
       </AppText>
@@ -40,10 +41,6 @@ export function UndoToast({ message, onUndo, onHide }: { message: string; onUndo
 const styles = StyleSheet.create({
   toast: {
     position: "absolute",
-    left: space.lg,
-    right: space.lg,
-    maxWidth: 600,
-    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     gap: space.md,

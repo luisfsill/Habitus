@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { pinned, space } from "@/theme";
+import { pinned, space, useColumnGutter } from "@/theme";
 
 import { AppText } from "./app-text";
 import { ProgressRing } from "./progress-ring";
@@ -26,6 +26,7 @@ const shadow = { textShadowColor: "rgba(0,0,0,0.8)", textShadowRadius: 8, textSh
 /** Small countdown ring in the top-right corner, out of the way of the fire. Time comes from timestamps. */
 function MiniTimer({ seconds, onEnd }: { seconds: number; onEnd: () => void }) {
   const insets = useSafeAreaInsets();
+  const gutter = useColumnGutter();
   const [left, setLeft] = useState(seconds);
   const ended = useRef(onEnd);
   useEffect(() => {
@@ -44,7 +45,7 @@ function MiniTimer({ seconds, onEnd }: { seconds: number; onEnd: () => void }) {
     return () => clearInterval(id);
   }, [seconds]);
   return (
-    <View style={[pinned, styles.timer, { top: insets.top + space.sm }]}>
+    <View style={[pinned, styles.timer, { top: insets.top + space.sm, right: gutter + space.lg }]}>
       <ProgressRing progress={1 - left / seconds} size={58} stroke={4} color={EMBER} duration={950} accessibilityLabel={`${left} segundos restantes`}>
         <AppText variant="footnote" style={[styles.digits, shadow]}>
           {left >= 60 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : String(left)}
@@ -75,7 +76,7 @@ export function FireFocus({ phase, seconds, onTimerEnd, attempts }: Props) {
 }
 
 const styles = StyleSheet.create({
-  timer: { right: space.lg, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.35)" },
+  timer: { borderRadius: 999, backgroundColor: "rgba(0,0,0,0.35)" },
   digits: { color: "#FFFFFF", fontWeight: "700", fontVariant: ["tabular-nums"] },
   blow: { left: space.xl, right: space.xl, alignItems: "center", gap: space.sm },
 });

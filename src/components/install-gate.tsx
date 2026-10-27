@@ -3,7 +3,7 @@ import { Image, StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, pinned, space, useTheme } from "@/theme";
+import { backdrops, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
@@ -115,7 +115,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   // Bottom padding leaves room for the pinned footer.
-  content: { paddingHorizontal: space.xl, paddingBottom: 200, gap: space.xl, maxWidth: 640, width: "100%", alignSelf: "center" },
+  content: { paddingHorizontal: space.xl, paddingBottom: 200, gap: space.xl, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
   hero: { alignItems: "center", gap: space.sm },
   logo: { width: 96, height: 96, borderRadius: 22, marginBottom: space.sm },
   line: { flexDirection: "row", alignItems: "center", gap: space.md },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingTop: space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    maxWidth: 640,
+    maxWidth: MAX_WIDTH,
     width: "100%",
   },
   done: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 52 },
