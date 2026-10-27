@@ -9,11 +9,13 @@ import { InstallGate } from "@/components/install-gate";
 import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
+import { DesktopFrame } from "@/components/desktop-frame";
 import { RewardToast } from "@/components/reward-toast";
 import { useStackHeader } from "@/components/stack-header";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
+import { framedOnDesktop, inDesktopFrame, mirrorToWindow } from "@/state/desktop-frame";
 import { TransitionProvider } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
@@ -40,9 +42,9 @@ function installOnly(): boolean {
   return (!__DEV__ || forced) && isMobileWeb() && !isStandalone();
 }
 
-/** A computer's browser, not the installed app: visitors get the landing page at "/". */
+/** A computer's browser, not the installed app: visitors get the landing page at "/" (inside the desktop frame they sign in instead). */
 function desktopWeb(): boolean {
-  return Platform.OS === "web" && !isMobileWeb() && !isStandalone();
+  return Platform.OS === "web" && !isMobileWeb() && !isStandalone() && !inDesktopFrame();
 }
 
 /** Full page loads: the landing page renders instead of the navigator, so there is no router to push to. */
@@ -134,6 +136,7 @@ function RootStack() {
   useEffect(() => {
     // The web document scrolls: a new screen starts at the top, like a new page.
     if (Platform.OS === "web") window.scrollTo(0, 0);
+    mirrorToWindow();
   }, [pathname]);
 
   const entry = entryScreen(signedIn, pathname, install);
@@ -246,7 +249,16 @@ function AccountData({ userId }: { userId: string | null }) {
 // The installed iPhone app needs real insets to keep the title below the clock and pinned footers above the home indicator.
 const SafeArea = Platform.OS === "web" ? WebSafeAreaInsets : Fragment;
 
+const framed = framedOnDesktop();
+
+/** On a computer this window only holds the frame; the app runs inside it. */
+function FramedApp() {
+  useEffect(() => void SplashScreen.hideAsync(), []);
+  return <DesktopFrame src={window.location.pathname + window.location.search} />;
+}
+
 export default function RootLayout() {
+  if (framed) return <FramedApp />;
   return (
     <SafeArea>
       <AuthProvider>
