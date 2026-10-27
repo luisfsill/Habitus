@@ -12,7 +12,7 @@ export function DesktopFrame({ src }: { src: string }) {
     document.documentElement.style.overflow = "hidden";
   }, []);
   return (
-    <View style={[styles.page, { backgroundColor: dark ? "#020408" : "#CBD5E1" }]}>
+    <View style={[styles.page, { backgroundColor: dark ? "#020C17" : "#C3DCEA" }]}>
       <iframe
         src={src}
         title="Habitus"
