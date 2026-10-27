@@ -49,7 +49,7 @@ Som das notificações (Ajustes) usa `ToggleSwitch`: trilho cinza `#ddd` que fic
 
 ## Aparência em Ajustes
 
-`ThemeTabs`: porte para React Native da variante "tabs" do seletor de tema do designali (shadcn). Três abas com ícone e nome (Claro, Escuro, Automático) que ocupa a largura toda da seção (abas iguais de 38 pt, ícone 18); a pílula da aba ativa desliza com mola (stiffness 500, damping 30) e o balanço fica preso dentro do trilho. Só em Ajustes; o menu da conta na Hoje continua com o interruptor.
+`ThemeTabs`: porte para React Native da variante "tabs" do seletor de tema do designali (shadcn). Três abas com ícone e nome (Claro, Escuro, Auto) que ocupa a largura toda da seção (abas iguais de 38 pt, ícone 18); a pílula da aba ativa desliza com mola (stiffness 500, damping 30) e o balanço fica preso dentro do trilho. Só em Ajustes; o menu da conta na Hoje continua com o interruptor.
 
 ## Admin: página do usuário
 

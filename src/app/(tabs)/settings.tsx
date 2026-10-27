@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Platform, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AffirmationsEditor } from "@/components/affirmations-editor";
@@ -160,13 +160,7 @@ export default function SettingsScreen() {
         <AffirmationsEditor value={data.settings.affirmations} onChange={(affirmations) => void change({ affirmations })} />
       </Section>
 
-      <Section
-        title="Notificações"
-        footer={
-          Platform.OS === "web"
-            ? "Na versão instalada pelo navegador, os lembretes só chegam com o Habitus aberto ou minimizado há pouco. Para lembretes com o app fechado, use o app Android."
-            : undefined
-        }>
+      <Section title="Notificações">
         <View style={styles.row}>
           <AppText variant="body">Som</AppText>
           <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
@@ -227,7 +221,7 @@ export default function SettingsScreen() {
         )}
       </Section>
 
-      <Section title="Aparência" footer="Automático segue o modo claro ou escuro do aparelho.">
+      <Section title="Aparência" footer="Auto segue o modo claro ou escuro do aparelho.">
         <ThemeTabs value={data.settings.theme} onChange={(theme) => void change({ theme })} />
       </Section>
 

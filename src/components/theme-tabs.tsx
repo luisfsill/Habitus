@@ -13,7 +13,7 @@ import { Icon } from "./icon";
 const OPTIONS: readonly { value: ThemePreference; label: string; ios: string; android: string }[] = [
   { value: "light", label: "Claro", ios: "sun.max", android: "light_mode" },
   { value: "dark", label: "Escuro", ios: "moon", android: "dark_mode" },
-  { value: "auto", label: "Automático", ios: "desktopcomputer", android: "desktop_windows" },
+  { value: "auto", label: "Auto", ios: "desktopcomputer", android: "desktop_windows" },
 ];
 
 const LOOK = {
