@@ -1,5 +1,5 @@
 import * as Haptics from "expo-haptics";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { type LayoutRectangle, Pressable, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
@@ -16,12 +16,6 @@ const OPTIONS: readonly { value: ThemePreference; label: string; ios: string; an
   { value: "auto", label: "Auto", ios: "desktopcomputer", android: "desktop_windows" },
 ];
 
-const LOOK = {
-  // Light track a step darker than the original #f8fafc so the white pill shows on the light backdrop.
-  light: { track: "#e9eef4", border: "#d5dde7", pill: "#ffffff" },
-  dark: { track: "#1e293b", border: "#334155", pill: "#334155" },
-} as const;
-
 // framer-motion's spring uses mass 1; Reanimated 4 defaults to 4, which wobbles far more.
 const SPRING = { stiffness: 500, damping: 30, mass: 1 };
 
@@ -30,10 +24,13 @@ interface Props {
   onChange: (value: ThemePreference) => void;
 }
 
-/** Light / dark / automatic tabs with icons; a raised pill springs to the selected one. */
+/**
+ * Light / dark / automatic tabs with icons, straight on the section's glass card (no track of their own): water-blue
+ * hairlines split them and a soft blue pill springs to the selected one.
+ */
 export function ThemeTabs({ value, onChange }: Props) {
-  const { colors, scheme } = useTheme();
-  const look = LOOK[scheme];
+  const { colors } = useTheme();
+  const selectedAt = OPTIONS.findIndex((o) => o.value === value);
   const [frames, setFrames] = useState<Partial<Record<ThemePreference, LayoutRectangle>>>({});
   const frame = frames[value];
   const first = frames[OPTIONS[0].value];
@@ -63,31 +60,35 @@ export function ThemeTabs({ value, onChange }: Props) {
   });
 
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel="Aparência" style={[styles.track, { backgroundColor: look.track, borderColor: look.border }]}>
-      <Animated.View style={[styles.pill, { backgroundColor: look.pill }, pill]} />
-      {OPTIONS.map((option) => {
+    <View accessibilityRole="radiogroup" accessibilityLabel="Aparência" style={styles.track}>
+      <Animated.View style={[styles.pill, { backgroundColor: colors.accentSoft }, pill]} />
+      {OPTIONS.map((option, i) => {
         const selected = option.value === value;
+        // No hairline right next to the pill.
+        const line = i > 0 && i !== selectedAt && i - 1 !== selectedAt;
         return (
-          <Pressable
-            key={option.value}
-            accessibilityRole="radio"
-            accessibilityLabel={option.label}
-            accessibilityState={{ checked: selected }}
-            onLayout={(e) => {
-              const layout = e.nativeEvent.layout;
-              setFrames((f) => ({ ...f, [option.value]: layout }));
-            }}
-            onPress={() => {
-              if (selected) return;
-              void Haptics.selectionAsync();
-              onChange(option.value);
-            }}
-            style={styles.tab}>
-            <Icon ios={option.ios} android={option.android} size={18} color={selected ? colors.label : colors.secondaryLabel} />
-            <AppText variant="subheadline" color={selected ? "label" : "secondaryLabel"} style={styles.label}>
-              {option.label}
-            </AppText>
-          </Pressable>
+          <Fragment key={option.value}>
+            {i > 0 && <View style={[styles.line, { backgroundColor: line ? colors.separator : "transparent" }]} />}
+            <Pressable
+              accessibilityRole="radio"
+              accessibilityLabel={option.label}
+              accessibilityState={{ checked: selected }}
+              onLayout={(e) => {
+                const layout = e.nativeEvent.layout;
+                setFrames((f) => ({ ...f, [option.value]: layout }));
+              }}
+              onPress={() => {
+                if (selected) return;
+                void Haptics.selectionAsync();
+                onChange(option.value);
+              }}
+              style={styles.tab}>
+              <Icon ios={option.ios} android={option.android} size={18} color={selected ? colors.accentText : colors.secondaryLabel} />
+              <AppText variant="subheadline" color={selected ? "accentText" : "secondaryLabel"} style={styles.label}>
+                {option.label}
+              </AppText>
+            </Pressable>
+          </Fragment>
         );
       })}
     </View>
@@ -95,8 +96,9 @@ export function ThemeTabs({ value, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  track: { flexDirection: "row", alignSelf: "stretch", padding: space.xs, borderRadius: radius.sm, borderWidth: 1 },
-  pill: { position: "absolute", top: space.xs, bottom: space.xs, left: 0, borderRadius: radius.sm - 4, boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)" },
+  track: { flexDirection: "row", alignItems: "center", alignSelf: "stretch" },
+  pill: { position: "absolute", top: 0, bottom: 0, left: 0, borderRadius: radius.pill },
+  line: { width: StyleSheet.hairlineWidth, height: 20 },
   tab: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.sm, height: 38, paddingHorizontal: space.lg },
-  label: { fontWeight: "500" },
+  label: { fontWeight: "600" },
 });
