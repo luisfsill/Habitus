@@ -75,3 +75,12 @@ export async function saveProfileCache(profile: Profile | null): Promise<void> {
     log.error("could not save profile", error);
   }
 }
+
+/** Whether this browser holds a login (web only: the Supabase client keeps it as `sb-<project>-auth-token`). */
+export function hasStoredSession(): boolean {
+  try {
+    return Object.keys(localStorage).some((key) => /^sb-.+-auth-token$/.test(key));
+  } catch {
+    return false;
+  }
+}
