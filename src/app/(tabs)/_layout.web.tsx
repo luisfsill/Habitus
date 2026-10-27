@@ -1,12 +1,11 @@
 import { Tabs, TabList, TabSlot, TabTrigger, useTabTrigger } from "expo-router/ui";
 import { StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Icon } from "@/components/icon";
 import { MAX_WIDTH } from "@/components/screen";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
 import { useAccess } from "@/state/access";
-import { pinned, space, useTheme } from "@/theme";
+import { pinned, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
 // not fit four tabs on a phone. The PWA draws its own floating bar instead: the liquid glass navbar.
@@ -25,7 +24,6 @@ type Tab = (typeof TABS)[number];
 function Bar({ tabs }: { tabs: readonly Tab[] }) {
   const { switchTab, getTrigger } = useTabTrigger({ name: "index" });
   const active = Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
-  const insets = useSafeAreaInsets();
   const { colors, scheme } = useTheme();
   const items = tabs.map((tab, i) => ({
     key: tab.key,
@@ -34,7 +32,7 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
     icon: <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />,
   }));
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, pinned, { paddingBottom: insets.bottom + space.md }]}>
+    <View pointerEvents="box-none" style={[styles.wrap, pinned]}>
       <LiquidNavbar items={items} active={active} tone={scheme} compact label="Abas" style={BAR} onChange={(_, item) => switchTab(item.key, {})} />
     </View>
   );
@@ -59,9 +57,12 @@ export default function WebTabsLayout() {
 
 // Almost edge to edge on a phone, as wide as the page column on a computer.
 const BAR = { width: "100%", maxWidth: MAX_WIDTH };
+// The same gap below and at the sides, so the pill follows the rounded screen corners. Like iOS 26's own tab bar
+// it sits over the home indicator's safe area (34 pt), still clear of the indicator line itself.
+const EDGE = 18;
 
 const styles = StyleSheet.create({
   // The triggers only register the tabs; the floating bar is the visible one.
   hidden: { display: "none" },
-  wrap: { left: 0, right: 0, bottom: 0, alignItems: "center", paddingHorizontal: space.md },
+  wrap: { left: 0, right: 0, bottom: 0, alignItems: "center", paddingHorizontal: EDGE, paddingBottom: EDGE },
 });

@@ -246,7 +246,7 @@ function AccountData({ userId }: { userId: string | null }) {
   );
 }
 
-// The installed iPhone app needs real insets to keep the title below the clock and the tab bar above the home indicator.
+// The installed iPhone app needs real insets to keep the title below the clock and pinned footers above the home indicator.
 const SafeArea = Platform.OS === "web" ? WebSafeAreaInsets : Fragment;
 
 export default function RootLayout() {
