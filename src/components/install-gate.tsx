@@ -54,7 +54,8 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, playD
     <LandingPage onStart={() => setAsk(true)} onSignIn={() => setAsk(true)} onLegal={onLegal} playDrop={playDrop}>
       {/* Room for the bar under the footer. */}
       <View style={{ height: BAR_HEIGHT + insets.bottom }} />
-      <View style={[styles.bar, pinned, BAR_GLASS, { paddingBottom: insets.bottom + space.md }]}>
+      {/* Hidden under the steps sheet, whose own buttons sit where it would. */}
+      <View style={[styles.bar, pinned, BAR_GLASS, { paddingBottom: insets.bottom + space.md }, steps && styles.hidden]}>
         {installed ? (
           <Installed />
         ) : (
@@ -118,4 +119,5 @@ const styles = StyleSheet.create({
   done: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 56 },
   flex: { flex: 1 },
   bold: { fontWeight: "700" },
+  hidden: { display: "none" },
 });

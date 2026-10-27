@@ -77,12 +77,16 @@ export function useInstallPrompt() {
   /** Shows the browser's own install dialog. Resolves true when accepted. */
   const install = useCallback(async () => {
     const event = window.__habitusInstall;
-    if (!event) return false;
+    // Single-use and dismissed already: from now on "Instalar" shows the browser menu steps instead of doing nothing.
+    if (!event) {
+      setMode("manual");
+      return false;
+    }
     await event.prompt();
     const { outcome } = await event.userChoice;
-    // The event is single-use.
     window.__habitusInstall = undefined;
     if (outcome === "accepted") setInstalled(true);
+    else setMode("manual");
     return outcome === "accepted";
   }, []);
 
