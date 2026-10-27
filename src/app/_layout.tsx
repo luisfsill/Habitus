@@ -6,17 +6,18 @@ import { Appearance, Platform, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { InstallGate } from "@/components/install-gate";
-import { LandingPage } from "@/components/landing-page";
+import { DesktopLanding } from "@/components/landing-modal";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
 import { DesktopFrame } from "@/components/desktop-frame";
 import { RewardToast } from "@/components/reward-toast";
 import { useStackHeader } from "@/components/stack-header";
 import { WaterBackdrop } from "@/components/water-backdrop";
+import { playDrop } from "@/services/sound";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
-import { framedOnDesktop, inDesktopFrame, mirrorToWindow } from "@/state/desktop-frame";
+import { framedOnDesktop, inDesktopFrame, leaveLoginModal, mirrorToWindow } from "@/state/desktop-frame";
 import { TransitionProvider } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
@@ -54,20 +55,24 @@ function go(path: string) {
   window.location.assign(path);
 }
 
-/** Screens shown instead of the app: install-only on a phone's browser, the landing page for desktop visitors at "/". */
+/** Screens shown instead of the app: the landing page that asks to install on a phone's browser, the landing page for desktop visitors at "/". */
 function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<typeof useInstallPrompt>) {
-  if (installOnly()) {
+  const onLegal = (page: "terms" | "privacy") => go(`/legal/${page}`);
+  // The landing's legal links open as pages of their own.
+  if (installOnly() && !pathname.startsWith("/legal")) {
     return (
       <InstallGate
         mode={install.mode === "hidden" ? "manual" : install.mode}
         installed={install.installed}
         iPhone={isIPhone()}
         onInstall={() => void install.install()}
+        onLegal={onLegal}
+        playDrop={playDrop}
       />
     );
   }
   if (!signedIn && pathname === "/" && desktopWeb()) {
-    return <LandingPage onStart={() => go("/auth?modo=criar")} onSignIn={() => go("/auth")} onLegal={(page) => go(`/legal/${page}`)} />;
+    return <DesktopLanding onLegal={onLegal} playDrop={playDrop} />;
   }
   return null;
 }
@@ -145,7 +150,8 @@ function RootStack() {
     // The web document scrolls: a new screen starts at the top, like a new page.
     if (Platform.OS === "web") window.scrollTo(0, 0);
     mirrorToWindow();
-  }, [pathname]);
+    if (signedIn) leaveLoginModal();
+  }, [pathname, signedIn]);
 
   const entry = entryScreen(signedIn, pathname, install);
   const night = nightSky(signedIn, entry !== null, pathname);

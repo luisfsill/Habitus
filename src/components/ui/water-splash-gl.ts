@@ -2,8 +2,9 @@
  * Full-screen water splash for the "+1 copo" button (water-splash.web.tsx): a drop falls to the middle of the
  * screen, hits a thin film of water and sends real ripples out (a height field lit like the navbar's water, see
  * liquid-glass-water.ts: specular highlights, fresnel rim and caustics). A smaller droplet bounces up and lands
- * again. As the waves spread, the screen turns into the inside of a glass of water: deep blue with light rays,
- * caustics and bubbles rising (some from the impact point), until it all fades. Drawn by fullscreen-gl.ts. Web only (WebGL).
+ * again. As the waves spread, light rays, caustics and rising bubbles (some from the impact point) play over the
+ * page without tinting it, and drops land on the glass and slide down, until it all fades. Drawn by
+ * fullscreen-gl.ts; the page itself wobbles on impact (water-splash.web.tsx). Web only (WebGL).
  */
 
 /** Seconds from the tap until the drop touches the water. */
@@ -51,6 +52,22 @@ vec2 bubbles(vec2 p,float t){vec2 acc=vec2(0.);
   float r=2.+hash(fi+50.)*5.;vec2 c=uC+vec2((hash(fi+60.)-.5)*50.+sin(b*5.+fi)*6.,-b*(150.+hash(fi+70.)*130.)+12.);
   acc=max(acc,bubble(p,c,r));}}}
  return acc;}
+// Drops splashed onto the glass: they pop up around the screen, cling for a moment, then slide down leaving a wet
+// streak. Lit like a lens on glass: dark rim, bright glint up top, light gathered at the bottom. rgb colour, a alpha.
+vec4 glassDrops(vec2 p,float t){vec4 acc=vec4(0.);
+ for(int i=0;i<12;i++){float fi=float(i)+90.;float s=t-FALL-.08-hash(fi)*.5;if(s<0.)continue;
+  float r=(4.+hash(fi+1.)*7.)*smoothstep(0.,.15,s);
+  float x=uRes.x*(.08+.84*hash(fi+2.));float y0=uRes.y*(.1+.65*hash(fi+3.));
+  float slide=max(s-.3-hash(fi+4.)*.9,0.);float y=y0+slide*slide*(25.+hash(fi+5.)*45.)*r/8.;
+  vec2 c=vec2(x+sin(y*.05+fi)*1.5,y);vec2 q=(p-c)/vec2(1.,1.12);float d=length(q);
+  float tr=0.;if(slide>0.&&p.y>y0&&p.y<c.y-r*.5)tr=(1.-smoothstep(r*.2,r*.4,abs(p.x-c.x)))*.16*(p.y-y0)/(c.y-y0);
+  if(d>r+1.5&&tr<=0.)continue;
+  float body=smoothstep(r+.8,r-.8,d);float edge=body*smoothstep(r*.55,r,d);
+  float hl=smoothstep(r*.3,0.,length(q+vec2(r*.3,r*.38)));float glow=body*smoothstep(0.,r*.8,q.y)*(1.-edge)*.6;
+  vec3 col=mix(mix(vec3(.9,.97,1.),vec3(0.,.18,.35),edge*.7),vec3(1.),max(hl,glow));
+  float a=max(body*(.14+edge*.4)+hl*.9+glow*.5,tr);
+  if(a>acc.a)acc=vec4(col,min(a,1.));}
+ return acc;}
 void main(){
  vec2 p=vec2(gl_FragCoord.x,uRes.y*uDpr-gl_FragCoord.y)/uDpr;
  float fade=1.-smoothstep(END-.7,END,uT);
@@ -69,15 +86,13 @@ void main(){
  // Underwater: fills the screen behind the first wave front, from the impact point outwards.
  float s=uT-FALL;float under=s>0.?(1.-smoothstep(s*620.-160.,s*620.,length(p-uC)))*fade:0.;
  float yy=p.y/uRes.y;
- vec3 uw=mix(vec3(.1,.55,.85),vec3(0.,.1,.3),yy);
  float rays=pow(.5+.5*sin(p.x*.013+p.y*.005+sin(uT*.5+p.x*.004)*1.6),7.)*(1.-yy)*.55;
  float uc=smoothstep(.5,1.,caus(p*.022+vec2(0.,uT*.15),uT*.9))*(1.-yy*.7);
- uw+=vec3(.55,.85,1.)*(rays+uc*.35);
  vec2 bb=bubbles(p,uT);
- // Water film: a faint blue that darkens in troughs, white glints on crests, caustic sparkle.
- float filmA=.07*energy+.05*fade*smoothstep(0.,.25,uT-FALL);
- vec3 c=deep;float a=filmA;
- float ua=under*.62;c=mix(c,uw,ua/max(ua+a*(1.-ua),.001));a=ua+a*(1.-ua);
+ // Water film: a faint blue that darkens in troughs only where the waves are, white glints on crests, caustic sparkle.
+ vec3 c=deep;float a=.07*energy;
+ // Underwater light: rays and caustics as clear light over the page, no blue wash, so the screen stays readable.
+ float ua=(rays*.45+uc*.22)*under;c=mix(c,vec3(.85,.96,1.),ua/max(ua+a*(1.-ua),.001));a=ua+a*(1.-ua);
  float ba=bb.y*under;c=mix(c,vec3(.85,.97,1.),ba);a=ba+a*(1.-ba);
  float la=clamp(spec*1.7+spec2*1.3,0.,1.)*energy;c=mix(c,vec3(1.),la);a=la+a*(1.-la);
  la=fres*.25*energy;c=mix(c,irid,la);a=la+a*(1.-la);
@@ -88,6 +103,8 @@ void main(){
  float rim=dm*(1.-smoothstep(0.,4.,-dd));dc=mix(dc,mix(vec3(0.,.42,.78),vec3(.2,.6,1.),uDark),rim*.6);da=max(da,rim*.7);
  float ds=clamp(spec*1.4+spec2,0.,1.)*dm;dc=mix(dc,vec3(1.),ds);da=ds+da*(1.-ds);
  c=dc*da+c*a*(1.-da);a=da+a*(1.-da);c/=max(a,.001);
+ // Drops left on the glass, in front of everything.
+ vec4 gd=glassDrops(p,uT);c=mix(c,gd.rgb,gd.a/max(gd.a+a*(1.-gd.a),.001));a=gd.a+a*(1.-gd.a);
  a*=fade;
  gl_FragColor=vec4(c*a,a);
 }`;

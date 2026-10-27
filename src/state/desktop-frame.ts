@@ -12,20 +12,32 @@ export function inDesktopFrame(): boolean {
 
 /**
  * A computer's browser shows the app in a phone-width frame in the middle of the window, laid out as on a phone.
- * Not the landing page (a signed-out visitor at "/"), which is made for the wide window.
+ * Not the landing page (a signed-out visitor at "/"), which is made for the wide window, nor the legal pages it
+ * links to, which read as full-window documents. Opened from inside the app, they stay in the frame.
  * shortcut: decided once per page load; a small window resized wide is framed only after a reload.
  */
 export function framedOnDesktop(): boolean {
   if (Platform.OS !== "web" || inDesktopFrame()) return false;
   const desktop = window.matchMedia("(hover: hover) and (pointer: fine)").matches && window.innerWidth >= MIN_WINDOW_WIDTH;
-  return desktop && (window.location.pathname !== "/" || hasStoredSession());
+  const { pathname } = window.location;
+  if (pathname.startsWith("/legal/")) return false;
+  return desktop && (pathname !== "/" || hasStoredSession());
+}
+
+/** This page is the sign-in screen in the landing page's dialog (`LoginFrame`). */
+export function inLoginModal(): boolean {
+  return inDesktopFrame() && window.frameElement?.hasAttribute("data-login") === true;
+}
+
+/** Signed in from the landing page's dialog: the landing reloads and, with the session saved, opens the app in the frame. */
+export function leaveLoginModal() {
+  if (inLoginModal()) window.parent.location.reload();
 }
 
 /** Inside the frame: the window's address bar and tab title follow the app, so a reload or a copied link opens the same screen. */
 export function mirrorToWindow() {
-  if (!inDesktopFrame()) return;
-  // Still scrolls with the wheel; a desktop scrollbar would take 15 px off a phone-width page.
-  document.documentElement.style.scrollbarWidth = "none";
+  // The dialog's address is not the window's: the landing stays at "/".
+  if (!inDesktopFrame() || inLoginModal()) return;
   // After the router has written the new address and title.
   setTimeout(() => {
     window.parent.history.replaceState(null, "", window.location.pathname + window.location.search);

@@ -22,6 +22,8 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin || request.headers.has("range")) return;
+  // Dev server bundles (/index.ts.bundle?…) are slow to build and change on every edit: a cached copy would be stale.
+  if (url.pathname.endsWith(".bundle")) return;
   if (HASHED.test(url.pathname)) {
     event.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((response) => store(request, response))));
     return;

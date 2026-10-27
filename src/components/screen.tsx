@@ -76,7 +76,8 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
     return (
       <View style={[styles.root, backdrop ? styles.clear : undefined]}>
         {backdrop}
-        <View style={content}>{body}</View>
+        {/* The id lets a water splash wobble the page (water-splash.web.tsx). */}
+        <View nativeID="screen-content" style={content}>{body}</View>
         {foot && <View style={[pinned, styles.footerBar, bar]}>{foot}</View>}
       </View>
     );

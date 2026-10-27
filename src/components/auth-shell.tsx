@@ -1,6 +1,6 @@
 import { BlurView } from "expo-blur";
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, type StyleProp, StyleSheet, useWindowDimensions, View, type ViewStyle } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -30,8 +30,6 @@ function Body({ style, children }: { style: StyleProp<ViewStyle>; children: Reac
 /** Deep-water page with the title on top and a frosted glass card holding the form. */
 export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
-  // Phones keep the card low (thumb reach); wide screens center it.
-  const wide = useWindowDimensions().width >= 768;
   // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title starts under that.
   const top = Platform.OS === "web" ? space.xxl + space.sm : space.xxl;
   return (
@@ -39,7 +37,7 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
     <View style={[styles.root, Platform.OS !== "web" && styles.native]}>
       {Platform.OS !== "web" && <WaterBackdrop scheme="dark" />}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Body style={[styles.content, wide && styles.centered, { paddingTop: insets.top + top, paddingBottom: insets.bottom + space.xl }]}>
+        <Body style={[styles.content, { paddingTop: insets.top + top, paddingBottom: insets.bottom + space.xl }]}>
           <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
             {title}
             {subtitle}
@@ -61,8 +59,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   native: { backgroundColor: "#041526" },
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: "flex-end", gap: space.xl, paddingHorizontal: space.lg, width: "100%", maxWidth: 460, alignSelf: "center" },
-  centered: { justifyContent: "center" },
+  content: { flexGrow: 1, justifyContent: "center", gap: space.xl, paddingHorizontal: space.lg, width: "100%", maxWidth: 460, alignSelf: "center" },
   header: { gap: space.sm, paddingHorizontal: space.xs },
   cardShadow: { borderRadius: radius.lg + 4, shadowColor: "#0A7CC0", shadowOpacity: 0.3, shadowRadius: 40, shadowOffset: { width: 0, height: 0 } },
   card: {

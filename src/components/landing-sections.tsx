@@ -7,7 +7,7 @@ import { radius, space, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 import { GAINS } from "./benefits";
 import { Icon } from "./icon";
-import { PrimaryButton } from "./primary-button";
+import { Reveal, SurfaceButton } from "./surface-parts";
 
 // shortcut: prices mirror supabase/admin.sql; the plans table is readable only when signed in. Open it to anon if admins change prices often.
 const PLANS = [
@@ -95,10 +95,24 @@ function Feature({ icon, title, text }: { icon: { ios: string; android: string }
   );
 }
 
-export function Benefits({ columns }: { columns: number }) {
+/** Benefits as a magazine list: thin number, strong title, one line of text, hairlines between. */
+export function Benefits({ wide }: { wide: boolean }) {
+  const { colors } = useTheme();
   return (
     <Block id="beneficios" kicker="Benefícios" title="O que muda no seu dia">
-      <Grid columns={columns}>{GAINS.map((g) => <Feature key={g.title} {...g} />)}</Grid>
+      <View style={[styles.list, { borderColor: colors.separator }]}>
+        {GAINS.map((gain, i) => (
+          <Reveal key={gain.title} style={{ ...styles.gain, ...(wide ? styles.gainWide : null), borderColor: colors.separator }}>
+            <AppText color="accentText" style={styles.gainNumber}>
+              {String(i + 1).padStart(2, "0")}
+            </AppText>
+            <AppText style={[styles.gainTitle, wide && styles.gainTitleWide]}>{gain.title}</AppText>
+            <AppText variant="body" color="secondaryLabel" style={[styles.gainText, wide && styles.gainTextWide]}>
+              {gain.text}
+            </AppText>
+          </Reveal>
+        ))}
+      </View>
       <AppText variant="subheadline" color="secondaryLabel" align="center">
         Quais são as 6 dicas? Você descobre ao entrar no app.
       </AppText>
@@ -137,39 +151,30 @@ export function Features({ columns }: { columns: number }) {
   );
 }
 
-export function Plans({ columns, onStart }: { columns: number; onStart: () => void }) {
+/** Plans side by side, split by hairlines; the yearly one is marked by a single word. */
+export function Plans({ wide, onStart }: { wide: boolean; onStart: () => void }) {
   const { colors } = useTheme();
   return (
     <Block id="planos" kicker="Planos" title="Comece grátis. Continue se gostar.">
       <AppText variant="body" color="secondaryLabel">
         Todo cadastro ganha 7 dias grátis. Depois, escolha por quanto tempo quer continuar.
       </AppText>
-      <Grid columns={columns}>
-        {PLANS.map((plan) => {
-          const perMonth = plan.days >= 60 ? `${formatPrice(Math.round((plan.cents * 30) / plan.days))} por mês` : "Pague mês a mês";
-          const top = "highlight" in plan;
-          return (
-            <View key={plan.name} style={styles.plan}>
-              <View style={styles.planHead}>
-                <AppText variant="title3">{plan.name}</AppText>
-                {top && (
-                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                    <AppText variant="caption" style={styles.badgeText}>
-                      Mais vantajoso
-                    </AppText>
-                  </View>
-                )}
-              </View>
-              <AppText style={[styles.price, { color: top ? colors.accentText : colors.label }]}>{formatPrice(plan.cents)}</AppText>
-              <AppText variant="subheadline" color="secondaryLabel">
-                {plan.days} dias · {perMonth}
-              </AppText>
-            </View>
-          );
-        })}
-      </Grid>
+      <View style={[styles.plans, wide && styles.plansWide, { borderColor: colors.separator }]}>
+        {PLANS.map((plan, i) => (
+          <View key={plan.name} style={[styles.plan, wide && i > 0 && styles.planDivider, { borderColor: colors.separator }]}>
+            <AppText variant="footnote" style={[styles.kicker, { color: "highlight" in plan ? colors.accentText : "transparent" }]}>
+              MAIS VANTAJOSO
+            </AppText>
+            <AppText variant="title3">{plan.name}</AppText>
+            <AppText style={styles.price}>{formatPrice(plan.cents)}</AppText>
+            <AppText variant="subheadline" color="secondaryLabel">
+              {plan.days} dias · {plan.days >= 60 ? `${formatPrice(Math.round((plan.cents * 30) / plan.days))} por mês` : "mês a mês"}
+            </AppText>
+          </View>
+        ))}
+      </View>
       <View style={styles.cta}>
-        <PrimaryButton label="Começar meus 7 dias grátis" onPress={onStart} glow />
+        <SurfaceButton label="Começar meus 7 dias grátis" onPress={onStart} />
       </View>
     </Block>
   );
@@ -192,6 +197,19 @@ export function Faq() {
   );
 }
 
+/** Footer text link: lights up under the mouse. */
+function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link">
+      {({ hovered }) => (
+        <AppText variant="footnote" color={hovered ? "label" : "secondaryLabel"} style={hovered && styles.underline}>
+          {label}
+        </AppText>
+      )}
+    </Pressable>
+  );
+}
+
 export function Footer({ onLegal }: { onLegal: (page: "terms" | "privacy") => void }) {
   const { colors } = useTheme();
   return (
@@ -200,12 +218,8 @@ export function Footer({ onLegal }: { onLegal: (page: "terms" | "privacy") => vo
         © {new Date().getFullYear()} Habitus
       </AppText>
       <View style={styles.links}>
-        <Pressable onPress={() => onLegal("terms")} accessibilityRole="button">
-          <AppText variant="footnote" color="secondaryLabel">Termos de uso</AppText>
-        </Pressable>
-        <Pressable onPress={() => onLegal("privacy")} accessibilityRole="button">
-          <AppText variant="footnote" color="secondaryLabel">Política de privacidade</AppText>
-        </Pressable>
+        <FooterLink label="Termos de uso" onPress={() => onLegal("terms")} />
+        <FooterLink label="Política de privacidade" onPress={() => onLegal("privacy")} />
       </View>
     </View>
   );
@@ -221,13 +235,22 @@ const styles = StyleSheet.create({
   bottom: { borderBottomWidth: StyleSheet.hairlineWidth },
   step: { gap: space.sm },
   number: { width: 36, height: 36, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", marginBottom: space.xs },
-  plan: { gap: space.xs },
-  planHead: { flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" },
-  badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
-  badgeText: { color: "#FFFFFF", fontWeight: "700" },
-  price: { fontSize: 40, lineHeight: 48, fontWeight: "800", letterSpacing: -1, marginTop: space.sm },
-  cta: { alignSelf: "center", minWidth: 320 },
+  list: { borderTopWidth: 1 },
+  gain: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", gap: space.lg, paddingVertical: space.xl, borderBottomWidth: 1 },
+  gainWide: { flexWrap: "nowrap", gap: space.xxl },
+  gainNumber: { width: 64, flexShrink: 0, fontSize: 40, lineHeight: 44, fontWeight: "200" },
+  gainTitle: { fontSize: 24, lineHeight: 30, fontWeight: "700" },
+  gainTitleWide: { width: 320, flexShrink: 0 },
+  gainText: { flexBasis: "100%" },
+  gainTextWide: { flex: 1, flexBasis: 0, minWidth: 0 },
+  plans: { borderTopWidth: 1, borderBottomWidth: 1 },
+  plansWide: { flexDirection: "row" },
+  plan: { flex: 1, gap: space.xs, paddingVertical: space.xxl, paddingHorizontal: space.xl },
+  planDivider: { borderLeftWidth: 1 },
+  price: { fontSize: 56, lineHeight: 64, fontWeight: "700", letterSpacing: -2, marginTop: space.md },
+  cta: { alignItems: "center", marginTop: space.xl },
   faq: { gap: space.xs },
+  underline: { textDecorationLine: "underline" },
   footer: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: space.md, paddingVertical: space.xl, borderTopWidth: StyleSheet.hairlineWidth },
   links: { flexDirection: "row", gap: space.lg },
 });

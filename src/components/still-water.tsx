@@ -5,6 +5,8 @@ import { palettes } from "@/theme";
 
 interface Props {
   scheme: "light" | "dark";
+  /** Web only (water-backdrop.web.tsx): still water does not ripple. */
+  ripples?: boolean;
 }
 
 const DEEP = { light: "#B9DCEE", dark: "#03263F" };

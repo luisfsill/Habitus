@@ -7,6 +7,8 @@ import { BACKDROP_FRAG } from "./ui/water-backdrop-gl";
 
 interface Props {
   scheme: "light" | "dark";
+  /** The mouse stirs the water: ripples spread where it moves and, stronger, where it clicks. */
+  ripples?: boolean;
 }
 
 /** The water is soft and fills the screen: half the CSS resolution is plenty and keeps phones cool. */
@@ -25,19 +27,49 @@ const FALLBACK = {
 };
 
 /**
+ * Ripples for the shader's six `uDrops` slots (x, y, start time, strength), reused round robin: a weak one where the
+ * mouse moves, a strong one where it clicks. All zero (no ripples) when `on` is false.
+ */
+function mouseRipples(start: number, on: boolean) {
+  const drops = new Float32Array(24);
+  let slot = 0;
+  let last = { x: -1e4, y: -1e4 };
+  const touch = (x: number, y: number, strength: number) => {
+    drops.set([x, y, (performance.now() - start) / 1000, strength], slot * 4);
+    slot = (slot + 1) % 6;
+  };
+  const onMove = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse" || Math.hypot(e.clientX - last.x, e.clientY - last.y) < 70) return;
+    last = { x: e.clientX, y: e.clientY };
+    touch(e.clientX, e.clientY, 0.35);
+  };
+  const onDown = (e: PointerEvent) => touch(e.clientX, e.clientY, 1);
+  if (on) {
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+  }
+  const stop = () => {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerdown", onDown);
+  };
+  return { drops, stop };
+}
+
+/**
  * Web: live water behind the whole app, one fixed canvas the root layout keeps mounted (one shader for every
  * screen, see ui/water-backdrop-gl.ts). Paused while the tab is hidden; with "reduce motion" it draws one still frame.
  */
-export function WaterBackdrop({ scheme }: Props) {
+export function WaterBackdrop({ scheme, ripples }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const cv = canvasRef.current;
-    const scene = cv ? initSceneGL(cv, BACKDROP_FRAG, ["uBase"]) : null;
+    const scene = cv ? initSceneGL(cv, BACKDROP_FRAG, ["uBase", "uDrops"]) : null;
     if (!cv || !scene) return;
     const { gl, u } = scene;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
+    const stir = mouseRipples(start, !!ripples && !reduce);
     let raf = 0;
     let last = 0;
     const draw = (now: number) => {
@@ -56,6 +88,7 @@ export function WaterBackdrop({ scheme }: Props) {
       gl.uniform2f(u.uC, w / 2, h / 2);
       gl.uniform1f(u.uDark, scheme === "dark" ? 1 : 0);
       gl.uniform3f(u.uBase, ...rgb(palettes[scheme].background));
+      gl.uniform4fv(u.uDrops, stir.drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
     const tick = (now: number) => {
@@ -76,11 +109,12 @@ export function WaterBackdrop({ scheme }: Props) {
     document.addEventListener("visibilitychange", run);
     window.addEventListener("resize", redraw);
     return () => {
+      stir.stop();
       cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", run);
       window.removeEventListener("resize", redraw);
     };
-  }, [scheme]);
+  }, [scheme, ripples]);
 
   return (
     <div

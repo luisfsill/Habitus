@@ -17,6 +17,9 @@
          iOS 26+ would blur that edge; #status-bar below turns it into a solid band in the page colour instead. -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
+      // Inside the desktop phone frame (src/state/desktop-frame.ts): still scrolls with the wheel, but no desktop
+      // scrollbar, which would take 15 px off a phone-width page. Set here so it never shows while the app loads.
+      if (window.self !== window.top) document.documentElement.style.scrollbarWidth = "none";
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
       }
