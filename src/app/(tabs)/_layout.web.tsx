@@ -2,11 +2,10 @@ import { Tabs, TabList, TabSlot, TabTrigger, useTabTrigger } from "expo-router/u
 import { StyleSheet, View } from "react-native";
 
 import { Icon } from "@/components/icon";
-import { MAX_WIDTH } from "@/components/screen";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
 import { playSplash, settleWater, stirWater } from "@/services/sound";
 import { useAccess } from "@/state/access";
-import { pinned, useTheme } from "@/theme";
+import { MAX_WIDTH, pinned, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
 // not fit four tabs on a phone. The PWA draws its own floating bar instead: the liquid glass navbar.

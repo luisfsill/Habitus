@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { Platform, type TextStyle, useColorScheme, type ViewStyle } from "react-native";
+import { Platform, type TextStyle, useColorScheme, useWindowDimensions, type ViewStyle } from "react-native";
 
 /**
  * Cobalt accent with mindful green, mapped onto iOS system greys. Text
@@ -53,6 +53,18 @@ const dark: typeof light = {
   switchOff: "#636366",
   shadow: "#000000",
 };
+
+/** Width of the app column on wide (desktop/tablet) screens: pages, headers, pinned bars and sheets keep to it. */
+export const MAX_WIDTH = 640;
+
+/**
+ * Room beside the app column (0 on a phone). Pinned overlays and header buttons inset by it to stay on the column:
+ * an absolute box with `left`/`right` and `maxWidth` sticks to the left edge instead of centring.
+ */
+export function useColumnGutter(): number {
+  const { width } = useWindowDimensions();
+  return Math.max(0, (width - MAX_WIDTH) / 2);
+}
 
 /** Overlays pin to the viewport: on the web the document scrolls, so `absolute` would scroll away with the page. */
 export const pinned: ViewStyle = { position: Platform.OS === "web" ? ("fixed" as "absolute") : "absolute" };

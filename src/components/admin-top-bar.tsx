@@ -1,10 +1,9 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { radius, space, useTheme } from "@/theme";
+import { MAX_WIDTH, radius, space, useTheme } from "@/theme";
 
 import { AccountMenu, type AccountMenuItem } from "./account-menu";
 import { AppText } from "./app-text";
-import { MAX_WIDTH } from "./screen";
 
 export type AdminSection = "users" | "plans";
 

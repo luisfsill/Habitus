@@ -101,9 +101,14 @@ Na web a página rola como documento, não dentro de uma lista: `Screen`, `AuthS
 
 Na web/PWA, `LiquidNavbar` (`src/components/ui/liquid-glass-navbar.tsx`, adaptada do Nimbus UI "Waterline" de guglielmogiannattasio.it): uma pílula de vidro com uma gota de água sob a aba ativa. Ao trocar de aba a gota se estica até a nova, se parte em gotinhas nos saltos longos e se junta de novo com uma ondulação; cada ícone faz uma pequena animação ao toque (Hoje pula, Histórico gira, Conquistas salta, Ajustes balança). A água é um shader WebGL desenhado só dentro da pílula e pausado fora da tela; sem WebGL entra uma gota em CSS. Só ícones (o nome vai no `aria-label`), alvo de toque de 48 px, tom claro ou escuro conforme o tema, sem animação com "reduzir movimento". Som: um toque rápido na pílula toca um toque curto na água, sorteado entre os 5 mais fortes do mesmo áudio (nunca o mesmo duas vezes seguidas, volume máximo), e troca de aba; encostar e arrastar o dedo ou o mouse com o botão apertado (também vindo de fora da pílula; sair dela pausa e voltar retoma) só brinca com a água, sem trocar de aba: a água segue o dedo, solta ondas pelo caminho (pequenas com o dedo devagar, fortes com o dedo rápido) e toca água mexendo, num trecho sorteado de `assets/sounds/water-slosh.mp3` (arquivo `40727898-touching-the-water-176713.mp3`, escolhido pelo dono do app), mais alto quanto mais rápido o dedo e sumindo aos poucos ao soltar. Fica fixa no rodapé com a mesma folga de 18 pt embaixo e dos lados, para a pílula acompanhar os cantos arredondados da tela; como a barra do iOS 26, fica por cima da área segura do indicador de início (34 pt), sem cobrir o traço. Quase de borda a borda no celular e da largura da coluna do conteúdo (`MAX_WIDTH`) no computador; as abas dividem a largura em partes iguais. No iOS e no Android continuam as abas nativas (`NativeTabs`).
 
-## Admin no computador
+## Coluna no computador
 
-A barra do admin ocupa a largura da janela, mas o conteúdo (marca, seções e conta) fica na mesma coluna central do conteúdo (`MAX_WIDTH`, 640 pt).
+Em tela larga (computador, tablet) tudo que a pessoa lê ou toca fica numa coluna central de no máximo `MAX_WIDTH` (640 pt, em `src/theme`); só fundos, vídeos e efeitos ocupam a janela inteira. No celular a coluna é a tela toda, então nada muda.
+
+- Páginas: `Screen` limita o conteúdo e o rodapé fixo (`footer`) à coluna. `AuthShell` usa uma coluna mais estreita (460 pt).
+- Cabeçalhos de pilha: use `useStackHeader(voltar)` (`src/components/stack-header.ts`) nas opções da `Stack`. Ele recua o botão de voltar e as ações (Cancelar, Salvar, +) até as bordas da coluna, em vez das bordas da janela. Só o cabeçalho JS da web lê esse recuo; o cabeçalho nativo arruma os próprios botões.
+- Caixas fixas (`pinned`) com `left`/`right`: um `maxWidth` não as centraliza (a caixa gruda na esquerda). Some `useColumnGutter()` ao `left`/`right`, como em `UndoToast`, `InstallStepsSheet` e o cronômetro da fogueira, ou use uma faixa de largura total com o conteúdo centralizado, como o rodapé de `Screen` e a barra de abas.
+- A barra do admin ocupa a largura da janela, mas o conteúdo (marca, seções e conta) fica na coluna.
 
 ## Regras visuais
 

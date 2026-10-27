@@ -13,7 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { pinned, radius, space, useTheme } from "@/theme";
+import { pinned, radius, space, useColumnGutter, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
@@ -57,6 +57,7 @@ interface Props {
 export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const gutter = useColumnGutter();
   const { height } = useWindowDimensions();
   const reduce = useReducedMotion();
   const { title, bar, scenes } = SCENES[kind];
@@ -87,7 +88,7 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
         entering={SlideInDown.springify().damping(18)}
         exiting={SlideOutDown.duration(200)}
         accessibilityViewIsModal
-        style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + space.lg }]}>
+        style={[styles.sheet, { left: gutter, right: gutter, backgroundColor: colors.surface, paddingBottom: insets.bottom + space.lg }]}>
         <View style={[styles.grabber, { backgroundColor: colors.separator }]} />
         <AppText variant="title2" align="center" accessibilityRole="header">
           {title}
@@ -137,12 +138,7 @@ const styles = StyleSheet.create({
   backdrop: { backgroundColor: "rgba(0,0,0,0.45)" },
   sheet: {
     position: "absolute",
-    left: 0,
-    right: 0,
     bottom: 0,
-    maxWidth: 640,
-    alignSelf: "center",
-    width: "100%",
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingHorizontal: space.lg,

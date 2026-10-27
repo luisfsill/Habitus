@@ -10,6 +10,7 @@ import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
 import { RewardToast } from "@/components/reward-toast";
+import { useStackHeader } from "@/components/stack-header";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
@@ -35,8 +36,6 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
  * unless the address carries ?instalar, which shows the install screen for a look.
  */
 function installOnly(): boolean {
-  // TEMPORÁRIO: em desenvolvimento a tela de instalação aparece sempre (celular ou computador). Voltar ao ?instalar depois.
-  if (__DEV__ && Platform.OS === "web" && !isStandalone()) return true;
   const forced = __DEV__ && Platform.OS === "web" && window.location.search.includes("instalar");
   return (!__DEV__ || forced) && isMobileWeb() && !isStandalone();
 }
@@ -126,6 +125,7 @@ function RootStack() {
   useNotificationRouting(ready && open && data.onboarded);
   const install = useInstallPrompt();
   const pathname = usePathname();
+  const backToToday = useStackHeader("Hoje");
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
@@ -169,24 +169,9 @@ function RootStack() {
         </Stack.Protected>
         <Stack.Protected guard={open && data.onboarded} redirectTo={home}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen
-            name="trick/[id]"
-            options={{
-              headerShown: true,
-              headerTitle: "",
-              headerBackTitle: "Hoje",
-              headerTransparent: true,
-              headerTintColor: colors.accent,
-            }}
-          />
-          <Stack.Screen
-            name="lembretes/index"
-            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Hoje", headerTransparent: true, headerTintColor: colors.accent }}
-          />
-          <Stack.Screen
-            name="lembretes/[id]"
-            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Lembretes", headerTransparent: true, headerTintColor: colors.accent }}
-          />
+          <Stack.Screen name="trick/[id]" options={backToToday} />
+          <Stack.Screen name="lembretes/index" options={backToToday} />
+          <Stack.Screen name="lembretes/[id]" options={{ ...backToToday, headerBackTitle: "Lembretes" }} />
         </Stack.Protected>
         <Stack.Protected guard={open && !data.onboarded} redirectTo={home}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />
