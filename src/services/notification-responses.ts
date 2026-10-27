@@ -5,8 +5,8 @@ import { Platform } from "react-native";
 import { contentData, interpretResponse, type ResponseIntent } from "@/domain/notification-actions";
 
 import { log } from "./log";
-import { scheduleSnooze } from "./notifications";
-import { markDoneInStorage } from "./storage";
+import { cancelReminderOccurrence, scheduleReminderSnooze, scheduleSnooze } from "./notifications";
+import { loadData, markDoneInStorage, markReminderDoneInStorage } from "./storage";
 
 const BACKGROUND_TASK = "habitus-notification-actions";
 const handled = new Set<string>();
@@ -23,16 +23,22 @@ export async function applyResponse(response: Notifications.NotificationResponse
   const intent = intentFor(response);
   // Android may deliver one action twice (headless task + JS listener); apply it once.
   const id = `${response.notification.request.identifier}:${response.actionIdentifier}`;
-  if (intent.type !== "done" && intent.type !== "snooze") return intent;
+  const actionable = ["done", "snooze", "reminder-done", "reminder-snooze", "dismiss"];
+  if (!actionable.includes(intent.type)) return intent;
   if (handled.has(id)) return intent;
   handled.add(id);
 
   try {
     if (intent.type === "done") await markDoneInStorage(intent.dayKey, intent.trickIndex);
     if (intent.type === "snooze") await scheduleSnooze(intent.dayKey, intent.trickIndex);
-    if (intent.type === "done" || intent.type === "snooze") {
-      await Notifications.dismissNotificationAsync(response.notification.request.identifier);
+    if (intent.type === "reminder-done") {
+      await markReminderDoneInStorage(intent.reminderId, intent.occurrence);
+      await cancelReminderOccurrence(intent.reminderId, intent.occurrence);
     }
+    if (intent.type === "reminder-snooze") {
+      await scheduleReminderSnooze(intent.reminderId, intent.occurrence, intent.lead, await loadData());
+    }
+    await Notifications.dismissNotificationAsync(response.notification.request.identifier);
   } catch (error) {
     log.error("could not apply notification action", error);
   }

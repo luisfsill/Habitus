@@ -1,18 +1,19 @@
-import { StyleSheet, TextInput, type TextInputProps, View } from "react-native";
+import { type StyleProp, StyleSheet, TextInput, type TextInputProps, View, type ViewStyle } from "react-native";
 
 import { HIT, radius, space, type, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 
-interface Props extends Pick<TextInputProps, "value" | "onChangeText" | "placeholder" | "keyboardType" | "autoCapitalize" | "autoComplete" | "onSubmitEditing" | "editable"> {
+interface Props extends Pick<TextInputProps, "value" | "onChangeText" | "placeholder" | "keyboardType" | "autoCapitalize" | "autoComplete" | "onSubmitEditing" | "editable" | "multiline" | "maxLength"> {
   label: string;
+  style?: StyleProp<ViewStyle>;
 }
 
-/** Labelled input that follows the app theme (admin forms). */
-export function TextField({ label, ...input }: Props) {
+/** Labelled input that follows the app theme (admin and reminder forms). */
+export function TextField({ label, style, ...input }: Props) {
   const { colors } = useTheme();
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, style]}>
       <AppText variant="footnote" color="secondaryLabel">
         {label}
       </AppText>
@@ -21,7 +22,7 @@ export function TextField({ label, ...input }: Props) {
         {...input}
         accessibilityLabel={label}
         placeholderTextColor={colors.secondaryLabel}
-        style={[type.body, styles.input, { color: colors.label, backgroundColor: colors.fill }]}
+        style={[type.body, styles.input, input.multiline && styles.multiline, { color: colors.label, backgroundColor: colors.fill }]}
       />
     </View>
   );
@@ -30,4 +31,5 @@ export function TextField({ label, ...input }: Props) {
 const styles = StyleSheet.create({
   root: { gap: space.xs, flexGrow: 1, flexBasis: 160 },
   input: { minHeight: HIT, borderRadius: radius.sm, paddingHorizontal: space.md },
+  multiline: { minHeight: 88, paddingVertical: space.md, textAlignVertical: "top" },
 });

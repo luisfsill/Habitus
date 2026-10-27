@@ -1,6 +1,7 @@
 import { bedtimeSample, DEFAULT_BEDTIME, EARLIEST_BEDTIME, estimateBedtime, LATEST_BEDTIME, parseBedtime } from "./bedtime";
 import type { Completions } from "./history";
 import { computeSchedule, DEFAULT_END, DEFAULT_START, type ScheduleResult } from "./schedule";
+import { type Reminder, sanitizeReminders } from "./reminders";
 import { ALL_WEEKDAYS, parseTime, type Weekday } from "./time";
 import { BEDTIME_TRICK, DEFAULT_AFFIRMATIONS, isTrickIndex } from "./tricks";
 import { DEFAULT_WATER, sanitizeWater, sanitizeWaterLog, type WaterDay, type WaterSettings } from "./water";
@@ -33,6 +34,8 @@ export interface AppData {
   sleepLog: Record<string, number>;
   /** dayKey → cups of water logged that day and when that count last changed. */
   water: Record<string, WaterDay>;
+  /** id → personal reminder (deleted ones stay as tombstones for 30 days). */
+  reminders: Record<string, Reminder>;
   /** When `settings` last changed (ms); decides which device's settings win a sync. */
   settingsUpdatedAt: number;
   /** When "Resetar dados" last ran (ms); older copies on other devices are dropped in a sync. */
@@ -62,6 +65,7 @@ export function defaultData(): AppData {
     gratitude: {},
     sleepLog: {},
     water: {},
+    reminders: {},
     settingsUpdatedAt: 0,
     resetAt: 0,
     owner: null,
@@ -147,6 +151,7 @@ export function sanitizeData(raw: unknown): AppData {
     gratitude: sanitizeGratitude(raw.gratitude),
     sleepLog: sanitizeSleepLog(raw.sleepLog),
     water: sanitizeWaterLog(raw.water),
+    reminders: sanitizeReminders(raw.reminders),
     settingsUpdatedAt: timestamp(raw.settingsUpdatedAt),
     resetAt: timestamp(raw.resetAt),
     owner: typeof raw.owner === "string" ? raw.owner : null,

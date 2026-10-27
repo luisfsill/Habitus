@@ -23,6 +23,8 @@ const light = {
   successSoft: "rgba(5,150,105,0.14)",
   warm: "#B45309",
   danger: "#C62828",
+  /** Fill behind white text or icons on destructive buttons (swipe delete); 6.5:1 with white in both themes. */
+  destructive: "#B91C1C",
   ringTrack: "rgba(29,91,216,0.14)",
   /** Off track of a switch: iOS system grey, ≥3:1 against the card (WCAG 1.4.11). */
   switchOff: "#8E8E93",
@@ -46,6 +48,7 @@ const dark: typeof light = {
   successSoft: "rgba(52,211,153,0.18)",
   warm: "#FBBF24",
   danger: "#F87171",
+  destructive: "#B91C1C",
   ringTrack: "rgba(61,123,255,0.2)",
   switchOff: "#636366",
   shadow: "#000000",

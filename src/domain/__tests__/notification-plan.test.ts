@@ -1,11 +1,15 @@
 import {
   isOneOffId,
   MAX_PENDING_NOTIFICATIONS,
+  planAll,
   planNotifications,
   planTestRun,
+  planReminderNotifications,
   pushRow,
+  reminderSnooze,
   snoozeNotification,
 } from "../notification-plan";
+import type { Reminder } from "../reminders";
 import { computeSchedule, type DaySchedule } from "../schedule";
 import { ALL_WEEKDAYS, formatTime, minutesOfDay, type Weekday } from "../time";
 
@@ -147,5 +151,98 @@ describe("pushRow", () => {
     const [opening, tip] = planNotifications(schedule(), saturdayMorning);
     expect(pushRow(tip)).toEqual({ id: "2026-10-24:trick:0", send_at: tip.date.toISOString(), title: tip.title, body: tip.body, url: "/trick/0" });
     expect(pushRow(opening).url).toBe("/");
+  });
+});
+
+describe("planReminderNotifications", () => {
+  const rem = (over: Partial<Reminder> = {}): Reminder => ({
+    id: "a", title: "Reunião", notes: "", at: "2026-10-27T17:00", leads: [90], repeat: null,
+    doneAt: null, doneThrough: null, updatedAt: 1, deletedAt: null, ...over,
+  });
+  const noon = new Date(2026, 9, 27, 12, 0);
+
+  it("plans one alert per lead plus the one at the time", () => {
+    const plan = planReminderNotifications({ a: rem() }, noon, { slots: 10 });
+    expect(plan.map((p) => p.id)).toEqual(["rem:a:2026-10-27T17:00:90", "rem:a:2026-10-27T17:00:0"]);
+    expect(plan[0].date).toEqual(new Date(2026, 9, 27, 15, 30));
+    expect(plan[0]).toMatchObject({ kind: "reminder", reminderId: "a", occurrence: "2026-10-27T17:00", lead: 90, dayKey: "2026-10-27" });
+    expect(plan[1].title).toBe("Agora: Reunião");
+  });
+
+  it("skips alerts already past", () => {
+    const plan = planReminderNotifications({ a: rem() }, new Date(2026, 9, 27, 16, 0), { slots: 10 });
+    expect(plan.map((p) => p.lead)).toEqual([0]);
+  });
+
+  it("two leads give three alerts", () => {
+    expect(planReminderNotifications({ a: rem({ leads: [90, 60] }) }, noon, { slots: 10 })).toHaveLength(3);
+  });
+
+  it("respects slots, until and the 60-day horizon", () => {
+    const many = rem({ leads: [60, 30, 20, 10], repeat: { every: 1, unit: "day" } });
+    expect(planReminderNotifications({ a: many }, noon, { slots: 0 })).toEqual([]);
+    const two = planReminderNotifications({ a: many }, noon, { slots: 2 });
+    expect(two.map((p) => p.lead)).toEqual([60, 30]);
+    const until = new Date(2026, 9, 27, 16, 0);
+    expect(planReminderNotifications({ a: rem() }, noon, { slots: 10, until }).map((p) => p.lead)).toEqual([90]);
+    const all = planReminderNotifications({ a: rem({ leads: [], repeat: { every: 1, unit: "day" } }) }, noon, { slots: 500 });
+    expect(all.length).toBeLessThanOrEqual(61);
+    expect(all.length).toBeGreaterThan(55);
+  });
+
+  it("never emits an invalid date", () => {
+    expect(planReminderNotifications({ a: rem({ at: "bad" }) }, noon, { slots: 10 })).toEqual([]);
+  });
+});
+
+describe("reminder snooze and url", () => {
+  const rem: Reminder = { id: "a", title: "T", notes: "", at: "2026-10-27T17:00", leads: [90], repeat: null, doneAt: null, doneThrough: null, updatedAt: 1, deletedAt: null };
+  const occ = new Date(2026, 9, 27, 17, 0);
+
+  it("snoozes 10 minutes later as a one-off of that occurrence, with text for the new time", () => {
+    const now = new Date(2026, 9, 27, 15, 31);
+    const snoozed = reminderSnooze(rem, occ, 90, now);
+    expect(snoozed.id).toBe(`rem:a:2026-10-27T17:00:snooze:${now.getTime()}`);
+    expect(snoozed.date).toEqual(new Date(2026, 9, 27, 15, 41));
+    expect(snoozed).toMatchObject({ title: "Daqui a 1 h 19: T", body: "Hoje às 17:00", lead: 90, occurrence: "2026-10-27T17:00", reminderId: "a" });
+    expect(isOneOffId(snoozed.id)).toBe(true);
+    // Matches the prefixes cancelReminder and cancelReminderOccurrence use.
+    expect(snoozed.id.startsWith("rem:a:")).toBe(true);
+    expect(snoozed.id.startsWith("rem:a:2026-10-27T17:00:")).toBe(true);
+  });
+
+  it("a snooze landing at or after the occurrence reads Agora", () => {
+    const late = reminderSnooze(rem, occ, 90, new Date(2026, 9, 27, 16, 55));
+    expect(late).toMatchObject({ title: "Agora: T", body: "Às 17:00" });
+    expect(reminderSnooze({ ...rem, notes: "Sala 3" }, occ, 0, new Date(2026, 9, 27, 17, 2)).body).toBe("Sala 3");
+  });
+
+  it("taps open the reminder with the occurrence and lead", () => {
+    const [first] = planReminderNotifications({ a: rem }, new Date(2026, 9, 27, 12, 0), { slots: 5 });
+    expect(pushRow(first).url).toBe("/lembretes/a?occ=2026-10-27T17%3A00&lead=90");
+    expect(pushRow({ ...first, occurrence: undefined }).url).toBe("/lembretes/a");
+  });
+});
+
+describe("planAll", () => {
+  const daily: Reminder = { id: "a", title: "T", notes: "", at: "2026-10-24T18:00", leads: [], repeat: { every: 1, unit: "day" }, doneAt: null, doneThrough: null, updatedAt: 1, deletedAt: null };
+
+  it("gives reminders only the slots tips leave", () => {
+    const plan = planAll(schedule(), { a: daily }, saturdayMorning);
+    expect(plan.slice(0, 49).every((n) => n.kind !== "reminder")).toBe(true);
+    expect(plan.filter((n) => n.kind === "reminder")).toHaveLength(MAX_PENDING_NOTIFICATIONS - 49);
+  });
+
+  it("water on and the cap full leaves no reminder alerts", () => {
+    const water = { settings: { enabled: true, goal: 30, everyMinutes: 15 }, start: "08:00", end: "16:00", log: {} };
+    const plan = planAll(schedule(), { a: daily }, saturdayMorning, { water });
+    expect(plan).toHaveLength(MAX_PENDING_NOTIFICATIONS);
+    expect(plan.some((n) => n.kind === "reminder")).toBe(false);
+  });
+
+  it("invalid tip hours still plan reminders", () => {
+    const plan = planAll(null, { a: daily }, saturdayMorning);
+    expect(plan.length).toBeGreaterThan(0);
+    expect(plan.every((n) => n.kind === "reminder")).toBe(true);
   });
 });

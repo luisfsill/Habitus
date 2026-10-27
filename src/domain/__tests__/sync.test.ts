@@ -83,3 +83,17 @@ describe("claimData", () => {
     expect(claimData(data({ owner: "b", onboarded: true, gratitude: { d: "privado" } }), "a")).toEqual(data({ owner: "a" }));
   });
 });
+
+describe("mergeData reminders", () => {
+  const rem = (id: string, updatedAt: number) => ({
+    id, title: id, notes: "", at: "2026-10-28T09:00", leads: [], repeat: null, doneAt: null, doneThrough: null, updatedAt, deletedAt: null,
+  });
+  it("merges both sides", () => {
+    const out = mergeData(data({ reminders: { a: rem("a", 1) } }), data({ reminders: { b: rem("b", 1) } }));
+    expect(Object.keys(out.reminders).sort()).toEqual(["a", "b"]);
+  });
+  it("newer reset drops the other side's reminders", () => {
+    const reset = data({ resetAt: 500 });
+    expect(mergeData(reset, data({ reminders: { a: rem("a", 9) } })).reminders).toEqual({});
+  });
+});

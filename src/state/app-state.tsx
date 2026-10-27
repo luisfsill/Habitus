@@ -7,6 +7,7 @@ import { type AppData, defaultData, type Settings, withCompletion } from "@/doma
 import { claimData, mergeData } from "@/domain/sync";
 import { computeSchedule, type ScheduleResult } from "@/domain/schedule";
 import { trickDayKey } from "@/domain/bedtime";
+import type { ReminderDraft } from "@/domain/reminders";
 import { dayKey } from "@/domain/time";
 import { cupsOn, nextCups } from "@/domain/water";
 import type { TrickIndex } from "@/domain/tricks";
@@ -26,6 +27,8 @@ import {
 import { playCelebration } from "@/services/sound";
 import { clearData, loadData, saveData } from "@/services/storage";
 import { pushMerged } from "@/services/sync";
+
+import { useReminderActions } from "./use-reminders";
 
 interface AppStateValue {
   data: AppData;
@@ -48,6 +51,14 @@ interface AppStateValue {
   setGratitude: (text: string) => Promise<void>;
   /** One cup more or less today; replans the water reminders when the goal is crossed. */
   addWater: (delta: 1 | -1) => Promise<void>;
+  /** Creates (no id) or edits a reminder. Returns the validation message, or null when saved. */
+  saveReminder: (draft: ReminderDraft, id?: string) => Promise<string | null>;
+  /** Marks `occurrence` (from a notification) or the next occurrence done, with a success haptic. */
+  completeReminder: (id: string, occurrence?: string) => Promise<void>;
+  /** Snoozes one alert of a reminder for 10 minutes. */
+  snoozeReminder: (id: string, occurrence: string, lead: number) => Promise<void>;
+  reopenReminder: (id: string) => Promise<void>;
+  deleteReminders: (ids: readonly string[]) => Promise<void>;
   askPermission: () => Promise<PermissionState>;
   askExactAlarms: () => Promise<void>;
   /** True while some change has not reached the server yet. */
@@ -163,6 +174,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
   );
 
   const addWater = useAddWater({ dataRef, setData, setReward, commit, schedulePush });
+  const reminderActions = useReminderActions({ dataRef, commit });
 
   const refresh = useCallback(async () => {
     const [stored, state, exact] = await Promise.all([loadData(), getPermissionState(), hasExactAlarms()]);
@@ -257,6 +269,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         schedulePush();
       },
       addWater,
+      ...reminderActions,
       async askExactAlarms() {
         const granted = await requestExactAlarms();
         setExactAlarms(granted);
@@ -276,7 +289,7 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
         await commit({ ...defaultData(), owner: userId, resetAt: Date.now() });
       },
     }),
-    [data, ready, syncPending, permission, exactAlarms, progress, reward, setReward, celebration, setCelebration, refresh, commit, schedulePush, userId, addWater],
+    [data, ready, syncPending, permission, exactAlarms, progress, reward, setReward, celebration, setCelebration, refresh, commit, schedulePush, userId, addWater, reminderActions],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

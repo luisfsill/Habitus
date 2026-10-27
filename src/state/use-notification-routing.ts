@@ -20,8 +20,12 @@ export function useNotificationRouting(enabled: boolean) {
     const route = async (response: Notifications.NotificationResponse) => {
       const intent: ResponseIntent = await applyResponse(response);
       if (intent.type === "open-trick") router.push({ pathname: "/trick/[id]", params: { id: String(intent.trickIndex) } });
+      if (intent.type === "open-reminder") router.push({
+          pathname: "/lembretes/[id]",
+          params: { id: intent.reminderId, occ: intent.occurrence, lead: String(intent.lead) },
+        });
       if (intent.type === "open-today") router.navigate("/");
-      if (intent.type === "done" || intent.type === "snooze") await refresh();
+      if (intent.type === "done" || intent.type === "snooze" || intent.type === "reminder-done" || intent.type === "reminder-snooze") await refresh();
       await Notifications.clearLastNotificationResponseAsync();
     };
 

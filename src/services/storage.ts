@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { parseCachedProfile, type Profile } from "@/domain/access";
 import { type AppData, defaultData, sanitizeData, withCompletion } from "@/domain/app-data";
+import { completeReminder } from "@/domain/reminders";
 
 import { log } from "./log";
 
@@ -28,6 +29,16 @@ export async function saveData(data: AppData): Promise<void> {
 /** Read-modify-write used by background notification actions. */
 export async function markDoneInStorage(day: string, trickIndex: number): Promise<AppData> {
   const next = withCompletion(await loadData(), day, trickIndex, new Date());
+  await saveData(next);
+  return next;
+}
+
+/** Marks one occurrence of a reminder as done from a notification action. */
+export async function markReminderDoneInStorage(reminderId: string, occurrence: string): Promise<AppData> {
+  const data = await loadData();
+  const reminder = data.reminders[reminderId];
+  if (!reminder) return data;
+  const next = { ...data, reminders: { ...data.reminders, [reminderId]: completeReminder(reminder, occurrence, new Date()) } };
   await saveData(next);
   return next;
 }

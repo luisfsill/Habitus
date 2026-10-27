@@ -26,3 +26,10 @@
 .wt-wrapper > [data-rwp]:last-child .wt-highlight {
   border-radius: 0 10px 10px 0;
 }
+/* Three wheels (lead time, date): a little wider. The date's month column holds the full month name. */
+.wt-wide {
+  max-width: 340px;
+}
+.wt-date .wt-wrapper > [data-rwp]:nth-child(2) {
+  flex: 1.8;
+}

@@ -4,20 +4,25 @@ import { Linking, Platform } from "react-native";
 import { type AppData, completedKeys, scheduleFor } from "@/domain/app-data";
 import {
   ACTION_DONE,
+  ACTION_OK,
   ACTION_SNOOZE,
   type NotificationPayload,
   type PermissionState,
+  REMINDER_CATEGORY,
+  REMINDER_LEAD_CATEGORY,
   toPermissionState,
   TRICK_CATEGORY,
 } from "@/domain/notification-actions";
 import {
   isOneOffId,
   type PlannedNotification,
-  planNotifications,
+  planAll,
   planTestRun,
+  reminderSnooze,
   snoozeNotification,
   snoozePrefix,
 } from "@/domain/notification-plan";
+import { parseLocal } from "@/domain/reminders";
 import type { TrickIndex } from "@/domain/tricks";
 
 import { log } from "./log";
@@ -74,6 +79,20 @@ export async function configureNotifications(): Promise<void> {
     { identifier: ACTION_DONE, buttonTitle: "Feita", options: { opensAppToForeground: foreground } },
     { identifier: ACTION_SNOOZE, buttonTitle: "Adiar 10 min", options: { opensAppToForeground: foreground } },
   ]);
+  await Notifications.setNotificationCategoryAsync(REMINDER_CATEGORY, [
+    { identifier: ACTION_DONE, buttonTitle: "Feito", options: { opensAppToForeground: foreground } },
+    { identifier: ACTION_SNOOZE, buttonTitle: "Adiar 10 min", options: { opensAppToForeground: foreground } },
+  ]);
+  await Notifications.setNotificationCategoryAsync(REMINDER_LEAD_CATEGORY, [
+    { identifier: ACTION_OK, buttonTitle: "Ok", options: { opensAppToForeground: false } },
+    { identifier: ACTION_SNOOZE, buttonTitle: "Adiar 10 min", options: { opensAppToForeground: foreground } },
+  ]);
+}
+
+function categoryFor(item: PlannedNotification): string | undefined {
+  if (item.kind === "trick") return TRICK_CATEGORY;
+  if (item.kind === "reminder") return item.lead === 0 ? REMINDER_CATEGORY : REMINDER_LEAD_CATEGORY;
+  return undefined;
 }
 
 export async function getPermissionState(): Promise<PermissionState> {
@@ -111,7 +130,14 @@ export function openSystemSettings(): Promise<void> {
 
 async function schedule(item: PlannedNotification): Promise<void> {
   if (!supported) return pushActive() ? queuePush([item]) : addWebReminders([item]);
-  const data: NotificationPayload = { kind: item.kind, dayKey: item.dayKey, trickIndex: item.trickIndex };
+  const data: NotificationPayload = {
+    kind: item.kind,
+    dayKey: item.dayKey,
+    trickIndex: item.trickIndex,
+    reminderId: item.reminderId,
+    occurrence: item.occurrence,
+    lead: item.lead,
+  };
   await Notifications.scheduleNotificationAsync({
     identifier: item.id,
     content: {
@@ -119,7 +145,7 @@ async function schedule(item: PlannedNotification): Promise<void> {
       body: item.body,
       data: { ...data },
       sound: soundEnabled ? "default" : false,
-      categoryIdentifier: item.kind === "trick" ? TRICK_CATEGORY : undefined,
+      categoryIdentifier: categoryFor(item),
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -146,10 +172,6 @@ async function cancelWhere(predicate: (id: string) => boolean): Promise<void> {
   await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
 }
 
-/**
- * Rebuilds the next days (7, or 3 with water reminders on) from current data, keeping snoozes and test
- * notifications. Returns how many plan notifications are now pending.
- */
 /** End of the account's access (null: no limit). Set by the app before rescheduling. */
 let accessCutoff: Date | null = null;
 
@@ -157,6 +179,11 @@ export function setAccessCutoff(until: Date | null): void {
   accessCutoff = until;
 }
 
+/**
+ * Rebuilds the next days (7, or 3 with water reminders on) of tips plus personal reminders (60 days, in
+ * the slots tips leave free), keeping snoozes and test notifications. Invalid tip hours do not block
+ * reminders. Returns how many plan notifications are now pending.
+ */
 export async function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
   soundEnabled = data.settings.sound;
   // Web push first: the server sends the reminders, so they arrive with the PWA closed.
@@ -165,10 +192,10 @@ export async function rescheduleAll(data: AppData, now = new Date()): Promise<nu
   if (!supported && data.onboarded && !pushActive() && (await getPermissionState()) === "granted") await ensurePushSubscription();
   await cancelWhere((id) => !isOneOffId(id));
   const result = scheduleFor(data, now);
-  if (!data.onboarded || !result.ok) return 0;
+  if (!data.onboarded) return 0;
   if ((await getPermissionState()) !== "granted") return 0;
   const { start, end, water } = data.settings;
-  const plan = planNotifications(result.schedule, now, {
+  const plan = planAll(result.ok ? result.schedule : null, data.reminders, now, {
     completed: completedKeys(data.completions),
     until: accessCutoff ?? undefined,
     water: { settings: water, start, end, log: data.water },
@@ -189,6 +216,30 @@ export async function scheduleSnooze(day: string, trickIndex: TrickIndex, now = 
 export async function cancelTrick(day: string, trickIndex: TrickIndex): Promise<void> {
   const prefix = snoozePrefix(day, trickIndex);
   await cancelWhere((id) => id === `${day}:trick:${trickIndex}` || id.startsWith(prefix));
+}
+
+/** Cancels every pending alert of a reminder (all occurrences, leads and snoozes). */
+export async function cancelReminder(id: string): Promise<void> {
+  await cancelWhere((rid) => rid.startsWith(`rem:${id}:`));
+}
+
+/** Cancels the pending alerts of one occurrence of a reminder. */
+export async function cancelReminderOccurrence(id: string, occurrence: string): Promise<void> {
+  await cancelWhere((rid) => rid.startsWith(`rem:${id}:${occurrence}:`));
+}
+
+/** Snoozes one alert of a reminder, reading its text from the stored data. */
+export async function scheduleReminderSnooze(
+  reminderId: string,
+  occurrence: string,
+  lead: number,
+  data: AppData,
+  now = new Date(),
+): Promise<void> {
+  const reminder = data.reminders[reminderId];
+  const date = parseLocal(occurrence);
+  if (!reminder || reminder.deletedAt !== null || !date) return;
+  await schedule(reminderSnooze(reminder, date, lead, now));
 }
 
 /** One trick notification a few seconds from now. */

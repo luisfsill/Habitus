@@ -1,4 +1,5 @@
 import { type AppData, defaultData } from "./app-data";
+import { mergeReminders } from "./reminders";
 import { mergeWaterLog } from "./water";
 
 /**
@@ -27,6 +28,7 @@ export function mergeData(local: AppData, remote: AppData): AppData {
     gratitude: { ...remote.gratitude, ...local.gratitude },
     sleepLog,
     water: mergeWaterLog(local.water, remote.water),
+    reminders: mergeReminders(local.reminders, remote.reminders),
   };
 }
 

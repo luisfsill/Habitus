@@ -1,11 +1,14 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
+import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
 import { InstallCard } from "@/components/install-card";
 import { PermissionBanners } from "@/components/permission-banner";
+import { ReminderHero } from "@/components/reminder-hero";
+import { ReminderRow } from "@/components/reminder-row";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
 import { StatColumns } from "@/components/stat-columns";
@@ -17,8 +20,10 @@ import { WEEKDAY_NAMES } from "@/components/weekday-picker";
 import { firstName, type Profile } from "@/domain/access";
 import { currentStreak, doneCount, trickStatuses } from "@/domain/history";
 import { scheduleFor } from "@/domain/app-data";
+import { formatReminderCountdown, shortDay, whenLabel } from "@/domain/reminder-text";
+import { doneReminders, pendingReminders } from "@/domain/reminders";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
-import { atMinutes, dayKey, formatCountdown, minutesOfDay, type Weekday } from "@/domain/time";
+import { atMinutes, dayKey, formatCountdown, formatTime, minutesOfDay, type Weekday } from "@/domain/time";
 import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
 import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
@@ -53,6 +58,55 @@ function TodayWater({ today, onDrink }: { today: string; onDrink: () => void }) 
   return (
     <Section title="Água">
       <WaterRow cups={cupsOn(data.water, today)} goal={data.settings.water.goal} onAdd={drink} onRemove={() => void addWater(-1)} />
+    </Section>
+  );
+}
+
+const DAY_MS = 86_400_000;
+const openReminder = (id: string) => router.push({ pathname: "/lembretes/[id]", params: { id } });
+
+/** The next reminder featured with a countdown, two more below it, and a shortcut to add one. */
+function TodayReminders({ now }: { now: Date }) {
+  const { data } = useAppState();
+  const pending = pendingReminders(data.reminders, now);
+  const [first, ...rest] = pending;
+  const add = <ActionRow label="Novo lembrete" icon={{ ios: "plus.circle.fill", android: "add_circle" }} onPress={() => openReminder("novo")} />;
+  const all = (pending.length > 0 || doneReminders(data.reminders).length > 0) && (
+    <Pressable onPress={() => router.push("/lembretes")} accessibilityRole="link" accessibilityLabel="Ver todos os lembretes" hitSlop={12}>
+      <AppText variant="subheadline" color="accentText">
+        Ver todos
+      </AppText>
+    </Pressable>
+  );
+  if (!first) {
+    return (
+      <Section title="Lembretes" accessory={all} footer="Crie lembretes para estudo, compras, contas e o que mais precisar.">
+        {add}
+      </Section>
+    );
+  }
+  const left = first.at.getTime() - now.getTime();
+  return (
+    <Section title="Lembretes" accessory={all}>
+      <ReminderHero
+        title={first.reminder.title}
+        when={whenLabel(first.at, now)}
+        countdown={first.overdue ? "Atrasado" : formatReminderCountdown(left)}
+        progress={first.overdue ? 1 : 1 - left / DAY_MS}
+        overdue={first.overdue}
+        onPress={() => openReminder(first.reminder.id)}
+      />
+      {rest.slice(0, 2).map(({ reminder, at, overdue }) => (
+        <ReminderRow
+          key={reminder.id}
+          time={formatTime(minutesOfDay(at))}
+          day={shortDay(at, now)}
+          title={reminder.title}
+          overdue={overdue}
+          onPress={() => openReminder(reminder.id)}
+        />
+      ))}
+      {add}
     </Section>
   );
 }
@@ -119,6 +173,8 @@ export default function TodayScreen() {
       </View>
 
       <TodayWater today={today} onDrink={() => setSplash((n) => n + 1)} />
+
+      <TodayReminders now={now} />
 
       <Section title="Linha do tempo">
         {TRICKS.map((trick, i) => (

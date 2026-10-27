@@ -127,3 +127,10 @@ describe("theme preference", () => {
     expect(sanitizeData({ version: 1, settings: { theme: "neon" } }).settings.theme).toBe("auto");
   });
 });
+
+describe("sanitizeData reminders", () => {
+  it("old JSON without reminders gets {}", () => {
+    const { reminders: _omit, ...old } = defaultData();
+    expect(sanitizeData(old).reminders).toEqual({});
+  });
+});

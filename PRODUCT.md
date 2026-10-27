@@ -34,6 +34,12 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 - Na tela Hoje, a seção Água mostra "N de M copos", uma barra e os botões −1 e +1 copo.
 - Sem metas "de saúde" (ex.: 2 litros): quem define a meta é a pessoa.
 
+## Lembretes pessoais
+
+- Além das dicas, a pessoa cria lembretes próprios (título, notas, data e hora), com antecipações (até 5, de 1 min a 7 dias) e repetição opcional (a cada N dias, semanas, meses ou anos).
+- Ações na notificação: "Feito" e "Adiar 10 min". Concluídos ficam numa aba à parte; apagar não tem volta.
+- Notificações dos próximos 60 dias, nas vagas que as dicas deixam livres no limite do sistema. Sincronizados pela conta.
+
 ## Gamificação
 
 - XP: 10 por dica; 25 por dia perfeito (6 de 6) + 5 por dia de sequência (máx. +50); 150 por semana perfeita (todos os dias ativos, domingo a sábado); 15 por dia com a meta de água batida.

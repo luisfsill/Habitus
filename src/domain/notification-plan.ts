@@ -1,3 +1,5 @@
+import { alertBody, alertTitle } from "./reminder-text";
+import { occurrencesBetween, type Reminder, toLocal } from "./reminders";
 import { greetingFor, type DaySchedule, sliceCenters } from "./schedule";
 import { addDays, atMinutes, dayKey, formatTime, startOfDay } from "./time";
 import { notificationTitle, TRICK_COUNT, TRICKS, type TrickIndex } from "./tricks";
@@ -10,8 +12,9 @@ export const WATER_HORIZON_DAYS = 3;
 /** Hard ceiling on pending notifications, leaving room for snoozes. */
 export const MAX_PENDING_NOTIFICATIONS = 60;
 export const SNOOZE_MINUTES = 10;
+export const REMINDER_HORIZON_DAYS = 60;
 
-export type PlannedKind = "opening" | "trick" | "water";
+export type PlannedKind = "opening" | "trick" | "water" | "reminder";
 
 export interface PlannedNotification {
   /** Stable id, e.g. "2026-10-24:trick:1". Rescheduling reuses it. */
@@ -20,6 +23,11 @@ export interface PlannedNotification {
   kind: PlannedKind;
   dayKey: string;
   trickIndex?: TrickIndex;
+  reminderId?: string;
+  /** Local "YYYY-MM-DDTHH:MM" of the occurrence this alert is for. */
+  occurrence?: string;
+  /** Minutes before the occurrence; 0 = at the time. */
+  lead?: number;
   title: string;
   body: string;
 }
@@ -122,8 +130,68 @@ export function planNotifications(
   return plan.slice(0, MAX_PENDING_NOTIFICATIONS);
 }
 
-/** Where tapping a reminder lands: the tip's screen, or Hoje for the opening and water. */
-export function reminderUrl(item: Pick<PlannedNotification, "trickIndex">): string {
+/** One alert of a personal reminder: `lead` minutes before `occurrence`. */
+export function reminderAlert(reminder: Reminder, occurrence: Date, lead: number): PlannedNotification {
+  const date = new Date(occurrence.getTime() - lead * 60_000);
+  const local = toLocal(occurrence);
+  return {
+    id: `rem:${reminder.id}:${local}:${lead}`,
+    date,
+    kind: "reminder",
+    dayKey: dayKey(occurrence),
+    reminderId: reminder.id,
+    occurrence: local,
+    lead,
+    title: alertTitle(reminder.title, occurrence, date),
+    body: alertBody(reminder, occurrence, date, lead),
+  };
+}
+
+/** Reminder alerts after `now` (and up to `until`) for occurrences in the next 60 days, nearest first, at most `slots`. */
+export function planReminderNotifications(
+  reminders: Readonly<Record<string, Reminder>>,
+  now: Date,
+  options: { slots: number; until?: Date },
+): PlannedNotification[] {
+  const end = addDays(now, REMINDER_HORIZON_DAYS);
+  const out: PlannedNotification[] = [];
+  for (const reminder of Object.values(reminders)) {
+    for (const occ of occurrencesBetween(reminder, now, end)) {
+      for (const lead of [...reminder.leads, 0]) {
+        const item = reminderAlert(reminder, occ, lead);
+        const t = item.date.getTime();
+        if (Number.isNaN(t) || t <= now.getTime() || (options.until && t > options.until.getTime())) continue;
+        out.push(item);
+      }
+    }
+  }
+  return out.sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, Math.max(options.slots, 0));
+}
+
+/**
+ * A snoozed alert of one occurrence, `SNOOZE_MINUTES` from `now`. Title and body are rebuilt for the new
+ * time, so a snooze that lands at or after the occurrence reads "Agora". The id keeps the occurrence, so
+ * marking it done also cancels the snooze.
+ */
+export function reminderSnooze(reminder: Reminder, occurrence: Date, lead: number, now: Date): PlannedNotification {
+  const date = new Date(now.getTime() + SNOOZE_MINUTES * 60_000);
+  const base = reminderAlert(reminder, occurrence, lead);
+  const left = Math.max(0, Math.round((occurrence.getTime() - date.getTime()) / 60_000));
+  return {
+    ...base,
+    id: `rem:${reminder.id}:${base.occurrence}:snooze:${now.getTime()}`,
+    date,
+    title: alertTitle(reminder.title, occurrence, date),
+    body: alertBody(reminder, occurrence, date, left),
+  };
+}
+
+/** Where tapping lands: the reminder (with the occurrence and lead it alerted), the tip's screen, or Hoje. */
+export function reminderUrl(item: Pick<PlannedNotification, "trickIndex" | "kind" | "reminderId" | "occurrence" | "lead">): string {
+  if (item.kind === "reminder") {
+    const query = item.occurrence ? `?occ=${encodeURIComponent(item.occurrence)}&lead=${item.lead ?? 0}` : "";
+    return `/lembretes/${item.reminderId}${query}`;
+  }
   return item.trickIndex === undefined ? "/" : `/trick/${item.trickIndex}`;
 }
 
@@ -151,6 +219,21 @@ export function isOneOffId(id: string): boolean {
 /** Prefix of every snooze created for one trick on one day. */
 export function snoozePrefix(day: string, trickIndex: number): string {
   return `${day}:snooze:${trickIndex}:`;
+}
+
+/**
+ * The whole plan: tips (and water) first, then reminders in the slots they leave under the cap.
+ * `schedule` null (invalid tip hours) plans no tips but still plans reminders.
+ */
+export function planAll(
+  schedule: DaySchedule | null,
+  reminders: Readonly<Record<string, Reminder>>,
+  now: Date,
+  options: PlanOptions = {},
+): PlannedNotification[] {
+  const tips = schedule ? planNotifications(schedule, now, options) : [];
+  const slots = MAX_PENDING_NOTIFICATIONS - tips.length;
+  return [...tips, ...planReminderNotifications(reminders, now, { slots, until: options.until })];
 }
 
 /** A snoozed copy of a trick notification, `SNOOZE_MINUTES` from `now`. */

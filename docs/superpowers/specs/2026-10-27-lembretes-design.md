@@ -63,7 +63,7 @@ Hoje o Habitus só lembra das 6 dicas e da água. O dono do app quer um **lembre
 ## Notificações
 
 - Entram em `planNotifications` como `kind: "reminder"`, com ids estáveis por ocorrência e antecipação (ex.: `rem:<id>:<ocorrênciaISO>:<leadMin>`), para cancelar e reagendar sem duplicar.
-- **Teto**: o plano tem teto de 60 (`MAX_PENDING_NOTIFICATIONS`; o iOS aceita 64). Os lembretes ganham uma **cota própria** (sugestão: até 20, as mais próximas primeiro), e as dicas e a água continuam com o restante. Assim os lembretes nunca derrubam as dicas. Lembretes distantes entram no plano conforme se aproximam, porque `rescheduleAll` roda ao abrir, ao voltar ao primeiro plano e a cada mudança. Horizonte: as próximas ocorrências dentro de ~60 dias (decisão do construtor).
+- **Teto** (decisão do dono do app): o plano continua com teto de 60 (`MAX_PENDING_NOTIFICATIONS`; o iOS aceita 64). Dicas (7 dias) e água mantêm a prioridade e o horizonte atuais; os lembretes usam **só as vagas que sobrarem**, as ocorrências mais próximas primeiro. Sem água sobram cerca de 11 vagas; com a água ligada pode sobrar pouco ou nada, e então os lembretes só entram no plano quando há espaço. Lembretes distantes entram conforme se aproximam, porque `rescheduleAll` roda ao abrir, ao voltar ao primeiro plano e a cada mudança. Horizonte: as próximas ocorrências dentro de ~60 dias (decisão do construtor).
 - **Ações**: nova categoria com Feito/Adiar (hora) e Ok/Adiar (antecipada). `interpretResponse` ganha os intents de lembrete; o Android aplica em background pela tarefa headless (`applyResponse`), e o iOS abre o app, como já é feito hoje. Tocar na notificação abre a edição do lembrete.
 - **Web/PWA**: o mesmo plano vira linhas de `push_queue` (`pushRow`), e o `sw.js` abre a tela do lembrete ao tocar. Na web a notificação **não tem botões** (igual às dicas hoje); Feito e Adiar ficam na tela que abre (decisão minha: botões no service worker exigiriam autenticação e gravação no servidor). O fallback `web-reminders.ts` (timers) também cobre os lembretes.
 - **Acesso**: respeita `setAccessCutoff` como os outros avisos (sem acesso, nada é agendado depois de `access_until`).
@@ -87,7 +87,7 @@ Hoje o Habitus só lembra das 6 dicas e da água. O dono do app quer um **lembre
 - Formato exato dos tipos, ids e nomes de arquivos; respeitando 350 linhas por arquivo e as camadas do ESLint.
 - Modal ou rota empilhada para o formulário; gesto de deslizar no nativo e na web.
 - Roleta de data na web (pode reaproveitar `@ncdai/react-wheel-picker`).
-- Horizonte e cota exatos do plano, desde que dicas e água nunca percam espaço.
+- Horizonte exato dos lembretes no plano; dicas e água nunca perdem espaço.
 
 ## Verificação
 

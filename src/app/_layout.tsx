@@ -177,6 +177,14 @@ function RootStack() {
               headerTintColor: colors.accent,
             }}
           />
+          <Stack.Screen
+            name="lembretes/index"
+            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Hoje", headerTransparent: true, headerTintColor: colors.accent }}
+          />
+          <Stack.Screen
+            name="lembretes/[id]"
+            options={{ headerShown: true, headerTitle: "", headerBackTitle: "Lembretes", headerTransparent: true, headerTintColor: colors.accent }}
+          />
         </Stack.Protected>
         <Stack.Protected guard={open && !data.onboarded} redirectTo={home}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />
