@@ -1,27 +1,43 @@
 import { Tabs, TabList, TabSlot, TabTrigger, useTabTrigger } from "expo-router/ui";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { FloatingTabBar, type TabItem } from "@/components/floating-tab-bar";
+import { Icon } from "@/components/icon";
+import { MAX_WIDTH } from "@/components/screen";
+import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
 import { useAccess } from "@/state/access";
+import { pinned, space, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
-// not fit four tabs on a phone. The PWA draws its own floating bar instead.
+// not fit four tabs on a phone. The PWA draws its own floating bar instead: the liquid glass navbar.
 // Headless tabs (expo-router/ui): their screen container does not clip, so the
 // page can overflow and the document scrolls (mobile Safari then hides its bars).
 const TABS = [
-  { key: "index", label: "Hoje", ios: "sun.max", android: "wb_sunny", href: "/" },
-  { key: "history", label: "Histórico", ios: "calendar", android: "calendar_month", href: "/history" },
-  { key: "achievements", label: "Conquistas", ios: "trophy", android: "emoji_events", href: "/achievements" },
-  { key: "settings", label: "Ajustes", ios: "gearshape", android: "settings", href: "/settings" },
-  { key: "admin", label: "Admin", ios: "shield", android: "admin_panel_settings", href: "/admin" },
+  { key: "index", fx: "glow" as NimbusFx, label: "Hoje", ios: "sun.max", android: "wb_sunny", href: "/" },
+  { key: "history", fx: "spin" as NimbusFx, label: "Histórico", ios: "calendar", android: "calendar_month", href: "/history" },
+  { key: "achievements", fx: "pop" as NimbusFx, label: "Conquistas", ios: "trophy", android: "emoji_events", href: "/achievements" },
+  { key: "settings", fx: "wave" as NimbusFx, label: "Ajustes", ios: "gearshape", android: "settings", href: "/settings" },
+  { key: "admin", fx: "pop" as NimbusFx, label: "Admin", ios: "shield", android: "admin_panel_settings", href: "/admin" },
 ] as const;
 
-function Bar({ tabs }: { tabs: readonly TabItem[] }) {
+type Tab = (typeof TABS)[number];
+
+function Bar({ tabs }: { tabs: readonly Tab[] }) {
   const { switchTab, getTrigger } = useTabTrigger({ name: "index" });
-  const active = tabs.find((tab) => getTrigger(tab.key)?.isFocused)?.key ?? "index";
+  const active = Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
   const insets = useSafeAreaInsets();
-  return <FloatingTabBar tabs={tabs} active={active} bottomInset={insets.bottom} onPress={(key) => switchTab(key, {})} />;
+  const { colors, scheme } = useTheme();
+  const items = tabs.map((tab, i) => ({
+    key: tab.key,
+    label: tab.label,
+    fx: tab.fx,
+    icon: <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />,
+  }));
+  return (
+    <View pointerEvents="box-none" style={[styles.wrap, pinned, { paddingBottom: insets.bottom + space.md }]}>
+      <LiquidNavbar items={items} active={active} tone={scheme} compact label="Abas" style={BAR} onChange={(_, item) => switchTab(item.key, {})} />
+    </View>
+  );
 }
 
 export default function WebTabsLayout() {
@@ -41,7 +57,11 @@ export default function WebTabsLayout() {
   );
 }
 
+// Almost edge to edge on a phone, as wide as the page column on a computer.
+const BAR = { width: "100%", maxWidth: MAX_WIDTH };
+
 const styles = StyleSheet.create({
   // The triggers only register the tabs; the floating bar is the visible one.
   hidden: { display: "none" },
+  wrap: { left: 0, right: 0, bottom: 0, alignItems: "center", paddingHorizontal: space.md },
 });

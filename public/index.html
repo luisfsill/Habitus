@@ -36,9 +36,12 @@
       }
       /* The document scrolls (screens lay their content out in flow), so mobile Safari collapses its bars. */
       /* These styles make the root element full-height */
+      /* Always 1px taller than the screen, even for a frame with no page mounted (a tab's first visit): the installed
+         iPhone app lays out a document that does not scroll one top inset shorter, which lifted the fixed tab bar. */
       #root {
         display: flex;
         height: 100%;
+        min-height: calc(100lvh + 1px);
         flex: 1;
       }
       /* The strip under the clock (see the comment at #status-bar). Only the installed app on iOS; the min-height keeps
