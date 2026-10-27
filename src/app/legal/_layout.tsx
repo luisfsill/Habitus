@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-import { backdrops, useTheme } from "@/theme";
+import { stackBackdrop, useTheme } from "@/theme";
 
 export default function LegalLayout() {
   const { colors, scheme } = useTheme();
@@ -12,7 +12,7 @@ export default function LegalLayout() {
         headerBackTitle: "Voltar",
         headerTransparent: true,
         headerTintColor: colors.accent,
-        contentStyle: backdrops[scheme],
+        contentStyle: stackBackdrop(scheme),
       }}
     />
   );

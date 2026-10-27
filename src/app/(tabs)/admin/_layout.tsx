@@ -1,7 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 
 import { useAccess } from "@/state/access";
-import { backdrops, useTheme } from "@/theme";
+import { stackBackdrop, useTheme } from "@/theme";
 
 /** Only administrators get past this layout; anyone else goes back to Hoje. */
 export default function AdminLayout() {
@@ -16,7 +16,7 @@ export default function AdminLayout() {
         headerBackTitle: "Usuários",
         headerTransparent: true,
         headerTintColor: colors.accent,
-        contentStyle: backdrops[scheme],
+        contentStyle: stackBackdrop(scheme),
       }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
     </Stack>

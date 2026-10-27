@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Glass } from "./glass";
 
 interface Props {
   title: string;
@@ -13,7 +14,7 @@ interface Props {
   children: ReactNode;
 }
 
-/** Edge-to-edge list: small caps label, rows split by hairlines, hairlines above and below. */
+/** Small caps label over a frosted glass card whose rows are split by hairlines. */
 export function Section({ title, footer, accessory, children }: Props) {
   const { colors } = useTheme();
   const line = { borderColor: colors.separator };
@@ -25,13 +26,13 @@ export function Section({ title, footer, accessory, children }: Props) {
         </AppText>
         {accessory}
       </View>
-      <View style={[styles.list, line]}>
+      <Glass style={styles.list}>
         {Children.toArray(children).map((child, i) => (
           <View key={i} style={[styles.row, i > 0 && styles.divided, line]}>
             {child}
           </View>
         ))}
-      </View>
+      </Glass>
       {footer && (
         <AppText variant="footnote" color="secondaryLabel">
           {footer}
@@ -44,9 +45,9 @@ export function Section({ title, footer, accessory, children }: Props) {
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 20 },
-  title: { letterSpacing: 0.6, fontWeight: "600" },
-  // Bleeds through the screen's side padding so the hairlines run edge to edge.
-  list: { marginHorizontal: -space.xl, paddingHorizontal: space.xl, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
+  title: { letterSpacing: 0.6, fontWeight: "600", paddingHorizontal: space.xs },
+  // A little wider than the column, so row text lines up with the page title.
+  list: { marginHorizontal: -space.sm, paddingHorizontal: space.lg },
   row: { paddingVertical: space.md },
   divided: { borderTopWidth: StyleSheet.hairlineWidth },
 });

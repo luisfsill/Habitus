@@ -21,7 +21,21 @@ Resultado: categoria "Meditation & Mindfulness", paleta lavanda + verde, estilo 
 | Lora / Raleway | Trocadas pela fonte do sistema (SF Pro no iOS, Roboto no Android) | HIG e Dynamic Type |
 | Padrão de landing page (hero + depoimentos) | Não se aplica | É um app, não uma landing page |
 
-Cores de apoio: verde (concluído) e âmbar `#B45309`/`#FBBF24` (sequência). Tokens em `src/theme/index.ts`.
+Cores de apoio: verde (concluído) e âmbar `#9A4A07`/`#FBBF24` (sequência). Tokens em `src/theme/index.ts`.
+
+## Tema "água e vidro" (experimento, branch `claude/water-glass-theme-37fbf4`)
+
+O app inteiro na linguagem da barra de abas web (`LiquidNavbar`): água por baixo, vidro translúcido por cima.
+
+- **Paleta** (`src/theme/index.ts`): azuis de água. Claro: fundo `#E3F1F8`, texto `#0B1B2B`, secundário `#3E5566`, destaque `#0369A1`. Escuro: fundo `#041526`, texto `#EEF7FF`, secundário `#9FB6C8`, destaque `#0277B5`. Tokens novos: `glass` (tinta do vidro), `glassRim` (brilho da borda de cima), `glassEdge` (contorno fino) e `waterTop`/`waterDeep` (a água do botão principal).
+- **Fundo** (`WaterBackdrop`): na web, um só shader WebGL fixo atrás do app inteiro, montado no layout raiz (`ui/water-backdrop-gl.ts`, com `fullscreen-gl.ts`): gradiente de profundidade, raios de luz lentos e cáusticas, como o fundo do copo de `WaterSplash`, mas calmo para ler por cima. Meia resolução, cerca de 30 quadros por segundo, pausado com a aba oculta e parado num quadro só com "reduzir movimento"; sem WebGL, um gradiente CSS. As telas e as pilhas ficam transparentes na web (`stackBackdrop`). Nas dicas (`/trick`) o shader sai, porque elas têm cena própria (no máximo um shader de fundo por tela). No iOS/Android cada `Screen` pinta um gradiente SVG parado, sem shader. O alto e o pé do fundo voltam para a cor lisa `background`, que continua pintando o `body` e a barra de status do iPhone, para não aparecer emenda.
+- **Vidro** (`Glass`): blur (`backdrop-filter` na web, `expo-blur` no app nativo), tinta clara, contorno fino e um brilho na borda de cima. `Section` e `StatColumns` viraram cartões de vidro com cantos de 22 pt (as linhas continuam separadas por divisórias finas). O rodapé fixo do `Screen` na web é vidro fosco.
+- **Botões** (`PrimaryButton`): pílulas. O cheio é água atrás do vidro (gradiente `waterTop` → `waterDeep`), com um menisco de luz no alto e uma onda que se espalha do ponto do toque (nada com "reduzir movimento"); o `tinted` é uma pílula de vidro. Branco sobre a água ≥ 4,5:1.
+- **Campos**: `TextField` é vidro, e no foco a borda acende na cor de destaque com um halo suave; `AuthField` segue igual, com a borda em azul-água.
+- **Login e renovação** (`AuthShell`): água funda no escuro no lugar do céu estrelado; o cartão é vidro escuro com borda clara em cima.
+- **Linha que desliza para apagar**: a linha é transparente (vidro) e o vermelho mostra só o que o arrasto descobre.
+
+Para descartar o experimento: `git branch -D claude/water-glass-theme-37fbf4` (depois de remover o worktree).
 
 ## Aparência
 
@@ -108,16 +122,16 @@ A barra do admin ocupa a largura da janela, mas o conteúdo (marca, seções e c
 ## Regras visuais
 
 - Tipografia nos estilos de texto do iOS (largeTitle 34, title1 28 … caption 12). O texto acompanha o tamanho de fonte do sistema, com `maxFontSizeMultiplier` para títulos grandes não quebrarem o layout.
-- Sem cards: listas corridas de largura total, no estilo de tabela (direção "C", escolhida em outubro de 2026; os cards pareciam genéricos e a versão só com tipografia deixava a informação solta).
-  - `Section`: rótulo pequeno em caixa alta, linhas separadas por divisórias finas (hairline) e uma divisória em cima e embaixo que vai de ponta a ponta da coluna. Nota de rodapé opcional.
+- Listas no estilo de tabela (direção "C", escolhida em outubro de 2026), agora dentro de cartões de vidro no tema água e vidro.
+  - `Section`: rótulo pequeno em caixa alta e um cartão de vidro (`Glass`) com as linhas separadas por divisórias finas (hairline). Nota de rodapé opcional.
   - Cada filho direto de `Section` é um grupo separado por divisória; agrupe linhas relacionadas numa `View` para não dividir cada uma. Ex.: Ajustes → Notificações tem o Som e, num só grupo, as três ações de teste; Conta tem Nome + E-mail, depois os links (Ver planos, Termos, Privacidade) e, por fim, Sair, Resetar dados e Excluir conta.
   - Ações e links dentro de seções usam `ActionRow` (ícone + texto, seta quando abre outra tela; vermelho nas destrutivas) em vez de botões cheios.
   - `StatColumns`: números lado a lado em colunas separadas por divisórias verticais (Hoje, Histórico, Conquistas e Admin). Com `columns`, quebra em grade (2×2 no celular).
   - Calendário do Histórico em grade com linhas entre os dias: dia completo com fundo verde suave, parcial com um ponto verde, hoje sublinhado na cor de destaque.
   - Linha do tempo como lista: horário, dica e, à direita, ✓ (feita), a contagem regressiva (próxima, em destaque) ou uma seta.
-  - Fundo do app inteiro: uma cor lisa (`backdrops` em `src/theme/index.ts`), `#0f172a` no escuro e `#f1f5f9` no claro, a mesma de `background`. Lisa de propósito: no iPhone instalado a área do relógio e a faixa abaixo do corte da página são pintadas pelo sistema só com cor, e assim não aparece emenda. É o mesmo fundo do botão de conta e do menu; o trilho do interruptor de tema tem os próprios gradientes. Superfícies (`surface`) só no que flutua: menu da conta, barra de abas, toasts e folhas. As telas de login mantêm o cartão de vidro sobre o fundo estrelado.
+  - Fundo do app inteiro: água (`WaterBackdrop`, ver "Tema água e vidro"), que volta no alto e no pé para a cor lisa `background` (`backdrops` em `src/theme/index.ts`), `#041526` no escuro e `#E3F1F8` no claro. A cor lisa continua no `body` e na barra de status: no iPhone instalado a área do relógio e a faixa abaixo do corte da página são pintadas pelo sistema só com cor. É o mesmo fundo do botão de conta e do menu; o trilho do interruptor de tema tem os próprios gradientes. Superfícies (`surface`) só no que flutua: menu da conta, barra de abas, toasts e folhas.
 - Alvos de toque de no mínimo 44 pt (os dias da semana têm 40 pt visíveis + `hitSlop`).
-- Contraste AA nos textos: secundário `#5B5B66` sobre o fundo claro `#f1f5f9` ≈ 6:1; `#A1A1AA` sobre o fundo escuro `#0f172a` ≥ 5,7:1; branco sobre `#7C3AED` ≈ 5,7:1; verde de texto `#047857` sobre branco ≈ 5,5:1.
+- Contraste AA nos textos: secundário `#3E5566` sobre o fundo claro `#E3F1F8` ≈ 6,8:1; `#9FB6C8` sobre o fundo escuro `#041526` ≈ 8,8:1 (7,2:1 sobre o vidro); branco sobre o destaque `#0369A1` ≈ 5,9:1 e sobre `#0277B5` ≈ 4,9:1; branco sobre o alto da água do botão `#0A7CC0` ≈ 4,5:1; verde de texto `#047857` sobre o fundo claro ≈ 4,8:1.
 - Movimento: spring curto nos botões (escala 0,97), anel que se preenche em 900 ms com ease-out, fade entre passos do onboarding, háptico leve na seleção e de sucesso ao concluir.
 - Ícones: SF Symbols no iOS, Material Symbols no Android/web (`src/components/icon.tsx`; na web, `icon.web.tsx` com a fonte reduzida `assets/fonts/icons.ttf`). São decorativos e ficam ocultos para leitores de tela.
 

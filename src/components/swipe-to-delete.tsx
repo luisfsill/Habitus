@@ -46,8 +46,8 @@ interface Props {
 
 function DeleteAction({ x, title, onPress }: { x: SharedValue<number>; title: string; onPress: () => void }) {
   const { colors } = useTheme();
-  // Pinned right; the red grows with the drag and fills the row while it leaves.
-  const grow = useAnimatedStyle(() => ({ width: Math.max(ACTION, -x.get()) }));
+  // Pinned right; the red is exactly what the drag uncovers (the row above is clear glass) and fills the row while it leaves.
+  const grow = useAnimatedStyle(() => ({ width: Math.max(0, -x.get()) }));
   return (
     <Animated.View style={[styles.action, { backgroundColor: colors.destructive }, grow]}>
       <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Apagar ${title}`} style={styles.press}>
@@ -115,7 +115,6 @@ function useRowMotion(onDelete: () => void) {
 
 /** A row that slides left to show a red delete button with a white trash can; a long swipe deletes, like the lists in iOS. */
 export function SwipeToDelete({ children, title, onDelete, enabled = true }: Props) {
-  const { colors } = useTheme();
   const box = useRef<ComponentRef<typeof View>>(null);
   const draggedAt = useRef(0);
   const [token] = useState(() => ({}));
@@ -183,7 +182,7 @@ export function SwipeToDelete({ children, title, onDelete, enabled = true }: Pro
         <DeleteAction x={x} title={title} onPress={leave} />
       </View>
       <GestureDetector gesture={pan}>
-        <Animated.View style={[styles.fill, { backgroundColor: colors.background }, motion.slide]}>{children(guard)}</Animated.View>
+        <Animated.View style={[styles.fill, motion.slide]}>{children(guard)}</Animated.View>
       </GestureDetector>
     </Animated.View>
   );
@@ -195,7 +194,7 @@ const styles = StyleSheet.create({
   clip: { overflow: "hidden", marginVertical: -space.md },
   fill: { paddingVertical: space.md },
   under: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, flexDirection: "row-reverse" },
-  action: { flexDirection: "row" },
+  action: { flexDirection: "row", overflow: "hidden" },
   // The trash keeps to the red's leading edge while it grows, as in iOS.
   press: { width: ACTION, alignItems: "center", justifyContent: "center" },
 });

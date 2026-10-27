@@ -10,6 +10,7 @@ import { LandingPage } from "@/components/landing-page";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
 import { RewardToast } from "@/components/reward-toast";
+import { WaterBackdrop } from "@/components/water-backdrop";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
@@ -17,7 +18,7 @@ import { TransitionProvider } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
 import { WebSafeAreaInsets } from "@/state/web-safe-area";
-import { backdrops, type Palette, ThemePreferenceContext, useTheme } from "@/theme";
+import { type Palette, palettes, stackBackdrop, ThemePreferenceContext, useTheme } from "@/theme";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -25,7 +26,8 @@ function navigationTheme(colors: Palette, scheme: "light" | "dark") {
   const base = scheme === "dark" ? DarkTheme : DefaultTheme;
   return {
     ...base,
-    colors: { ...base.colors, primary: colors.accent, background: colors.background, card: colors.surface, text: colors.label },
+    // Web: clear, so the water canvas behind the app shows through every screen.
+    colors: { ...base.colors, primary: colors.accent, background: Platform.OS === "web" ? "transparent" : colors.background, card: colors.surface, text: colors.label },
   };
 }
 
@@ -102,6 +104,12 @@ function nightSky(signedIn: boolean, entry: boolean, pathname: string): boolean 
   return pathname.startsWith("/renovar") || (!signedIn && pathname.startsWith("/auth"));
 }
 
+/** Web: one water shader behind the whole app. The tips bring their own scenes instead (one shader per screen). */
+function AppWater({ pathname, scheme, night }: { pathname: string; scheme: "light" | "dark"; night: boolean }) {
+  if (Platform.OS !== "web" || pathname.startsWith("/trick")) return null;
+  return <WaterBackdrop scheme={night ? "dark" : scheme} />;
+}
+
 /** First open without internet: the plan cannot be checked yet. */
 function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
   return (
@@ -146,9 +154,10 @@ function RootStack() {
     // page share the flat backdrop colour.
     if (Platform.OS !== "web") return;
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colors.background);
-    document.body.style.backgroundColor = night ? "#000000" : colors.background;
+    const flat = night ? palettes.dark.background : colors.background;
+    document.body.style.backgroundColor = flat;
     const bar = document.getElementById("status-bar");
-    if (bar) bar.style.backgroundColor = night ? "#000000" : colors.background;
+    if (bar) bar.style.backgroundColor = flat;
   }, [colors.background, night]);
 
   if (!ready) return null;
@@ -163,7 +172,8 @@ function RootStack() {
   return (
     <ThemeProvider value={theme}>
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: backdrops[scheme] }}>
+      <AppWater pathname={pathname} scheme={scheme} night={night} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: stackBackdrop(scheme) }}>
         <Stack.Protected guard={!signedIn} redirectTo={home}>
           <Stack.Screen name="auth" options={{ animation: "fade" }} />
         </Stack.Protected>
@@ -272,4 +282,3 @@ export default function RootLayout() {
     </SafeArea>
   );
 }
-

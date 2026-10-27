@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { backdrops, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { WaterBackdrop } from "./water-backdrop";
 
 interface Props {
   title?: string;
@@ -20,6 +21,9 @@ interface Props {
   /** Tighter page (smaller title, less space) so a short screen like a tip fits without scrolling. */
   dense?: boolean;
 }
+
+/** Frosted glass behind the pinned footer on the web. */
+const WEB_GLASS = { backdropFilter: "blur(16px) saturate(1.4)", WebkitBackdropFilter: "blur(16px) saturate(1.4)", borderTopWidth: StyleSheet.hairlineWidth } as ViewStyle;
 
 /** Height of a transparent native stack header (back button row). */
 const HEADER = Platform.select({ ios: 44, default: 56 });
@@ -67,21 +71,22 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
       {children}
     </>
   );
-  const fill = backdrop ? styles.clear : backdrops[scheme];
   const foot = footer && <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>{footer}</View>;
   // On the web the page itself scrolls (so mobile Safari tucks its bars away); the footer pins to the viewport.
+  // The page is clear there: the root layout's water canvas shows through, and the footer bar is frosted glass.
   if (Platform.OS === "web") {
+    const bar = backdrop ? undefined : [WEB_GLASS, { backgroundColor: colors.surfaceGlass, borderTopColor: colors.glassEdge }];
     return (
-      <View style={[styles.root, fill]}>
+      <View style={[styles.root, backdrop ? styles.clear : undefined]}>
         {backdrop}
         <View style={content}>{body}</View>
-        {foot && <View style={[pinned, styles.footerBar, { backgroundColor: backdrop ? "transparent" : colors.background }]}>{foot}</View>}
+        {foot && <View style={[pinned, styles.footerBar, bar]}>{foot}</View>}
       </View>
     );
   }
   return (
-    <View style={[styles.root, fill]}>
-      {backdrop}
+    <View style={[styles.root, backdrop ? styles.clear : backdrops[scheme]]}>
+      {backdrop ?? <WaterBackdrop scheme={scheme} />}
       <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={content}>
         {body}
       </ScrollView>

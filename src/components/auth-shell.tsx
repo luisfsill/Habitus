@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { radius, space } from "@/theme";
 
-import { HorizonBackground } from "./horizon-background";
+import { WaterBackdrop } from "./water-backdrop";
 
 interface Props {
   /** Big heading above the card. */
@@ -27,7 +27,7 @@ function Body({ style, children }: { style: StyleProp<ViewStyle>; children: Reac
   );
 }
 
-/** Night-sky page with the title on top and a frosted card holding the form. */
+/** Deep-water page with the title on top and a frosted glass card holding the form. */
 export function AuthShell({ title, subtitle, children, footer }: Props) {
   const insets = useSafeAreaInsets();
   // Phones keep the card low (thumb reach); wide screens center it.
@@ -35,8 +35,9 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
   // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title starts under that.
   const top = Platform.OS === "web" ? space.xxl + space.sm : space.xxl;
   return (
-    <View style={styles.root}>
-      <HorizonBackground />
+    // Web: the root layout's water canvas shows through (dark on these screens); native paints its own.
+    <View style={[styles.root, Platform.OS !== "web" && styles.native]}>
+      {Platform.OS !== "web" && <WaterBackdrop scheme="dark" />}
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Body style={[styles.content, wide && styles.centered, { paddingTop: insets.top + top, paddingBottom: insets.bottom + space.xl }]}>
           <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.header}>
@@ -57,18 +58,20 @@ export function AuthShell({ title, subtitle, children, footer }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000000" },
+  root: { flex: 1 },
+  native: { backgroundColor: "#041526" },
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "flex-end", gap: space.xl, paddingHorizontal: space.lg, width: "100%", maxWidth: 460, alignSelf: "center" },
   centered: { justifyContent: "center" },
   header: { gap: space.sm, paddingHorizontal: space.xs },
-  cardShadow: { borderRadius: radius.lg + 4, shadowColor: "#3D7BFF", shadowOpacity: 0.25, shadowRadius: 40, shadowOffset: { width: 0, height: 0 } },
+  cardShadow: { borderRadius: radius.lg + 4, shadowColor: "#0A7CC0", shadowOpacity: 0.3, shadowRadius: 40, shadowOffset: { width: 0, height: 0 } },
   card: {
     borderRadius: radius.lg + 4,
     overflow: "hidden",
-    backgroundColor: "rgba(18,20,28,0.6)",
+    backgroundColor: "rgba(4,21,38,0.5)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.09)",
+    borderColor: "rgba(125,211,252,0.16)",
+    borderTopColor: "rgba(255,255,255,0.28)",
   },
   cardBody: { padding: space.lg + 2, gap: space.md },
 });

@@ -35,7 +35,7 @@ function useAutofill(ref: RefObject<ComponentRef<typeof TextInput> | null>): boo
   return on;
 }
 
-/** Text field whose label floats up and whose border lights up in cobalt while focused. */
+/** Text field whose label floats up and whose border lights up like water catching the light while focused. */
 export function AuthField({ label, value, onChangeText, secure, error, ...input }: Props) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -54,7 +54,7 @@ export function AuthField({ label, value, onChangeText, secure, error, ...input 
     transform: [{ translateY: -11 * lifted.get() }, { scale: 1 - 0.22 * lifted.get() }],
   }));
   const boxStyle = useAnimatedStyle(() => ({ shadowOpacity: 0.7 * glow.get() }));
-  const border = error ? colors.danger : focused ? colors.accent : "rgba(255,255,255,0.1)";
+  const border = error ? colors.danger : focused ? colors.accent : "rgba(125,211,252,0.18)";
 
   return (
     <View>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     minHeight: 58,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(120,190,255,0.07)",
     justifyContent: "center",
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 14,

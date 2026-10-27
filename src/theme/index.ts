@@ -2,55 +2,69 @@ import { createContext, useContext } from "react";
 import { Platform, type TextStyle, useColorScheme, type ViewStyle } from "react-native";
 
 /**
- * Cobalt accent with mindful green, mapped onto iOS system greys. Text
- * colours meet WCAG AA (4.5:1) on their backgrounds; `success`/`warm` fills are paired with darker text
- * variants where they carry text on light surfaces.
+ * "Water glass": clear water blues with frosted glass surfaces. Text colours meet WCAG AA (4.5:1) on the page
+ * backdrop and on glass over it; white text keeps 4.5:1 on `accent` and on the water buttons (`waterTop` to
+ * `waterDeep`) in both themes. `success`/`warm` fills are paired with darker text variants where they carry text on light surfaces.
  */
 const light = {
-  background: "#F1F5F9",
-  surface: "#FFFFFF",
-  surfaceGlass: "rgba(255,255,255,0.72)",
-  fill: "rgba(120,120,128,0.12)",
-  label: "#111118",
-  secondaryLabel: "#5B5B66",
-  separator: "rgba(60,60,67,0.18)",
-  accent: "#1D5BD8",
+  background: "#E3F1F8",
+  surface: "#F4FAFD",
+  surfaceGlass: "rgba(244,250,253,0.72)",
+  /** Frosted glass over the water: cards, fields, the footer bar. Paired with a blur behind it. */
+  glass: "rgba(255,255,255,0.5)",
+  /** Bright rim along the top edge of glass, where the light catches it. */
+  glassRim: "rgba(255,255,255,0.9)",
+  /** Thin outline around glass, so it reads on pale water. */
+  glassEdge: "rgba(12,84,130,0.14)",
+  fill: "rgba(3,105,161,0.08)",
+  label: "#0B1B2B",
+  secondaryLabel: "#3E5566",
+  separator: "rgba(12,84,130,0.16)",
+  accent: "#0369A1",
   onAccent: "#FFFFFF",
-  accentSoft: "rgba(29,91,216,0.12)",
-  accentText: "#1A4FBF",
+  accentSoft: "rgba(3,105,161,0.12)",
+  accentText: "#075985",
+  /** Water inside the primary button, top to bottom (white text >= 4.5:1 on both). */
+  waterTop: "#0A7CC0",
+  waterDeep: "#035482",
   success: "#059669",
   successText: "#047857",
   successSoft: "rgba(5,150,105,0.14)",
-  warm: "#B45309",
+  warm: "#9A4A07",
   danger: "#C62828",
   /** Fill behind white text or icons on destructive buttons (swipe delete); 6.5:1 with white in both themes. */
   destructive: "#B91C1C",
-  ringTrack: "rgba(29,91,216,0.14)",
-  /** Off track of a switch: iOS system grey, ≥3:1 against the card (WCAG 1.4.11). */
-  switchOff: "#8E8E93",
-  shadow: "#0A1A3F",
+  ringTrack: "rgba(3,105,161,0.14)",
+  /** Off track of a switch: >=3:1 against the glass card (WCAG 1.4.11). */
+  switchOff: "#7B8794",
+  shadow: "#0A3A5F",
 };
 
 const dark: typeof light = {
-  background: "#0F172A",
-  surface: "#1E293B",
-  surfaceGlass: "rgba(30,41,59,0.72)",
-  fill: "rgba(120,120,128,0.24)",
-  label: "#F5F5F7",
-  secondaryLabel: "#A1A1AA",
-  separator: "rgba(84,84,88,0.6)",
-  accent: "#3D7BFF",
+  background: "#041526",
+  surface: "#0B2238",
+  surfaceGlass: "rgba(11,34,56,0.72)",
+  glass: "rgba(120,190,255,0.08)",
+  glassRim: "rgba(255,255,255,0.24)",
+  glassEdge: "rgba(125,211,252,0.16)",
+  fill: "rgba(125,211,252,0.12)",
+  label: "#EEF7FF",
+  secondaryLabel: "#9FB6C8",
+  separator: "rgba(125,211,252,0.18)",
+  accent: "#0277B5",
   onAccent: "#FFFFFF",
-  accentSoft: "rgba(61,123,255,0.18)",
-  accentText: "#8FB3FF",
+  accentSoft: "rgba(56,189,248,0.16)",
+  accentText: "#7DD3FC",
+  waterTop: "#0A7CC0",
+  waterDeep: "#023E63",
   success: "#34D399",
   successText: "#34D399",
   successSoft: "rgba(52,211,153,0.18)",
   warm: "#FBBF24",
   danger: "#F87171",
   destructive: "#B91C1C",
-  ringTrack: "rgba(61,123,255,0.2)",
-  switchOff: "#636366",
+  ringTrack: "rgba(56,189,248,0.2)",
+  switchOff: "#5B6B7A",
   shadow: "#000000",
 };
 
@@ -61,13 +75,19 @@ export type Palette = typeof light;
 export const palettes = { light, dark };
 
 /**
- * Page backdrop: one flat colour, so the status bar, the page and the strip the installed iPhone
- * app fills below the page all match. Theme-toggle paints its own gradients on top.
+ * Flat backdrop colour: the status bar, the body and the strip the installed iPhone app fills below the page.
+ * The pages themselves sit on water (`WaterBackdrop`), which fades into this colour at its top and bottom.
  */
 export const backdrops: Record<"light" | "dark", ViewStyle> = {
   light: { backgroundColor: light.background },
   dark: { backgroundColor: dark.background },
 };
+
+/**
+ * Background of navigator screens. Web: clear, so the one water canvas the root layout pins behind the app shows
+ * through every screen. Native: flat, and each `Screen` paints its own water.
+ */
+export const stackBackdrop = (scheme: "light" | "dark"): ViewStyle => (Platform.OS === "web" ? { backgroundColor: "transparent" } : backdrops[scheme]);
 
 export const ThemePreferenceContext = createContext<"auto" | "light" | "dark">("auto");
 
