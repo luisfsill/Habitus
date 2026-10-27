@@ -185,7 +185,8 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
     setData(own);
     setPermission(state);
     setExactAlarms(exact);
-    await rescheduleAll(own);
+    // Not awaited: on the web it talks to the push server, and the screen should not wait for that.
+    rescheduleAll(own).catch((error: unknown) => log.error("could not reschedule", error));
     const synced = sync();
     // Only a fresh device waits for the network (capped), so a slow connection never blocks the app.
     if (userId && !own.onboarded) await Promise.race([synced, new Promise((done) => setTimeout(done, FIRST_SYNC_WAIT_MS))]);

@@ -119,7 +119,7 @@ A barra do admin ocupa a largura da janela, mas o conteúdo (marca, seções e c
 - Alvos de toque de no mínimo 44 pt (os dias da semana têm 40 pt visíveis + `hitSlop`).
 - Contraste AA nos textos: secundário `#5B5B66` sobre o fundo claro `#f1f5f9` ≈ 6:1; `#A1A1AA` sobre o fundo escuro `#0f172a` ≥ 5,7:1; branco sobre `#7C3AED` ≈ 5,7:1; verde de texto `#047857` sobre branco ≈ 5,5:1.
 - Movimento: spring curto nos botões (escala 0,97), anel que se preenche em 900 ms com ease-out, fade entre passos do onboarding, háptico leve na seleção e de sucesso ao concluir.
-- Ícones: SF Symbols no iOS, Material Symbols no Android/web (`src/components/icon.tsx`). São decorativos e ficam ocultos para leitores de tela.
+- Ícones: SF Symbols no iOS, Material Symbols no Android/web (`src/components/icon.tsx`; na web, `icon.web.tsx` com a fonte reduzida `assets/fonts/icons.ttf`). São decorativos e ficam ocultos para leitores de tela.
 
 ## Acessibilidade
 

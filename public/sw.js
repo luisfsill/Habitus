@@ -1,21 +1,37 @@
-// Habitus service worker: offline fallback, server push reminders and notification taps.
-// Network-first on purpose, so a new deploy is picked up on the next load.
+// Habitus service worker: fast loads, offline fallback, server push reminders and notification taps.
+// Bundles and assets have a content hash in their path, so a cached copy is always right: cache-first.
+// Pages stay network-first, so a new deploy is picked up on the next load; a slow network falls back to the cache.
 const CACHE = "habitus-v1";
+// Export output only (dev serves /assets/?unstable_path=… without a hash in the name).
+const HASHED = /^\/_expo\/static\/|\.[0-9a-f]{32}\.\w+$/;
+const PAGE_TIMEOUT_MS = 3000;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
+function store(request, response) {
+  // Only whole, successful responses (a video's range request answers 206, which the cache refuses).
+  if (response.status === 200) {
+    const copy = response.clone();
+    caches.open(CACHE).then((cache) => cache.put(request, copy));
+  }
+  return response;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin || request.headers.has("range")) return;
+  if (HASHED.test(url.pathname)) {
+    event.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((response) => store(request, response))));
+    return;
+  }
+  const network = fetch(request).then((response) => store(request, response));
+  const fallback = async () => (await caches.match(request)) || (await caches.match("/"));
+  const slow = new Promise((resolve) => setTimeout(resolve, PAGE_TIMEOUT_MS)).then(fallback);
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE).then((cache) => cache.put(request, copy));
-        return response;
-      })
-      .catch(async () => (await caches.match(request)) || (await caches.match("/"))),
+    // Whichever comes first: the network, or (after the timeout) a cached copy. With no cached copy, keep waiting.
+    Promise.race([network, slow.then((hit) => hit || network)]).catch(() => fallback()),
   );
 });
 

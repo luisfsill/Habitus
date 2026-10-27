@@ -54,6 +54,9 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 ## Web / PWA
 
 - `public/index.html` (modo `web.output: single`) liga `manifest.json`, ícones e `sw.js`, e guarda o `beforeinstallprompt` em `window.__habitusInstall` antes do React montar.
+- Carregamento rápido: `vercel.json` marca `/_expo/static/*` e `/assets/*` (nomes com hash) como `immutable` por um ano. O `sw.js` serve esses arquivos do cache primeiro; páginas vão à rede primeiro e, se a rede passar de 3 s, usam a cópia em cache. Pedidos com `Range` (vídeos) não passam pelo cache do service worker.
+- Ícones na web: `src/components/icon.web.tsx` usa `assets/fonts/icons.ttf`, um subconjunto dos Material Symbols (~19 KB em vez de ~970 KB). Ícone novo: rode `node scripts/build-icon-font.mjs` (precisa de `pip install fonttools`); o teste `icon-glyphs.test.ts` acusa quando falta.
+- O boot não espera `rescheduleAll` (na web ele fala com o servidor de push); as chamadas a `rescheduleAll` rodam uma de cada vez, na ordem.
 - No celular pelo navegador (`isMobileWeb() && !isStandalone()`), o layout raiz mostra só `InstallGate`: apresentação + "Instalar agora". O app em si roda no computador ou instalado. Em desenvolvimento (`__DEV__`, ou seja `npm run dev` no localhost ou no IP da rede), a tela de instalação não aparece, para testar direto no navegador do celular.
 - No computador, sem login e em `/`, o layout raiz mostra `LandingPage` no lugar do Stack (sem o redirecionamento para `/auth`). Os botões fazem navegação completa (`window.location.assign`) para `/auth?modo=criar` (criar conta), `/auth` (entrar, o padrão da tela) e `/legal/*`. Logado, `/` continua sendo a tela Hoje.
 - `useInstallPrompt` (`src/state`) decide o modo do cartão: `prompt` (Chrome/Edge/Android), `ios` (passo a passo), `manual` ou `hidden` (instalado/dispensado).

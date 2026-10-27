@@ -184,7 +184,16 @@ export function setAccessCutoff(until: Date | null): void {
  * the slots tips leave free), keeping snoozes and test notifications. Invalid tip hours do not block
  * reminders. Returns how many plan notifications are now pending.
  */
-export async function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
+export function rescheduleAll(data: AppData, now = new Date()): Promise<number> {
+  // One at a time: the boot run is not awaited, and an older plan must never land after a newer one.
+  const run = rescheduling.then(() => reschedule(data, now));
+  rescheduling = run.catch(() => 0);
+  return run;
+}
+
+let rescheduling: Promise<unknown> = Promise.resolve();
+
+async function reschedule(data: AppData, now: Date): Promise<number> {
   soundEnabled = data.settings.sound;
   // Web push first: the server sends the reminders, so they arrive with the PWA closed.
   // It must be on before clearing, or stale rows (tips done elsewhere) would stay queued.
