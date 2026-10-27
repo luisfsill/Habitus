@@ -4,7 +4,7 @@
  * merges back with a ripple. The cursor lifts a meniscus, every tap sends a wave along the pill, and each icon
  * plays its own little scene. The water is a small WebGL shader drawn only inside the pill and paused off-screen;
  * without WebGL a CSS drop stands in. Web only (DOM). Trimmed to what the app uses: always controlled, buttons
- * only (no links), no tap sound.
+ * only (no links). Dragging a finger across the pill stirs the water without switching tabs; only a tap switches.
  */
 import { type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -31,6 +31,23 @@ export interface LiquidNavbarProps {
   compact?: boolean;
   label?: string;
   style?: CSSProperties;
+  /** A quick tap plays `tap`; dragging across the pill stirs the water (`stir`, 0 to 1 by speed) and `settle`s on release. */
+  sounds?: { tap: () => void; stir: (strength: number) => void; settle: () => void };
+}
+
+// How far a finger moves before a press stops being a tap and starts stirring the water.
+const DRAG_PX = 10;
+
+interface Press {
+  id: number;
+  x0: number;
+  y0: number;
+  x: number;
+  y: number;
+  t: number;
+  speed: number;
+  trail: number;
+  dragged: boolean;
 }
 
 /** SVG noise that bends the page behind the glass (Chromium; see supportsRefraction). */
@@ -44,7 +61,7 @@ const REFRACT_FILTER = (
   </svg>
 );
 
-export function LiquidNavbar({ items, active, onChange, tone = "light", compact, label = "Navegação", style }: LiquidNavbarProps) {
+export function LiquidNavbar({ items, active, onChange, tone = "light", compact, label = "Navegação", style, sounds }: LiquidNavbarProps) {
   const navRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dropRef = useRef<HTMLSpanElement>(null);
@@ -53,6 +70,9 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
   const st = useRef(makeWaterState());
   const lastWidth = useRef(-1);
   const [fx, setFx] = useState({ i: -1, n: 0 });
+  const press = useRef<Press | null>(null);
+  // The click that follows a drag lands on a button too: it must not switch tabs.
+  const skipClick = useRef(false);
 
   const loop = useCallback(() => {
     const s = st.current;
@@ -165,12 +185,92 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
     itemRefs.current[n]?.focus();
   };
 
-  const onMove = (e: PointerEvent) => {
-    if (e.pointerType !== "mouse") return;
-    const p = local(e.clientX, e.clientY);
+  // The meniscus rises under the pointer or finger.
+  const lift = (clientX: number, clientY: number) => {
+    const p = local(clientX, clientY);
     Object.assign(st.current.mouse, { x: p.x, y: p.y, on: true });
     loop();
+    return p;
   };
+  const drop = () => {
+    st.current.mouse.on = false;
+    loop();
+  };
+
+  const onMove = (e: PointerEvent) => {
+    let pr = press.current?.id === e.pointerId ? press.current : null;
+    // Leaving the pill pauses a drag (pointerleave ends it); coming back still pressed, or pressing outside and
+    // dragging in, stirs the water again.
+    if (!pr && e.buttons === 1) {
+      const { clientX: x, clientY: y } = e;
+      pr = press.current = { id: e.pointerId, x0: x, y0: y, x, y, t: e.timeStamp, speed: 0, trail: 0, dragged: true };
+    }
+    if (pr) drag(pr, e.clientX, e.clientY, e.timeStamp);
+    else if (e.pointerType === "mouse") lift(e.clientX, e.clientY);
+  };
+
+  const drag = (pr: Press, clientX: number, clientY: number, t: number) => {
+    const p = lift(clientX, clientY);
+    const step = Math.hypot(clientX - pr.x, clientY - pr.y);
+    pr.speed = pr.speed * 0.7 + (step / Math.max(1, t - pr.t)) * 0.3;
+    Object.assign(pr, { x: clientX, y: clientY, t });
+    if (!pr.dragged && Math.hypot(clientX - pr.x0, clientY - pr.y0) < DRAG_PX) return;
+    pr.dragged = true;
+    // About 1.2 px/ms is a brisk swipe: full volume and the biggest waves.
+    const strength = Math.min(1, pr.speed / 1.2);
+    sounds?.stir(strength);
+    pr.trail += step;
+    if (pr.trail > 36) {
+      pr.trail = 0;
+      // A slow finger leaves faint ripples, a fast one waves as strong as a tap.
+      ripple(p.x, p.y, 0.12 + 0.68 * strength);
+    }
+  };
+
+  const endPress = (e: PointerEvent, tapped: boolean) => {
+    const pr = press.current;
+    if (pr?.id !== e.pointerId) return;
+    press.current = null;
+    if (pr.dragged) sounds?.settle();
+    else if (tapped) sounds?.tap();
+    skipClick.current = pr.dragged;
+    setTimeout(() => (skipClick.current = false), 0);
+    if (e.pointerType !== "mouse") drop();
+  };
+
+  // A swipe that starts outside the pill never reaches it as pointer events (a touch stays with the element it began on),
+  // so follow touches on the window and stir the water while one is over the pill. Ids below 0 mark these presses.
+  useEffect(() => {
+    const overPill = (x: number, y: number) => {
+      const r = navRef.current?.getBoundingClientRect();
+      return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    };
+    const follow = (e: TouchEvent) => {
+      for (const touch of Array.from(e.changedTouches)) {
+        const id = -1 - touch.identifier;
+        const pr = press.current;
+        if (pr && pr.id !== id) continue;
+        const { clientX: x, clientY: y } = touch;
+        if (e.type === "touchmove" && overPill(x, y)) {
+          const p = pr ?? { id, x0: x, y0: y, x, y, t: e.timeStamp, speed: 0, trail: 0, dragged: true };
+          press.current = p;
+          drag(p, x, y, e.timeStamp);
+        } else if (pr) {
+          press.current = null;
+          sounds?.settle();
+          drop();
+        }
+      }
+    };
+    window.addEventListener("touchmove", follow, { passive: true });
+    window.addEventListener("touchend", follow, { passive: true });
+    window.addEventListener("touchcancel", follow, { passive: true });
+    return () => {
+      window.removeEventListener("touchmove", follow);
+      window.removeEventListener("touchend", follow);
+      window.removeEventListener("touchcancel", follow);
+    };
+  });
 
   return (
     <nav
@@ -181,14 +281,22 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
       aria-label={label}
       onKeyDown={onKeyDown}
       onPointerMove={onMove}
-      onPointerLeave={() => {
+      onPointerLeave={(e) => {
+        endPress(e, false);
         st.current.mouse.on = false;
         loop();
       }}
       onPointerDown={(e) => {
         const p = local(e.clientX, e.clientY);
         ripple(p.x, p.y, 0.8);
+        const at = { x: e.clientX, y: e.clientY };
+        press.current = { id: e.pointerId, x0: at.x, y0: at.y, ...at, t: e.timeStamp, speed: 0, trail: 0, dragged: false };
+        // A touch sticks to the button it began on; let go of it so a finger leaving the pill pauses, like the mouse.
+        const el = e.target as Element;
+        if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
       }}
+      onPointerUp={(e) => endPress(e, true)}
+      onPointerCancel={(e) => endPress(e, false)}
       style={style}>
       <style dangerouslySetInnerHTML={{ __html: NIMBUS_CSS }} />
       {REFRACT_FILTER}
@@ -208,7 +316,9 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
             className="nimbus-item"
             aria-label={it.label}
             aria-current={i === active ? "page" : undefined}
-            onClick={() => select(i)}>
+            onClick={() => {
+              if (!skipClick.current) select(i);
+            }}>
             {it.icon && (
               <span
                 className="nv-ico"

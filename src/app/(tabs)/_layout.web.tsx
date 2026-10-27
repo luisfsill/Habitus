@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { MAX_WIDTH } from "@/components/screen";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
+import { playSplash, settleWater, stirWater } from "@/services/sound";
 import { useAccess } from "@/state/access";
 import { pinned, useTheme } from "@/theme";
 
@@ -33,7 +34,7 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
   }));
   return (
     <View pointerEvents="box-none" style={[styles.wrap, pinned]}>
-      <LiquidNavbar items={items} active={active} tone={scheme} compact label="Abas" style={BAR} onChange={(_, item) => switchTab(item.key, {})} />
+      <LiquidNavbar items={items} active={active} tone={scheme} compact label="Abas" style={BAR} sounds={SOUNDS} onChange={(_, item) => switchTab(item.key, {})} />
     </View>
   );
 }
@@ -55,6 +56,8 @@ export default function WebTabsLayout() {
   );
 }
 
+// A tap touches the water; dragging a finger across it sloshes the water.
+const SOUNDS = { tap: playSplash, stir: stirWater, settle: settleWater };
 // Almost edge to edge on a phone, as wide as the page column on a computer.
 const BAR = { width: "100%", maxWidth: MAX_WIDTH };
 // The same gap below and at the sides, so the pill follows the rounded screen corners. Like iOS 26's own tab bar
