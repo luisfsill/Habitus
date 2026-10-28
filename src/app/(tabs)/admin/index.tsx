@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from "rea
 
 import { AdminTopBar } from "@/components/admin-top-bar";
 import { AdminUserRow, formatDate, type Grant } from "@/components/admin-user-row";
+import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
 import { CreateUserCard } from "@/components/create-user-card";
 import { PrimaryButton } from "@/components/primary-button";
@@ -40,6 +41,16 @@ function granted(p: Profile, grant: Grant, now: Date): Access {
   return grant === "unlimited"
     ? { accessUntil: p.accessUntil, unlimited: true, plan: "paid" }
     : { accessUntil: extendAccess(p.accessUntil, grant, now), unlimited: false, plan: "paid" };
+}
+
+/** Narrow has no top bar with sections: the other admin pages are reached from here. */
+function ManageLinks() {
+  return (
+    <Section title="Gerenciar">
+      <ActionRow label="Pagamentos" detail="Método, faturamento e histórico" icon={{ ios: "creditcard", android: "payments" }} navigates onPress={() => router.push("/admin/payments")} />
+      <ActionRow label="Planos e preços" icon={{ ios: "creditcard", android: "credit_card" }} navigates onPress={() => router.push("/admin/plans")} />
+    </Section>
+  );
 }
 
 export default function AdminUsersScreen() {
@@ -175,6 +186,8 @@ export default function AdminUsersScreen() {
             <PrimaryButton label="Criar convite" icon={{ ios: "envelope", android: "mail" }} variant="tinted" onPress={() => router.push("/admin/invites")} />
           </View>
         )}
+
+        {!wide && <ManageLinks />}
 
         {error && <AppText variant="footnote" color="danger">{error}</AppText>}
         {shown.length > 0 && (
