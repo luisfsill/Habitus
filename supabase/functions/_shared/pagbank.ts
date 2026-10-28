@@ -28,11 +28,25 @@ async function call(env: string, path: string, body?: unknown): Promise<unknown>
   });
   // Só o código vai para o log: a resposta pode trazer dados da pessoa.
   const what = `PagBank respondeu ${res.status} (${body === undefined ? "GET" : "POST"} /orders)`;
-  if (!res.ok) throw new Error(what);
+  if (!res.ok) throw new Error(`${what}${await reasons(res)}`);
   // O erro de parse do JSON cita trechos do corpo: troca por uma mensagem só com o código.
   return await res.json().catch(() => {
     throw new Error(`${what} sem JSON`);
   });
+}
+
+/**
+ * Os motivos de um erro do PagBank (error_messages: code, parameter_name, description), sem os valores enviados,
+ * para o log dizer qual campo foi recusado. Corta em 300 caracteres.
+ */
+async function reasons(res: Response): Promise<string> {
+  const data = await res.json().catch(() => null);
+  const list = isRow(data) && Array.isArray(data.error_messages) ? data.error_messages : [];
+  const text = list
+    .filter(isRow)
+    .map((m) => [m.code, m.parameter_name, m.description].filter((v) => typeof v === "string").join(" "))
+    .join("; ");
+  return text ? `: ${text.slice(0, 300)}` : "";
 }
 
 /** Horário de São Paulo com offset, como nos exemplos do PagBank (2026-10-28T12:30:00-03:00). Sem horário de verão desde 2019. */
