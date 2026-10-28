@@ -134,7 +134,9 @@ export const GLYPHS: Record<string, number> = {
   "wb_sunny": 58416,
   "wb_twilight": 57798,
   "web": 57425,
+  "weekend": 57707,
   "whatshot": 59406,
+  "work": 59641,
   "workspace_premium": 59311,
   "zoom_in": 59647
 };

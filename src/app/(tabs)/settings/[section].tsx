@@ -14,10 +14,10 @@ import { Stepper } from "@/components/stepper";
 import { ThemeTabs } from "@/components/theme-tabs";
 import { TimeField } from "@/components/time-field";
 import { ToggleSwitch } from "@/components/toggle-switch";
-import { WeekdayPicker } from "@/components/weekday-picker";
+import { WeekdayRow, WeekdaySummary } from "@/components/weekday-plan";
 import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
-import { formatTime, minutesOfDay } from "@/domain/time";
+import { ALL_WEEKDAYS, formatTime, minutesOfDay, type Weekday } from "@/domain/time";
 import { formatEvery, WATER_EVERY, WATER_GOAL } from "@/domain/water";
 import { pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
@@ -53,10 +53,18 @@ function Schedule({ draft, change }: PageProps) {
 }
 
 function Days({ draft, change }: PageProps) {
+  const set = (days: Weekday[]) => void change({ days });
   return (
-    <Section plain title="Dias da semana">
-      <WeekdayPicker value={draft.days} onChange={(days) => void change({ days })} />
-    </Section>
+    <>
+      <Section plain title="Sua semana">
+        <WeekdaySummary value={draft.days} onChange={set} />
+      </Section>
+      <Section plain title="Dia a dia" footer="Nos dias desligados você não recebe dicas, e a sequência não quebra.">
+        {ALL_WEEKDAYS.map((day) => (
+          <WeekdayRow key={day} day={day} value={draft.days} onChange={set} />
+        ))}
+      </Section>
+    </>
   );
 }
 
