@@ -14,6 +14,7 @@ const TABS = [
   { key: "index", fx: "glow" as NimbusFx, label: "Hoje", ios: "sun.max", android: "wb_sunny", href: "/" },
   { key: "history", fx: "spin" as NimbusFx, label: "Histórico", ios: "calendar", android: "calendar_month", href: "/history" },
   { key: "achievements", fx: "pop" as NimbusFx, label: "Conquistas", ios: "trophy", android: "emoji_events", href: "/achievements" },
+  { key: "amigos", fx: "pop" as NimbusFx, label: "Amigos", ios: "person.2", android: "group", href: "/amigos" },
   { key: "settings", fx: "wave" as NimbusFx, label: "Ajustes", ios: "gearshape", android: "settings", href: "/settings" },
   { key: "admin", fx: "pop" as NimbusFx, label: "Admin", ios: "shield", android: "admin_panel_settings", href: "/admin" },
 ] as const;

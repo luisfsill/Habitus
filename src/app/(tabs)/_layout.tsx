@@ -1,9 +1,11 @@
 import { NativeTabs } from "expo-router/native-tabs";
 
+import { useIncomingCount } from "@/state/use-friends";
 import { useTheme } from "@/theme";
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const requests = useIncomingCount();
   return (
     <NativeTabs tintColor={colors.accent} labelStyle={{ selected: { color: colors.accent } }}>
       <NativeTabs.Trigger name="index">
@@ -17,6 +19,11 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="achievements">
         <NativeTabs.Trigger.Label>Conquistas</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "trophy", selected: "trophy.fill" }} md="emoji_events" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="amigos">
+        <NativeTabs.Trigger.Label>Amigos</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="group" />
+        <NativeTabs.Trigger.Badge hidden={requests === 0}>{String(requests)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Ajustes</NativeTabs.Trigger.Label>
