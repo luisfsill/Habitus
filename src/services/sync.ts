@@ -1,6 +1,9 @@
 import { type AppData, sanitizeData } from "@/domain/app-data";
+import { publicStats } from "@/domain/friends";
 import { mergeData } from "@/domain/sync";
 
+import { log } from "./log";
+import { publishStats } from "./social";
 import { requireSupabase } from "./supabase";
 
 const TABLE = "user_data";
@@ -24,6 +27,7 @@ export async function pushMerged(userId: string, local: AppData): Promise<AppDat
   const remote = await fetchRemote(userId);
   const merged = remote ? mergeData(local, remote) : local;
   await overwriteRemote(userId, merged);
+  publishStats(userId, publicStats(merged, new Date())).catch((e) => log.warn("could not publish stats", e));
   return merged;
 }
 

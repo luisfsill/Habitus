@@ -12,6 +12,10 @@ export interface Profile {
   accessUntil: string | null;
   unlimited: boolean;
   createdAt: string;
+  /** The @ chosen for friends; null until set. */
+  username: string | null;
+  /** Whether strangers can find this account by search. */
+  searchable: boolean;
 }
 
 export interface Plan {
@@ -96,7 +100,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** A `profiles` row from Supabase, or null when it is not one. */
 export function parseProfile(row: unknown): Profile | null {
   if (!isRecord(row)) return null;
-  const { id, name, email, role, plan, access_until, unlimited, created_at } = row;
+  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable } = row;
   if (typeof id !== "string" || typeof email !== "string" || typeof created_at !== "string") return null;
   if (role !== "user" && role !== "admin") return null;
   if (plan !== "trial" && plan !== "paid") return null;
@@ -109,6 +113,8 @@ export function parseProfile(row: unknown): Profile | null {
     accessUntil: typeof access_until === "string" ? access_until : null,
     unlimited: unlimited === true,
     createdAt: created_at,
+    username: typeof username === "string" ? username : null,
+    searchable: searchable !== false,
   };
 }
 
@@ -133,6 +139,8 @@ export function parseCachedProfile(value: unknown): Profile | null {
     access_until: value.accessUntil,
     unlimited: value.unlimited,
     created_at: value.createdAt,
+    username: value.username,
+    searchable: value.searchable,
   });
 }
 

@@ -1,4 +1,5 @@
 import { type PlannedNotification, pushRow } from "@/domain/notification-plan";
+import { isSocialPushId } from "@/domain/username";
 
 import { log } from "./log";
 import { supabase } from "./supabase";
@@ -52,12 +53,12 @@ export async function queuePush(items: readonly PlannedNotification[]): Promise<
   if (error) log.error("could not queue push reminders", error);
 }
 
-/** Removes queued reminders whose id matches `predicate`. */
+/** Removes queued reminders whose id matches `predicate`; friend notices (`social:`) are left for push-send. */
 export async function unqueuePush(predicate: (id: string) => boolean): Promise<void> {
   if (!active || !supabase) return;
   const { data, error } = await supabase.from("push_queue").select("id");
   if (error) return log.error("could not read push queue", error);
-  const ids = (data as { id: string }[]).map((row) => row.id).filter(predicate);
+  const ids = (data as { id: string }[]).map((row) => row.id).filter((id) => !isSocialPushId(id) && predicate(id));
   if (ids.length === 0) return;
   const removed = await supabase.from("push_queue").delete().in("id", ids);
   if (removed.error) log.error("could not clear push reminders", removed.error);
