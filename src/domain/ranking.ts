@@ -1,4 +1,4 @@
-import { XP_RULES } from "./gamification";
+import { perfectDayXp, XP_RULES } from "./gamification";
 import { addDays, dayKey, fromDayKey, type Weekday } from "./time";
 import { TRICK_COUNT } from "./tricks";
 
@@ -10,9 +10,38 @@ export interface RankingLog {
   activeDays: readonly Weekday[];
 }
 
+/** The streak bonus caps at 10 steps (77 days with one active weekday), so older days cannot matter. */
+const LOOKBACK_DAYS = 80;
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
 /** Distinct valid trick indices done on `day`. */
 function countOf(log: RankingLog, day: string): number {
   return new Set((log.tricks[day] ?? []).filter((i) => Number.isInteger(i) && i >= 0 && i < TRICK_COUNT)).size;
+}
+
+interface Walk { log: RankingLog; weekStart: string; lenientFrom: string; days: readonly number[]; xp: number; streak: number; allDone: boolean; anyActive: boolean }
+
+/** Scores one day of the week itself (tricks, water, perfect-week bookkeeping). */
+function scoreDay(w: Walk, key: string, count: number, active: boolean): void {
+  w.xp += XP_RULES.trick * count;
+  const water = w.log.water[key];
+  if (water && water.cups >= water.goal) w.xp += XP_RULES.waterGoal;
+  if (!active) return;
+  w.anyActive = true;
+  if (count !== TRICK_COUNT) w.allDone = false;
+}
+
+function step(w: Walk, d: Date): void {
+  const key = dayKey(d);
+  const count = countOf(w.log, key);
+  const active = w.days.includes(d.getDay());
+  if (count === TRICK_COUNT) {
+    if (active) w.streak++;
+    if (key >= w.weekStart) w.xp += perfectDayXp(w.streak);
+  } else if (active && key < w.lenientFrom) {
+    w.streak = 0;
+  }
+  if (key >= w.weekStart) scoreDay(w, key, count, active);
 }
 
 /**
@@ -20,31 +49,11 @@ function countOf(log: RankingLog, day: string): number {
  * Mirrors the SQL `public.week_xp_of` (supabase/ranking.sql); both run the vectors in supabase/tests/ranking.sql.
  */
 export function weekXp(log: RankingLog, weekStart: string, lenientFrom: string): number {
-  const first = Object.keys(log.tricks).filter((k) => countOf(log, k) > 0).sort()[0];
+  const oldest = dayKey(addDays(fromDayKey(weekStart), -LOOKBACK_DAYS));
+  const first = Object.keys(log.tricks).filter((k) => DAY_KEY.test(k) && k >= oldest && k < weekStart && countOf(log, k) > 0).sort()[0];
   const end = dayKey(addDays(fromDayKey(weekStart), 6));
   const days = log.activeDays.length > 0 ? log.activeDays : [0, 1, 2, 3, 4, 5, 6];
-  let xp = 0;
-  let streak = 0;
-  let allDone = true;
-  let anyActive = false;
-  for (let d = fromDayKey(first && first < weekStart ? first : weekStart), key = dayKey(d); key <= end; d = addDays(d, 1), key = dayKey(d)) {
-    const count = countOf(log, key);
-    const active = days.includes(d.getDay() as Weekday);
-    const inWeek = key >= weekStart;
-    if (count === TRICK_COUNT) {
-      if (active) streak++;
-      if (inWeek) xp += XP_RULES.perfectDay + XP_RULES.streakStep * Math.min(Math.max(streak - 1, 0), XP_RULES.streakCap);
-    } else if (active && key < lenientFrom) {
-      streak = 0;
-    }
-    if (!inWeek) continue;
-    xp += XP_RULES.trick * count;
-    const w = log.water[key];
-    if (w && w.cups >= w.goal) xp += XP_RULES.waterGoal;
-    if (active) {
-      anyActive = true;
-      if (count !== TRICK_COUNT) allDone = false;
-    }
-  }
-  return anyActive && allDone ? xp + XP_RULES.perfectWeek : xp;
+  const w: Walk = { log, weekStart, lenientFrom, days, xp: 0, streak: 0, allDone: true, anyActive: false };
+  for (let d = fromDayKey(first ?? weekStart); dayKey(d) <= end; d = addDays(d, 1)) step(w, d);
+  return w.anyActive && w.allDone ? w.xp + XP_RULES.perfectWeek : w.xp;
 }
