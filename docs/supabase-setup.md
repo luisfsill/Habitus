@@ -160,6 +160,34 @@ update public.profiles set role = 'admin', unlimited = true where email = 'seu_e
 
 Feche e abra o app: a aba **Admin** aparece na barra de baixo.
 
+## 11. Pix automático (PagBank)
+
+Só é preciso para o modo **Automático** de **Admin > Pagamentos**. O modo **Manual** (Pix estático e comprovante pelo WhatsApp) funciona sem nada disto. Antes, rode `payments.sql` (seção "Pagamentos" do passo 2).
+
+1. **Tokens do PagBank.** Gere um token de sandbox (no portal de desenvolvedores do PagBank) e um de produção (na sua conta PagBank).
+2. **Segredos.** No Supabase, abra **Edge Functions → Secrets** e crie:
+   - `PAGBANK_TOKEN_SANDBOX`: o token de sandbox;
+   - `PAGBANK_TOKEN_PRODUCTION`: o token de produção.
+
+   Os tokens ficam só aqui. Nunca vão para o código, o app, o `.env.local` nem o banco.
+3. **Publique as funções** pela linha de comando, porque as duas usam o arquivo compartilhado `supabase/functions/_shared/pagbank.ts`:
+
+   ```bash
+   npx supabase functions deploy pix-checkout --project-ref SEU_PROJECT_REF
+   npx supabase functions deploy pagbank-webhook --no-verify-jwt --project-ref SEU_PROJECT_REF
+   ```
+
+   `pagbank-webhook` fica sem verificação de JWT porque o PagBank chama sem login. Ela não confia no corpo do aviso: reconsulta o pedido no PagBank antes de liberar qualquer coisa.
+4. **Teste no sandbox.**
+   1. Em **Admin > Pagamentos**, deixe **Ambiente do PagBank: Teste** e escolha **Automático**.
+   2. Com uma conta de teste, toque em **Assinar** num plano, informe um CPF válido e confira se o QR aparece. Use um e-mail diferente do e-mail da conta PagBank: o PagBank pode recusar comprador e vendedor iguais.
+   3. Simule o pagamento do pedido (`ORDE_...`) como a documentação de sandbox do PagBank indicar. Em até 10 s depois do aviso, a tela mostra "Pagamento confirmado" e a conta ganha os dias do plano.
+   4. Se o aviso não chegar, toque em **Consultar no PagBank** no detalhe do pagamento. Os motivos de cada aviso ignorado ficam em **Edge Functions → pagbank-webhook → Logs**.
+   5. Para conferir a queda para o manual, apague `PAGBANK_TOKEN_SANDBOX` e toque em **Assinar** de novo: deve aparecer o Pix manual com o aviso. Depois, crie o segredo de novo.
+5. **Produção.** Com o sandbox funcionando, troque para **Ambiente do PagBank: Produção**. Faça uma compra real de valor baixo para conferir. Os pagamentos de teste continuam no histórico com a etiqueta "Teste" e nunca entram no faturamento.
+
+Se algo der errado, volte para **Manual** em **Admin > Pagamentos**: o app passa a usar o Pix estático na hora.
+
 ## Conferir os amigos
 
 Depois do passo 7, use duas contas de teste (A e B), cada uma num navegador ou aparelho:
