@@ -9,14 +9,12 @@ import { AVATAR_PRESETS } from "@/components/avatar-presets";
 import { Divider } from "@/components/divider";
 import { Icon } from "@/components/icon";
 import { PrimaryButton } from "@/components/primary-button";
-import { RedeemCode } from "@/components/redeem-code";
 import { Screen } from "@/components/screen";
 import { ToggleSwitch } from "@/components/toggle-switch";
 import { pickAvatar } from "@/services/avatar";
 import { useAppState } from "@/state/app-state";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
-import { useRedeem } from "@/state/use-redeem";
 import { confirm } from "@/state/use-sign-out";
 import { HIT, space, useTheme } from "@/theme";
 
@@ -111,7 +109,6 @@ function Photo() {
 export default function AccountScreen() {
   const { session, deleteAccount } = useAuth();
   const { profile, setSearchable } = useAccess();
-  const redeem = useRedeem();
   const { reset } = useAppState();
   const [message, setMessage] = useState<string | null>(null);
   const resetData = () =>
@@ -146,7 +143,6 @@ export default function AccountScreen() {
           Se desligar, ninguém acha você e você também não pode buscar ninguém.
         </AppText>
       </View>
-      <RedeemCode onRedeem={redeem} />
       <View>
         <ActionRow label="Resetar dados" icon={{ ios: "arrow.counterclockwise", android: "restart_alt" }} destructive onPress={resetData} />
         <Divider />

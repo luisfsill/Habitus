@@ -4,29 +4,33 @@ import { StyleSheet, View } from "react-native";
 import { INVITE_CODE_LENGTH, normalizeInviteCode } from "@/domain/invites";
 import { space } from "@/theme";
 
-import { AppText } from "./app-text";
 import { AuthField } from "./auth-field";
+import { GiftOpening } from "./gift-opening";
 import { PrimaryButton } from "./primary-button";
 
 interface Props {
-  /** Redeems the code; resolves to the message to show, or rejects with the reason. */
-  onRedeem: (code: string) => Promise<string>;
+  /** Redeems the code; resolves to its license days (null = unlimited), or rejects with the reason. */
+  onRedeem: (code: string) => Promise<number | null>;
+  /** After the celebration is closed. */
+  onDone?: () => void;
 }
 
-/** "Resgatar código": the gift code an admin sent, typed in after the account exists. */
-export function RedeemCode({ onRedeem }: Props) {
+/** "Resgatar código": the gift code an admin sent, typed in after the account exists; a good one opens the gift. */
+export function RedeemCode({ onRedeem, onDone }: Props) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ text: string; error: boolean } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  // License days of the gift being opened (null = unlimited); undefined while there is none.
+  const [gift, setGift] = useState<number | null | undefined>(undefined);
 
   const redeem = async () => {
     setBusy(true);
-    setResult(null);
+    setError(null);
     try {
-      setResult({ text: await onRedeem(code), error: false });
+      setGift(await onRedeem(code));
       setCode("");
     } catch (e) {
-      setResult({ text: (e as Error).message, error: true });
+      setError((e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -41,13 +45,17 @@ export function RedeemCode({ onRedeem }: Props) {
         autoCapitalize="characters"
         returnKeyType="done"
         onSubmitEditing={() => code.length === INVITE_CODE_LENGTH && void redeem()}
-        error={result?.error ? result.text : undefined}
+        error={error ?? undefined}
       />
       <PrimaryButton label="Resgatar código" variant="tinted" onPress={() => void redeem()} disabled={code.length !== INVITE_CODE_LENGTH} loading={busy} />
-      {result && !result.error && (
-        <AppText variant="footnote" color="successText" accessibilityLiveRegion="polite">
-          {result.text}
-        </AppText>
+      {gift !== undefined && (
+        <GiftOpening
+          days={gift}
+          onClose={() => {
+            setGift(undefined);
+            onDone?.();
+          }}
+        />
       )}
     </View>
   );

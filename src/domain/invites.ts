@@ -63,16 +63,16 @@ export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt"
     inviteLink(invite.code, origin),
     "",
     `🔑 Seu código: *${invite.code}*`,
-    "📲 Já com a conta criada, resgate o código em *Ajustes > Conta > Resgatar código* (ou na tela de planos).",
+    "📲 Já com a conta criada, toque na sua foto no canto de cima e em *Gift Code* para resgatar o código.",
     `⏳ Vale até ${brDate(invite.expiresAt)}, para uma única conta.`,
     "",
     "Te espero lá! 💧",
   ].join("\n");
 }
 
-/** What the account sees after redeeming a code. */
-export function redeemedMessage(days: number | null): string {
-  return days === null ? "Código resgatado: seu acesso agora é ilimitado." : `Código resgatado: ${licenseLabel(days)} somados ao seu plano.`;
+/** Under the prize, after a code is redeemed. */
+export function giftMessage(days: number | null): string {
+  return days === null ? "Seu acesso agora é ilimitado." : `+${licenseLabel(days)} somados ao seu plano.`;
 }
 
 export function inviteStatus(invite: Invite, now: Date): InviteStatus {

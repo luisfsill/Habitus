@@ -1,4 +1,4 @@
-import { type Invite, inviteLink, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite, redeemedMessage } from "../invites";
+import { type Invite, inviteLink, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite, giftMessage } from "../invites";
 
 const now = new Date("2026-10-27T12:00:00Z");
 const row = { code: "AB12CD34EF", days: 180, created_at: "2026-10-27T12:00:00Z", expires_at: "2026-11-03T12:00:00Z", used_at: null };
@@ -24,7 +24,7 @@ describe("invites", () => {
     expect(text).toContain("*6 meses* de licença gratuita");
     expect(text).toContain("https://habitushub.vercel.app/auth?modo=criar&convite=AB12CD34EF");
     expect(text).toContain("*AB12CD34EF*");
-    expect(text).toContain("Ajustes > Conta > Resgatar código");
+    expect(text).toContain("*Gift Code*");
     expect(text).toContain("Vale até 03/11/2026");
     expect(inviteMessage({ ...invite, days: null })).toContain("acesso *ilimitado* e gratuito");
   });
@@ -36,8 +36,8 @@ describe("invites", () => {
   });
 
   it("tells what a redeemed code gave", () => {
-    expect(redeemedMessage(30)).toBe("Código resgatado: 30 dias somados ao seu plano.");
-    expect(redeemedMessage(null)).toBe("Código resgatado: seu acesso agora é ilimitado.");
+    expect(giftMessage(30)).toBe("+30 dias somados ao seu plano.");
+    expect(giftMessage(null)).toBe("Seu acesso agora é ilimitado.");
   });
 
   it("parses rows and rejects damaged ones", () => {
