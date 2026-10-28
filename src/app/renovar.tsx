@@ -1,10 +1,11 @@
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, Share, StyleSheet, View } from "react-native";
+import { Alert, Linking, Platform, Share, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { Icon } from "@/components/icon";
+import { PixGenerating } from "@/components/pix-generating";
 import { PixQr } from "@/components/pix-qr";
 import { PixReceipt } from "@/components/pix-receipt";
 import { CpfStep, PixStep } from "@/components/pix-step";
@@ -162,22 +163,6 @@ function RenewFooter({ plan, step, onPay, onReceipt, onHelp, onCpf, onChange }: 
   );
 }
 
-/** While the Pix is being made (after "Assinar" or the CPF): a spinner instead of the plans. */
-function Generating() {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.generating} accessibilityLiveRegion="polite">
-      <ActivityIndicator size="large" color={colors.accent} />
-      <AppText variant="headline" align="center">
-        Gerando o Pix…
-      </AppText>
-      <AppText variant="footnote" color="secondaryLabel" align="center">
-        Leva só alguns segundos.
-      </AppText>
-    </View>
-  );
-}
-
 /** What sits under the status line once "Assinar" is tapped: the CPF form or the Pix (automatic or manual). */
 function PayBody({ plan, flow }: { plan: Plan; flow: ReturnType<typeof usePixCheckout> }) {
   if (flow.step === "cpf") return <CpfStep cpf={flow.cpf} error={flow.error} onChange={flow.setCpf} />;
@@ -307,7 +292,7 @@ function RenewScreen() {
         </AppText>
       </View>
       {plan && step === "loading" ? (
-        <Generating />
+        <PixGenerating done={pixFlow.finishing} />
       ) : plan && step !== "idle" ? (
         <PayBody plan={plan} flow={pixFlow} />
       ) : (
@@ -335,7 +320,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   wide: { flex: 2 },
   receiptActions: { flexDirection: "row", gap: space.sm },
-  generating: { alignItems: "center", gap: space.sm, paddingVertical: space.xxl },
   status: { flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
   list: { gap: space.sm },
   benefit: { flexDirection: "row", alignItems: "center", gap: space.sm },
