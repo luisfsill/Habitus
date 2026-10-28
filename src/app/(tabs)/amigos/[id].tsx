@@ -14,7 +14,9 @@ import { blockUser, cancelFriendRequest, getUserProfile, removeFriend, respondFr
 import { confirm } from "@/state/use-sign-out";
 import { radius, space, useTheme } from "@/theme";
 
-type Run = (action: () => Promise<unknown>) => void;
+/** Runs an action, then reloads the profile, or leaves it (after unfriending or blocking it would be stale). */
+type Run = (action: () => Promise<unknown>, then?: "leave") => void;
+const goBack = () => (router.canGoBack() ? router.back() : router.replace("/amigos"));
 
 /** The button (or buttons) for where the two people stand. */
 function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boolean }) {
@@ -44,8 +46,8 @@ function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boo
       </View>
     );
   }
-  const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos e do ranking.`, "Desfazer", () => run(() => removeFriend(p.id)));
-  const block = () => confirm("Bloquear?", `${p.name} não vai mais achar você nem pedir sua amizade.`, "Bloquear", () => run(() => blockUser(p.id)));
+  const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos e do ranking.`, "Desfazer", () => run(() => removeFriend(p.id), "leave"));
+  const block = () => confirm("Bloquear?", `${p.name} não vai mais achar você nem pedir sua amizade.`, "Bloquear", () => run(() => blockUser(p.id), "leave"));
   return (
     <Section title="Amizade">
       <ActionRow label="Desfazer amizade" icon={{ ios: "person.badge.minus", android: "person_remove" }} destructive onPress={unfriend} />
@@ -74,7 +76,7 @@ function Failed({ error, retry }: { error: string; retry: () => void }) {
         {error}
       </AppText>
       {error !== "Perfil não encontrado." && <PrimaryButton label="Tentar de novo" variant="tinted" onPress={retry} />}
-      <PrimaryButton label="Voltar" variant="plain" onPress={() => (router.canGoBack() ? router.back() : router.navigate("/amigos"))} />
+      <PrimaryButton label="Voltar" variant="plain" onPress={goBack} />
     </Screen>
   );
 }
@@ -99,11 +101,12 @@ export default function PersonScreen() {
   );
   useEffect(() => void load(), [load]);
 
-  const run: Run = (action) => {
+  const run: Run = (action, then) => {
     setBusy(true);
     action()
       .then(() => {
         setStatus(null);
+        if (then === "leave") return goBack();
         return load();
       })
       .catch((e: Error) => setStatus(e.message))
@@ -137,9 +140,9 @@ export default function PersonScreen() {
           </View>
         )}
       </View>
-      {status && (
+      {(status ?? loadError) && (
         <AppText variant="subheadline" color="danger" accessibilityLiveRegion="polite">
-          {status}
+          {status ?? loadError}
         </AppText>
       )}
       <FriendDetails p={p} />
