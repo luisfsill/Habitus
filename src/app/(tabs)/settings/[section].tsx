@@ -43,21 +43,16 @@ function Schedule({ draft, change }: PageProps) {
   const { data } = useAppState();
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
   return (
-    <Section title="Horário" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
-      <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
-      <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
-      <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
-    </Section>
-  );
-}
-
-function Bedtime({ draft, change }: PageProps) {
-  const { data } = useAppState();
-  const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
-  return (
-    <Section title="Hora de dormir" footer={bedtimeFooter(sleep)}>
-      <BedtimeField value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
-    </Section>
+    <>
+      <Section title="Seu dia" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
+        <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
+        <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
+        <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
+      </Section>
+      <Section title="Hora de dormir" footer={bedtimeFooter(sleep)}>
+        <BedtimeField value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
+      </Section>
+    </>
   );
 }
 
@@ -167,7 +162,6 @@ function Appearance({ change }: PageProps) {
 /** Each menu row of Ajustes opens one of these; the account screen has its own route (conta). */
 const PAGES = {
   horario: { title: "Horário", Page: Schedule },
-  dormir: { title: "Hora de dormir", Page: Bedtime },
   dias: { title: "Dias da semana", Page: Days },
   afirmacoes: { title: "Afirmações", Page: Affirmations },
   notificacoes: { title: "Notificações", Page: Notifications },

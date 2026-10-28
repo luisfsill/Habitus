@@ -38,6 +38,7 @@ export const GLYPHS: Record<string, number> = {
   "directions_walk": 58678,
   "do_not_disturb_on": 58948,
   "done": 59510,
+  "edit": 58313,
   "email": 57534,
   "emoji_events": 59939,
   "event_available": 58900,
