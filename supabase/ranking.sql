@@ -36,12 +36,15 @@ $$;
 -- XP da semana (domingo a sábado) que começa em `week_start`.
 -- Dias a partir de `lenient_from` nunca quebram a sequência (o dia de hoje ainda está em andamento).
 -- tricks: {"AAAA-MM-DD": [índices]}; water: {"AAAA-MM-DD": {"cups": n, "goal": n}}; active_days vazio vale como os 7 dias.
+-- active_on: {"AAAA-MM-DD": true|false} tem prioridade sobre active_days no dia; ausente ou malformado cai em active_days.
+drop function if exists public.week_xp_of(jsonb, jsonb, smallint[], date, date);
 create or replace function public.week_xp_of(
   tricks jsonb,
   water jsonb,
   active_days smallint[],
   week_start date,
-  lenient_from date
+  lenient_from date,
+  active_on jsonb default '{}'::jsonb
 )
 returns int
 language plpgsql
@@ -62,11 +65,13 @@ declare
   all_done boolean := true;
   any_active boolean := false;
   w jsonb;
+  a jsonb;
   k text;
 begin
   -- Dados malformados valem como vazios: a função não pode abortar a consulta do ranking.
   if jsonb_typeof(tricks) is distinct from 'object' then tricks := '{}'::jsonb; end if;
   if jsonb_typeof(water) is distinct from 'object' then water := '{}'::jsonb; end if;
+  if jsonb_typeof(active_on) is distinct from 'object' then active_on := '{}'::jsonb; end if;
 
   -- Só olha 80 dias para trás (o bônus de sequência para em 10 passos); dias mais antigos não mudam o resultado.
   for k in select jsonb_object_keys(tricks) loop
@@ -82,7 +87,9 @@ begin
     d := start_day + n;
     cnt := public.tricks_done_of(tricks -> to_char(d, 'YYYY-MM-DD'));
     -- extract(dow): 0 = domingo, igual a Date#getDay()
-    is_active := coalesce(cardinality(active_days), 0) = 0 or extract(dow from d)::smallint = any(active_days);
+    a := active_on -> to_char(d, 'YYYY-MM-DD');
+    is_active := case when jsonb_typeof(a) = 'boolean' then (a #>> '{}')::boolean
+      else coalesce(cardinality(active_days), 0) = 0 or extract(dow from d)::smallint = any(active_days) end;
     in_week := d >= week_start;
 
     if cnt = 6 then
@@ -113,7 +120,7 @@ $$;
 
 revoke execute on function public.day_of(text) from public, anon;
 revoke execute on function public.tricks_done_of(jsonb) from public, anon;
-revoke execute on function public.week_xp_of(jsonb, jsonb, smallint[], date, date) from public, anon;
+revoke execute on function public.week_xp_of(jsonb, jsonb, smallint[], date, date, jsonb) from public, anon;
 
 -- Registro do servidor ------------------------------------------------------------
 -- Cópia das dicas e da água com o horário do servidor, preenchida por trigger no user_data.
@@ -138,17 +145,30 @@ create table if not exists public.ranking_water (
   primary key (user_id, day)
 );
 
+-- Dia ativo congelado no primeiro registro do dia: mudar settings.days não reescreve o passado
+-- (senão dava para tirar do app um dia perdido e ganhar semana perfeita/sequência). Dia sem registro (sem sync) conta como ativo.
+create table if not exists public.ranking_days (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  active boolean not null,
+  recorded_at timestamptz not null default now(),
+  primary key (user_id, day)
+);
+
 -- reset_at guarda o resetAt do app: um valor maior apaga o registro ("Resetar dados").
 create table if not exists public.ranking_settings (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  active_days smallint[] not null default '{0,1,2,3,4,5,6}',
   reset_at bigint not null default 0,
   updated_at timestamptz not null default now()
 );
 
+alter table public.ranking_settings drop column if exists active_days;
+
 alter table public.ranking_tricks enable row level security;
 alter table public.ranking_water enable row level security;
+alter table public.ranking_days enable row level security;
 alter table public.ranking_settings enable row level security;
+revoke all on public.ranking_tricks, public.ranking_water, public.ranking_days, public.ranking_settings from anon, authenticated;
 
 -- Regra do trigger, separada para a carga inicial reaproveitar. Nunca pode abortar a gravação do user_data.
 -- Só grava dias entre hoje (UTC) - 2 e hoje + 1: cobre todos os fusos e cerca de dois dias offline.
@@ -191,14 +211,19 @@ begin
     if new_reset > coalesce(old_reset, 0) then
       delete from public.ranking_tricks where user_id = uid;
       delete from public.ranking_water where user_id = uid;
+      delete from public.ranking_days where user_id = uid;
     end if;
 
-    insert into public.ranking_settings (user_id, active_days, reset_at, updated_at)
-    values (uid, days, new_reset, now())
+    insert into public.ranking_settings (user_id, reset_at, updated_at)
+    values (uid, new_reset, now())
     on conflict (user_id) do update
-      set active_days = excluded.active_days,
-          reset_at = greatest(public.ranking_settings.reset_at, excluded.reset_at),
-          updated_at = now();
+      set reset_at = greatest(public.ranking_settings.reset_at, excluded.reset_at), updated_at = now();
+
+    -- Congela se cada dia da janela é ativo (o primeiro registro vence).
+    insert into public.ranking_days (user_id, day, active)
+    select uid, today + o, extract(dow from today + o)::smallint = any(days)
+    from generate_series(-2, 1) o
+    on conflict do nothing;
 
     -- Nunca apaga: as dicas não se desmarcam no app e o mergeData só soma.
     insert into public.ranking_tricks (user_id, day, trick)
@@ -266,9 +291,14 @@ as $$
       from public.ranking_water w
       where w.user_id = uid and w.day between week_start and week_start + 6
     ), '{}'::jsonb),
-    coalesce((select active_days from public.ranking_settings where user_id = uid), '{}'::smallint[]),
+    '{}'::smallint[],
     week_start,
-    (now() at time zone 'utc')::date - 1
+    (now() at time zone 'utc')::date - 1,
+    coalesce((
+      select jsonb_object_agg(to_char(d.day, 'YYYY-MM-DD'), d.active)
+      from public.ranking_days d
+      where d.user_id = uid and d.day between week_start - 80 and week_start + 6
+    ), '{}'::jsonb)
   );
 $$;
 
@@ -332,7 +362,7 @@ end;
 $$;
 
 -- Só global_ranking é do app; o resto é interno (chamado por outras funções security definer e pelo trigger).
-revoke execute on function public.week_xp_of(jsonb, jsonb, smallint[], date, date) from authenticated;
+revoke execute on function public.week_xp_of(jsonb, jsonb, smallint[], date, date, jsonb) from authenticated;
 revoke execute on function public.ranking_ingest(uuid, jsonb) from public, anon, authenticated;
 revoke execute on function public.ranking_ingest_row() from public, anon, authenticated;
 revoke execute on function public.week_xp(uuid, date) from public, anon, authenticated;

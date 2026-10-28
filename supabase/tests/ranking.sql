@@ -21,7 +21,9 @@ $json$[
 {"name":"chave-invalida","log":{"tricks":{"2026-02-31":[0],"lixo":[0],"2026-10-26":[0]},"water":{},"activeDays":[0,1,2,3,4,5,6]},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":10},
 {"name":"domingo-inativo-segunda","log":{"tricks":{"2026-10-25":[0,1,2,3,4,5],"2026-10-26":[0,1,2,3,4,5]},"water":{},"activeDays":[1,2,3,4,5]},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":170},
 {"name":"dias-ativos-vazios","log":{"tricks":{"2026-10-25":[0,1,2,3,4,5]},"water":{},"activeDays":[]},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":85},
-{"name":"semana-perfeita-subconjunto","log":{"tricks":{"2026-10-26":[0,1,2,3,4,5],"2026-10-27":[0,1,2,3,4,5],"2026-10-28":[0,1,2,3,4,5],"2026-10-29":[0,1,2,3,4,5],"2026-10-30":[0,1,2,3,4,5]},"water":{},"activeDays":[1,2,3,4,5]},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":625}
+{"name":"semana-perfeita-subconjunto","log":{"tricks":{"2026-10-26":[0,1,2,3,4,5],"2026-10-27":[0,1,2,3,4,5],"2026-10-28":[0,1,2,3,4,5],"2026-10-29":[0,1,2,3,4,5],"2026-10-30":[0,1,2,3,4,5]},"water":{},"activeDays":[1,2,3,4,5]},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":625},
+{"name":"active-on-dia-inativo-nao-quebra","log":{"tricks":{"2026-10-25":[0,1,2,3,4,5],"2026-10-27":[0,1,2,3,4,5]},"water":{},"activeDays":[0,1,2,3,4,5,6],"activeOn":{"2026-10-26":false}},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":175},
+{"name":"active-on-dia-perdido-ativo","log":{"tricks":{"2026-10-26":[0,1,2,3,4,5],"2026-10-27":[0,1,2,3,4,5],"2026-10-28":[0,1,2,3,4,5],"2026-10-29":[0,1,2,3,4,5],"2026-10-30":[0,1,2,3,4,5]},"water":{},"activeDays":[1,2,3,4,5],"activeOn":{"2026-10-25":true}},"weekStart":"2026-10-25","lenientFrom":"2026-10-31","expected":475}
 ]$json$
 -- vectors:end
   )::jsonb;
@@ -34,7 +36,8 @@ begin
       item->'log'->'water',
       array(select jsonb_array_elements_text(item->'log'->'activeDays')::smallint),
       (item->>'weekStart')::date,
-      (item->>'lenientFrom')::date
+      (item->>'lenientFrom')::date,
+      coalesce(item->'log'->'activeOn', '{}'::jsonb)
     );
     if got is distinct from (item->>'expected')::int then
       raise exception 'vetor % esperava % obteve %', item->>'name', item->>'expected', got;
@@ -60,6 +63,7 @@ begin
   begin
     delete from public.ranking_tricks where user_id = uid;
     delete from public.ranking_water where user_id = uid;
+    delete from public.ranking_days where user_id = uid;
 
     perform public.ranking_ingest(uid, jsonb_build_object(
       'completions', jsonb_build_object((d - 10)::text, jsonb_build_array(0, 1), d::text, '[0,0,9,"x"]'::jsonb),
@@ -83,6 +87,13 @@ begin
     if g is distinct from 5 then raise exception 'meta deveria seguir 5, obteve %', g; end if;
     select cups into g from public.ranking_water where user_id = uid and day = d;
     if g is distinct from 4 then raise exception 'cups deveria ser 4, obteve %', g; end if;
+
+    -- o dia ativo fica congelado: outro settings.days não muda um ranking_days já gravado
+    select count(*) into n from public.ranking_days where user_id = uid and day = d and active;
+    if n <> 1 then raise exception 'ranking_days deveria ter hoje ativo, obteve %', n; end if;
+    perform public.ranking_ingest(uid, jsonb_build_object('settings', jsonb_build_object('days', jsonb_build_array(extract(dow from d + 3)::int))));
+    select count(*) into n from public.ranking_days where user_id = uid and day = d and active;
+    if n <> 1 then raise exception 'ranking_days mudou depois de novo settings.days (%)', n; end if;
 
     perform public.ranking_ingest(uid, '{}'::jsonb);
 

@@ -8,6 +8,8 @@ export interface RankingLog {
   /** day key -> cups drunk and the goal frozen that day */
   water: Readonly<Record<string, { cups: number; goal: number }>>;
   activeDays: readonly Weekday[];
+  /** day key -> whether the day was active when first recorded; wins over `activeDays` for that day */
+  activeOn?: Readonly<Record<string, boolean>>;
 }
 
 /** The streak bonus caps at 10 steps (77 days with one active weekday), so older days cannot matter. */
@@ -34,7 +36,8 @@ function scoreDay(w: Walk, key: string, count: number, active: boolean): void {
 function step(w: Walk, d: Date): void {
   const key = dayKey(d);
   const count = countOf(w.log, key);
-  const active = w.days.includes(d.getDay());
+  const flag = w.log.activeOn?.[key];
+  const active = typeof flag === "boolean" ? flag : w.days.includes(d.getDay());
   if (count === TRICK_COUNT) {
     if (active) w.streak++;
     if (key >= w.weekStart) w.xp += perfectDayXp(w.streak);
