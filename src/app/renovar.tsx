@@ -11,6 +11,7 @@ import { PixReceipt } from "@/components/pix-receipt";
 import { CpfStep, PixStep } from "@/components/pix-step";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
+import { RedeemCode } from "@/components/redeem-code";
 import { Screen } from "@/components/screen";
 import { accessStatus, displayName, formatPrice, hasAccess as profileHasAccess, helpWhatsAppUrl, OWNER_PIX, type Plan, type Profile, renewWhatsAppUrl } from "@/domain/access";
 import { formatPaymentTime } from "@/domain/payments";
@@ -19,6 +20,7 @@ import { fetchPlans } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
 import { type PixStep as Step, usePixCheckout } from "@/state/pix-checkout";
+import { useRedeem } from "@/state/use-redeem";
 import { space, ThemePreferenceContext, useTheme } from "@/theme";
 
 const BENEFITS = ["As 6 dicas com lembretes no seu horário", "Água, lembretes e histórico", "Amigos e ranking da semana"];
@@ -173,6 +175,11 @@ function PayBody({ plan, flow }: { plan: Plan; flow: ReturnType<typeof usePixChe
   return <PayWithPix plan={plan} order={flow.order} code={pixPayload({ ...OWNER_PIX, amountCents: plan.priceCents, txid: flow.order })} notice={flow.notice} />;
 }
 
+/** A gift code from an admin, in place of paying. */
+function Redeem() {
+  return <RedeemCode onRedeem={useRedeem()} />;
+}
+
 /** Pix confirmed by the server: refresh the profile once and swap the page for the receipt. */
 function usePaidReceipt(flow: ReturnType<typeof usePixCheckout>, plan: Plan | undefined, refresh: () => Promise<unknown>, hasAccess: boolean) {
   const paid = flow.outcome === "paid";
@@ -296,7 +303,10 @@ function RenewScreen() {
       ) : plan && step !== "idle" ? (
         <PayBody plan={plan} flow={pixFlow} />
       ) : (
-        <PlanPicker plans={plans} selected={selected} onSelect={setSelected} />
+        <>
+          <PlanPicker plans={plans} selected={selected} onSelect={setSelected} />
+          <Redeem />
+        </>
       )}
       {message && (
         <AppText variant="footnote" color="secondaryLabel" align="center" accessibilityLiveRegion="polite">

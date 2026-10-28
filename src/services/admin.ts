@@ -81,5 +81,15 @@ export function deleteInvite(code: string): Promise<void> {
 export async function listInvites(): Promise<Invite[]> {
   const { data, error } = await requireSupabase().from("invites").select("*").order("created_at", { ascending: false }).limit(30);
   if (error) throw serviceError(error);
-  return (data as unknown[]).map(parseInvite).filter((i): i is Invite => i !== null);
+  const invites = (data as unknown[]).map(parseInvite).filter((i): i is Invite => i !== null);
+  const ids = invites.flatMap((i) => (i.usedBy ? [i.usedBy] : []));
+  if (ids.length === 0) return invites;
+  // Who accepted each invite: admins read every profile.
+  const people = await requireSupabase().from("profiles").select("id, name, email").in("id", ids);
+  if (people.error) throw serviceError(people.error);
+  const byId = new Map((people.data as { id: string; name: string | null; email: string | null }[]).map((p) => [p.id, p]));
+  return invites.map((i) => {
+    const p = i.usedBy ? byId.get(i.usedBy) : undefined;
+    return p ? { ...i, user: { name: p.name ?? "", email: p.email ?? "" } } : i;
+  });
 }

@@ -52,6 +52,11 @@ export function InviteRow({ invite, now, onOpen, onDelete }: { invite: Invite; n
             {STATUS[status].label} {when}
           </AppText>
         </View>
+        {invite.user && (
+          <AppText variant="footnote" color="secondaryLabel" selectable numberOfLines={2}>
+            {[invite.user.name, invite.user.email].filter(Boolean).join(" · ")}
+          </AppText>
+        )}
       </View>
       {status === "pending" && <RoundButton label={`Ver mensagem do convite ${invite.code}`} icon={{ ios: "bubble.left", android: "chat" }} onPress={onOpen} />}
       <RoundButton label={`Excluir convite ${invite.code}`} icon={{ ios: "trash", android: "delete" }} danger onPress={onDelete} />

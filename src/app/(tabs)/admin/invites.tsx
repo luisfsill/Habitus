@@ -58,11 +58,11 @@ export default function AdminInvitesScreen() {
   };
 
   const remove = (invite: Invite) =>
-    confirm("Excluir convite?", `O código ${invite.code} deixa de valer na hora. Quem já se cadastrou com ele continua com a licença.`, "Excluir", () => void drop(invite.code));
+    confirm("Excluir convite?", `O código ${invite.code} deixa de valer na hora. Quem já resgatou continua com a licença.`, "Excluir", () => void drop(invite.code));
 
   const now = new Date();
   return (
-    <Screen title="Convites" subtitle="Quem cria a conta pelo link já entra com a licença" underHeader>
+    <Screen title="Convites" subtitle="Um código de presente: a pessoa resgata no app e ganha a licença" underHeader>
       <Section title="Licença gratuita">
         <View style={styles.options}>
           {INVITE_OPTIONS.map((o) => (
@@ -79,7 +79,7 @@ export default function AdminInvitesScreen() {
           ))}
         </View>
         <PrimaryButton label="Gerar convite" onPress={() => void generate()} loading={busy} />
-        <AppText variant="footnote" color="secondaryLabel">O link vale por 7 dias e para uma única conta.</AppText>
+        <AppText variant="footnote" color="secondaryLabel">O código vale por 7 dias e para uma única conta.</AppText>
       </Section>
 
       {error && <AppText variant="footnote" color="danger">{error}</AppText>}

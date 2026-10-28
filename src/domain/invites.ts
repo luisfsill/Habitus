@@ -20,6 +20,10 @@ export interface Invite {
   /** Until when the code can be used to sign up. */
   expiresAt: string;
   usedAt: string | null;
+  /** The account created with it (`used_by`); null when unused or the account was deleted. */
+  usedBy: string | null;
+  /** Name and e-mail of that account, filled in by the admin list. */
+  user?: { name: string; email: string };
 }
 
 export type InviteStatus = "pending" | "used" | "expired";
@@ -55,15 +59,20 @@ export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt"
     "",
     "🌿 O Habitus é o seu app de lembretes virtual: ele te avisa na hora certa do que importa no seu dia.",
     "",
-    "👉 Crie sua conta por este link:",
+    "👉 Baixe o app e crie sua conta por este link:",
     inviteLink(invite.code, origin),
     "",
-    `🔑 Código do convite: *${invite.code}*`,
-    "📲 Se o celular pedir para instalar o app, instale e digite o código ao criar a conta.",
+    `🔑 Seu código: *${invite.code}*`,
+    "📲 Já com a conta criada, resgate o código em *Ajustes > Conta > Resgatar código* (ou na tela de planos).",
     `⏳ Vale até ${brDate(invite.expiresAt)}, para uma única conta.`,
     "",
     "Te espero lá! 💧",
   ].join("\n");
+}
+
+/** What the account sees after redeeming a code. */
+export function redeemedMessage(days: number | null): string {
+  return days === null ? "Código resgatado: seu acesso agora é ilimitado." : `Código resgatado: ${licenseLabel(days)} somados ao seu plano.`;
 }
 
 export function inviteStatus(invite: Invite, now: Date): InviteStatus {
@@ -74,8 +83,10 @@ export function inviteStatus(invite: Invite, now: Date): InviteStatus {
 /** An `invites` row from Supabase, or null when it is not one. */
 export function parseInvite(row: unknown): Invite | null {
   if (typeof row !== "object" || row === null) return null;
-  const { code, days, created_at, expires_at, used_at } = row as Record<string, unknown>;
+  const { code, days, created_at, expires_at, used_at, used_by } = row as Record<string, unknown>;
   if (typeof code !== "string" || typeof created_at !== "string" || typeof expires_at !== "string") return null;
   if (days !== null && (typeof days !== "number" || days < 1)) return null;
-  return { code, days, createdAt: created_at, expiresAt: expires_at, usedAt: typeof used_at === "string" ? used_at : null };
+  return { code, days, createdAt: created_at, expiresAt: expires_at, usedAt: typeof used_at === "string" ? used_at : null,
+    usedBy: typeof used_by === "string" ? used_by : null,
+  };
 }

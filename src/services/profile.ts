@@ -27,6 +27,13 @@ export async function fetchPlans(): Promise<Plan[]> {
   return (data as unknown[]).map(parsePlan).filter((p): p is Plan => p !== null);
 }
 
+/** Redeems an invite code for the signed-in account; resolves to its license days (null = unlimited). */
+export async function redeemInvite(code: string): Promise<number | null> {
+  const result = await requireSupabase().rpc("redeem_invite", { invite_code: code });
+  if (result.error) throw serviceError(result.error);
+  return (result.data as { days: number | null }).days ?? null;
+}
+
 /** License days of a usable invite (null = unlimited), or undefined when the code is not valid. */
 export async function checkInvite(code: string): Promise<number | null | undefined> {
   const result = await requireSupabase().rpc("check_invite", { invite_code: code });

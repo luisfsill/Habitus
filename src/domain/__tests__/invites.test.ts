@@ -1,8 +1,8 @@
-import { type Invite, inviteLink, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite } from "../invites";
+import { type Invite, inviteLink, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite, redeemedMessage } from "../invites";
 
 const now = new Date("2026-10-27T12:00:00Z");
 const row = { code: "AB12CD34EF", days: 180, created_at: "2026-10-27T12:00:00Z", expires_at: "2026-11-03T12:00:00Z", used_at: null };
-const invite: Invite = { code: "AB12CD34EF", days: 180, createdAt: "2026-10-27T12:00:00Z", expiresAt: "2026-11-03T12:00:00Z", usedAt: null };
+const invite: Invite = { code: "AB12CD34EF", days: 180, createdAt: "2026-10-27T12:00:00Z", expiresAt: "2026-11-03T12:00:00Z", usedAt: null, usedBy: null };
 
 describe("invites", () => {
   it("normalizes what people type or paste", () => {
@@ -24,6 +24,7 @@ describe("invites", () => {
     expect(text).toContain("*6 meses* de licença gratuita");
     expect(text).toContain("https://habitushub.vercel.app/auth?modo=criar&convite=AB12CD34EF");
     expect(text).toContain("*AB12CD34EF*");
+    expect(text).toContain("Ajustes > Conta > Resgatar código");
     expect(text).toContain("Vale até 03/11/2026");
     expect(inviteMessage({ ...invite, days: null })).toContain("acesso *ilimitado* e gratuito");
   });
@@ -34,10 +35,16 @@ describe("invites", () => {
     expect(inviteStatus(invite, new Date("2026-11-04T00:00:00Z"))).toBe("expired");
   });
 
+  it("tells what a redeemed code gave", () => {
+    expect(redeemedMessage(30)).toBe("Código resgatado: 30 dias somados ao seu plano.");
+    expect(redeemedMessage(null)).toBe("Código resgatado: seu acesso agora é ilimitado.");
+  });
+
   it("parses rows and rejects damaged ones", () => {
     expect(parseInvite(row)).toEqual(invite);
     expect(parseInvite({ ...row, days: null })?.days).toBeNull();
     expect(parseInvite({ ...row, days: 0 })).toBeNull();
     expect(parseInvite({ ...row, code: 1 })).toBeNull();
+    expect(parseInvite({ ...row, used_by: "u1" })?.usedBy).toBe("u1");
   });
 });

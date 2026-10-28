@@ -229,6 +229,37 @@ as $$
   where code = upper(regexp_replace(invite_code, '[^A-Za-z0-9]', '', 'g')) and used_at is null and expires_at > now();
 $$;
 
+-- Resgate do código já com a conta criada (tela de planos ou Ajustes > Conta): marca o convite como usado por
+-- quem resgatou e soma os dias à validade, como um pagamento (de agora se ela já venceu); null = ilimitado.
+-- O "used_at is null" no update faz dois resgates ao mesmo tempo valerem uma vez só. Devolve {"days": n | null}.
+create or replace function public.redeem_invite(invite_code text)
+returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := auth.uid();
+  invite_days int;
+begin
+  if uid is null then
+    raise exception 'Entre na sua conta para resgatar o código.' using errcode = '42501';
+  end if;
+  update public.invites set used_by = uid, used_at = now()
+  where code = upper(regexp_replace(coalesce(invite_code, ''), '[^A-Za-z0-9]', '', 'g')) and used_at is null and expires_at > now()
+  returning days into invite_days;
+  if not found then
+    raise exception 'Código inválido, já usado ou vencido.' using errcode = '22023';
+  end if;
+  update public.profiles
+  set plan = 'paid',
+      unlimited = unlimited or invite_days is null,
+      access_until = case
+        when invite_days is null then access_until
+        else greatest(coalesce(access_until, now()), now()) + invite_days * interval '24 hours'
+      end
+  where id = uid;
+  return jsonb_build_object('days', invite_days);
+end;
+$$;
+
 -- Qualquer conta pode mudar o próprio nome (Ajustes > Conta).
 create or replace function public.update_my_name(new_name text)
 returns void language sql security definer set search_path = ''
@@ -243,7 +274,8 @@ begin
     'is_admin()', 'has_access()', 'require_admin()',
     'admin_set_access(uuid, timestamptz, boolean, text)', 'admin_set_role(uuid, text)',
     'admin_update_name(uuid, text)', 'admin_delete_user(uuid)',
-    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int)', 'admin_delete_invite(text)'
+    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int)', 'admin_delete_invite(text)',
+    'redeem_invite(text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);
