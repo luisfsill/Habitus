@@ -127,9 +127,9 @@ function Locked({ onRecheck, checking, onLeave, onRemove }: { onRecheck: () => v
   return (
     <View style={[styles.account, { borderColor: colors.separator }]}>
       <RedeemCode onRedeem={redeemInvite} onDone={onRecheck} />
-      <PrimaryButton variant="tinted" label="Já paguei, atualizar" onPress={onRecheck} loading={checking} />
-      <PrimaryButton variant="plain" label="Sair da conta" onPress={onLeave} />
-      <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={onRemove} />
+      <PrimaryButton variant="tinted" label="Já paguei, atualizar" icon={{ ios: "arrow.clockwise", android: "autorenew" }} onPress={onRecheck} loading={checking} />
+      <PrimaryButton variant="plain" label="Sair da conta" icon={{ ios: "rectangle.portrait.and.arrow.right", android: "logout" }} onPress={onLeave} />
+      <PrimaryButton variant="plain" destructive label="Excluir conta" icon={{ ios: "trash", android: "delete" }} onPress={onRemove} />
     </View>
   );
 }
