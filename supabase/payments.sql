@@ -322,15 +322,19 @@ begin
 end;
 $$;
 
--- Histórico, do mais novo ao mais antigo; "before" pagina pelo created_at da última linha recebida.
--- Nunca devolve o CPF.
-create or replace function public.admin_payments(st text, before timestamptz, max int)
+-- Histórico de um ambiente (sandbox ou production), do mais novo ao mais antigo; "before" pagina pelo
+-- created_at da última linha recebida. Nunca devolve o CPF.
+drop function if exists public.admin_payments(text, timestamptz, int);
+create or replace function public.admin_payments(st text, before timestamptz, max int, environment text)
 returns jsonb language plpgsql stable security definer set search_path = ''
 as $$
 begin
   perform public.require_admin();
   if st is null or st not in ('all', 'paid', 'pending', 'closed') then
     raise exception 'Filtro inválido.' using errcode = '22023';
+  end if;
+  if environment is null or environment not in ('sandbox', 'production') then
+    raise exception 'Ambiente inválido.' using errcode = '22023';
   end if;
   return coalesce((
     select jsonb_agg(jsonb_build_object(
@@ -342,7 +346,8 @@ begin
     ) order by x.created_at desc)
     from (
       select * from public.payments pay
-      where (admin_payments.before is null or pay.created_at < admin_payments.before)
+      where pay.env = environment
+        and (admin_payments.before is null or pay.created_at < admin_payments.before)
         and (st = 'all' or pay.status = st or (st = 'closed' and pay.status in ('expired', 'failed', 'canceled')))
       order by pay.created_at desc
       limit least(greatest(coalesce(admin_payments.max, 50), 1), 100)
@@ -353,8 +358,9 @@ begin
 end;
 $$;
 
--- Faturamento: só pagos de produção, por dia (30 dias, "AAAA-MM-DD") ou por mês (12 meses, "AAAA-MM"), no fuso de São Paulo.
-create or replace function public.admin_revenue(period text)
+-- Faturamento: só pagos do ambiente pedido, por dia (30 dias, "AAAA-MM-DD") ou por mês (12 meses, "AAAA-MM"), no fuso de São Paulo.
+drop function if exists public.admin_revenue(text);
+create or replace function public.admin_revenue(period text, environment text)
 returns jsonb language plpgsql stable security definer set search_path = ''
 as $$
 declare
@@ -372,12 +378,15 @@ begin
   else
     raise exception 'Período inválido.' using errcode = '22023';
   end if;
+  if environment is null or environment not in ('sandbox', 'production') then
+    raise exception 'Ambiente inválido.' using errcode = '22023';
+  end if;
   return coalesce((
     select jsonb_agg(jsonb_build_object('bucket', bucket, 'cents', cents, 'count', n) order by bucket)
     from (
       select to_char(paid_at at time zone 'America/Sao_Paulo', fmt) as bucket, sum(amount_cents)::int as cents, count(*)::int as n
       from public.payments
-      where status = 'paid' and env = 'production' and paid_at >= since
+      where status = 'paid' and env = environment and paid_at >= since
       group by 1
     ) t
   ), '[]'::jsonb);
@@ -405,7 +414,7 @@ begin
   foreach f in array array[
     'set_my_tax_id(text)', 'my_tax_id()', 'start_manual_payment(text)', 'my_payment_status(uuid)',
     'admin_set_config(text, text)', 'admin_confirm_payment(uuid)', 'admin_cancel_payment(uuid)',
-    'admin_payments(text, timestamptz, int)', 'admin_revenue(text)'
+    'admin_payments(text, timestamptz, int, text)', 'admin_revenue(text, text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);

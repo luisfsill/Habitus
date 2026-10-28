@@ -1,4 +1,4 @@
-import { type AdminPayment, type Checkout, parseAdminPayment, parseCheckout, parseConfig, parseRevenue, type PaymentConfig, type PaymentStatus, type RevenuePoint } from "@/domain/payments";
+import { type AdminPayment, type Checkout, type PagbankEnv, parseAdminPayment, parseCheckout, parseConfig, parseRevenue, type PaymentConfig, type PaymentStatus, type RevenuePoint } from "@/domain/payments";
 
 import { serviceError } from "./profile";
 import { requireSupabase } from "./supabase";
@@ -61,13 +61,18 @@ export async function saveTaxId(cpf: string): Promise<void> {
   await call("set_my_tax_id", { cpf });
 }
 
-export async function adminPayments(status: "all" | "paid" | "pending" | "closed", before: string | null, max: number): Promise<AdminPayment[]> {
-  const rows = await call("admin_payments", { st: status, before, max });
+export async function adminPayments(
+  status: "all" | "paid" | "pending" | "closed",
+  before: string | null,
+  max: number,
+  env: PagbankEnv,
+): Promise<AdminPayment[]> {
+  const rows = await call("admin_payments", { st: status, before, max, environment: env });
   return Array.isArray(rows) ? rows.map(parseAdminPayment).filter((p): p is AdminPayment => p !== null) : [];
 }
 
-export async function adminRevenue(period: "days" | "months"): Promise<RevenuePoint[]> {
-  return parseRevenue(await call("admin_revenue", { period }));
+export async function adminRevenue(period: "days" | "months", env: PagbankEnv): Promise<RevenuePoint[]> {
+  return parseRevenue(await call("admin_revenue", { period, environment: env }));
 }
 
 export async function confirmPayment(id: string): Promise<void> {

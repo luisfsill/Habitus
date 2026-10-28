@@ -8,6 +8,7 @@ declare
   valid_until timestamptz;
   base int;
   total int;
+  sandbox_base int;
   ok boolean;
   st text;
   code text;
@@ -23,7 +24,8 @@ begin
     perform set_config('request.jwt.claims', jsonb_build_object('sub', uid, 'role', 'authenticated')::text, true);
     update public.profiles set role = 'admin', unlimited = false, access_until = now() - interval '1 day' where id = uid;
     update public.app_config set value = 'sandbox' where key = 'pagbank_env';
-    select coalesce(sum((e ->> 'cents')::int), 0) into base from jsonb_array_elements(public.admin_revenue('days')) e;
+    select coalesce(sum((e ->> 'cents')::int), 0) into base from jsonb_array_elements(public.admin_revenue('days', 'production')) e;
+    select coalesce(sum((e ->> 'cents')::int), 0) into sandbox_base from jsonb_array_elements(public.admin_revenue('days', 'sandbox')) e;
 
     -- validade vencida: conta a partir de agora; o segundo aviso não soma de novo
     insert into public.payments (user_id, plan_id, amount_cents, days, method, env)
@@ -56,13 +58,15 @@ begin
     perform public.set_my_tax_id('529.982.247-25');
     if public.my_tax_id() is distinct from '52998224725' then raise exception 'my_tax_id esperava só os dígitos'; end if;
 
-    -- faturamento ignora sandbox
+    -- faturamento separa os ambientes
     insert into public.payments (user_id, plan_id, amount_cents, days, method, env, status, paid_at)
     values (uid, 'monthly', 111, 30, 'manual', 'sandbox', 'paid', now()),
            (uid, 'monthly', 222, 30, 'manual', 'production', 'paid', now());
-    select coalesce(sum((e ->> 'cents')::int), 0) into total from jsonb_array_elements(public.admin_revenue('days')) e;
+    select coalesce(sum((e ->> 'cents')::int), 0) into total from jsonb_array_elements(public.admin_revenue('days', 'production')) e;
     if total - base <> 222 then raise exception 'admin_revenue days esperava +222, obteve +%', total - base; end if;
-    select coalesce(sum((e ->> 'cents')::int), 0) into total from jsonb_array_elements(public.admin_revenue('months')) e;
+    select coalesce(sum((e ->> 'cents')::int), 0) into total from jsonb_array_elements(public.admin_revenue('days', 'sandbox')) e;
+    if total - sandbox_base <> 111 + 990 + 990 then raise exception 'admin_revenue sandbox esperava +2091, obteve +%', total - sandbox_base; end if;
+    select coalesce(sum((e ->> 'cents')::int), 0) into total from jsonb_array_elements(public.admin_revenue('months', 'production')) e;
     if total < 222 then raise exception 'admin_revenue months não contou o pagamento de hoje'; end if;
 
     -- automático pendente expira depois de 30 min; um recente continua pendente
@@ -89,9 +93,12 @@ begin
     -- pedido manual: código HAB sem 0/O/1/I e sempre production; o histórico do admin não leva o CPF nem o QR
     code := public.start_manual_payment('monthly');
     if code !~ '^HAB[A-HJ-NP-Z2-9]{6}$' then raise exception 'código do pedido fora do formato: %', code; end if;
-    select e into item from jsonb_array_elements(public.admin_payments('pending', null, 100)) e where e ->> 'order_code' = code;
+    select e into item from jsonb_array_elements(public.admin_payments('pending', null, 100, 'production')) e where e ->> 'order_code' = code;
     if item is null or item ->> 'plan_name' is null or item ->> 'env' <> 'production' or item ? 'tax_id' or item ? 'qr_text' then
       raise exception 'admin_payments devolveu %', item;
+    end if;
+    if exists (select 1 from jsonb_array_elements(public.admin_payments('all', null, 100, 'sandbox')) e where e ->> 'env' <> 'sandbox') then
+      raise exception 'admin_payments sandbox devolveu linha de produção';
     end if;
 
     -- Só service_role executa estas funções: nem anon nem authenticated.

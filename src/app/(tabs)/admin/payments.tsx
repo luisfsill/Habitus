@@ -12,7 +12,7 @@ import { Section } from "@/components/section";
 import { SegmentedTabs } from "@/components/segmented-tabs";
 import { StatColumns } from "@/components/stat-columns";
 import { formatPrice } from "@/domain/access";
-import { type AdminPayment, type PaymentConfig, paymentSummary, revenueBars, type RevenuePoint } from "@/domain/payments";
+import { type AdminPayment, type PagbankEnv, type PaymentConfig, paymentSummary, revenueBars, type RevenuePoint } from "@/domain/payments";
 import { adminPayments, adminRevenue, cancelPayment, confirmPayment, getPaymentConfig, recheckPayment, setPaymentConfig } from "@/services/payments";
 import { confirm } from "@/state/use-sign-out";
 import { space } from "@/theme";
@@ -42,14 +42,17 @@ function ErrorLine({ text }: { text: string | null }) {
 }
 
 /** Manual or automatic Pix and the PagBank environment; each tap saves at once. */
-function MethodSection({ version }: { version: number }) {
-  const [config, setConfig] = useState<PaymentConfig | null>(null);
+function MethodSection({
+  config,
+  setConfig,
+  loadError,
+}: {
+  config: PaymentConfig | null;
+  setConfig: (c: PaymentConfig | null) => void;
+  loadError: string | null;
+}) {
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null);
-  useEffect(() => {
-    getPaymentConfig()
-      .then(setConfig)
-      .catch((e: Error) => setNote({ text: e.message, error: true }));
-  }, [version]);
+  const shown = note ?? (loadError ? { text: loadError, error: true } : null);
 
   const save = async (key: "payment_mode" | "pagbank_env", next: PaymentConfig) => {
     const previous = config;
@@ -74,9 +77,9 @@ function MethodSection({ version }: { version: number }) {
             onEnv={(env) => void save("pagbank_env", { ...config, env })}
           />
         )}
-        {note && (
-          <AppText variant="footnote" color={note.error ? "danger" : "secondaryLabel"} accessibilityLiveRegion="polite">
-            {note.text}
+        {shown && (
+          <AppText variant="footnote" color={shown.error ? "danger" : "secondaryLabel"} accessibilityLiveRegion="polite">
+            {shown.text}
           </AppText>
         )}
       </View>
@@ -84,8 +87,8 @@ function MethodSection({ version }: { version: number }) {
   );
 }
 
-/** Period summary and revenue chart; both come from the server (confirmed production payments only). */
-function RevenueSection({ version }: { version: number }) {
+/** Period summary and revenue chart of one environment; both come from the server (confirmed payments only). */
+function RevenueSection({ version, env }: { version: number; env: PagbankEnv }) {
   const { width } = useWindowDimensions();
   const [period, setPeriod] = useState<Period>("days");
   const [points, setPoints] = useState<RevenuePoint[]>([]);
@@ -93,16 +96,16 @@ function RevenueSection({ version }: { version: number }) {
   const [pending, setPending] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    adminRevenue(period)
+    adminRevenue(period, env)
       .then((pts) => {
         setPoints(pts);
         setSelected(period === "days" ? 29 : 11);
       })
       .catch((e: Error) => setError(e.message));
-    adminPayments("pending", null, PENDING_MAX)
+    adminPayments("pending", null, PENDING_MAX, env)
       .then((rows) => setPending(rows.length))
       .catch((e: Error) => setError(e.message));
-  }, [period, version]);
+  }, [period, version, env]);
 
   const summary = paymentSummary(points);
   const pendingText = pending === null ? "—" : pending >= PENDING_MAX ? `${PENDING_MAX}+` : String(pending);
@@ -121,7 +124,7 @@ function RevenueSection({ version }: { version: number }) {
         />
         <RevenueChart bars={revenueBars(points, period, new Date())} selected={selected} onSelect={setSelected} />
         <AppText variant="footnote" color="secondaryLabel">
-          Só pagamentos confirmados em Produção; os de Teste não contam.
+          {env === "production" ? "Só pagamentos confirmados em Produção." : "Só pagamentos confirmados em Teste; não é dinheiro de verdade."}
         </AppText>
         <ErrorLine text={error} />
       </View>
@@ -166,8 +169,8 @@ function PaymentItem({ payment: p, onChanged }: { payment: AdminPayment; onChang
   );
 }
 
-/** Every payment, newest first, 50 at a time. */
-function HistorySection({ version, onChanged }: { version: number; onChanged: () => void }) {
+/** Every payment of one environment, newest first, 50 at a time. */
+function HistorySection({ version, env, onChanged }: { version: number; env: PagbankEnv; onChanged: () => void }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [list, setList] = useState<AdminPayment[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -175,19 +178,19 @@ function HistorySection({ version, onChanged }: { version: number; onChanged: ()
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    adminPayments(filter, null, PAGE)
+    adminPayments(filter, null, PAGE, env)
       .then((rows) => {
         setList(rows);
         setMore(rows.length === PAGE);
         setError(null);
       })
       .catch((e: Error) => setError(e.message));
-  }, [filter, version]);
+  }, [filter, version, env]);
 
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const rows = await adminPayments(filter, list.at(-1)?.createdAt ?? null, PAGE);
+      const rows = await adminPayments(filter, list.at(-1)?.createdAt ?? null, PAGE, env);
       setList((l) => [...l, ...rows]);
       setMore(rows.length === PAGE);
     } catch (e) {
@@ -221,11 +224,18 @@ export default function AdminPaymentsScreen() {
   // Bumped after an action: every section reloads.
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const [config, setConfig] = useState<PaymentConfig | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  useEffect(() => {
+    getPaymentConfig()
+      .then(setConfig)
+      .catch((e: Error) => setLoadError(e.message));
+  }, [version]);
   return (
     <Screen title="Pagamentos" subtitle="Como os membros pagam e o que já entrou" underHeader>
-      <MethodSection version={version} />
-      <RevenueSection version={version} />
-      <HistorySection version={version} onChanged={reload} />
+      <MethodSection config={config} setConfig={setConfig} loadError={loadError} />
+      {config && <RevenueSection version={version} env={config.env} />}
+      {config && <HistorySection version={version} env={config.env} onChanged={reload} />}
     </Screen>
   );
 }

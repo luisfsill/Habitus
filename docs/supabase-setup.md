@@ -184,7 +184,7 @@ Só é preciso para o modo **Automático** de **Admin > Pagamentos**. O modo **M
    3. Simule o pagamento do pedido (`ORDE_...`) como a documentação de sandbox do PagBank indicar. Em até 10 s depois do aviso, a tela mostra "Pagamento confirmado" e a conta ganha os dias do plano.
    4. Se o aviso não chegar, toque em **Consultar no PagBank** no detalhe do pagamento. Os motivos de cada aviso ignorado ficam em **Edge Functions → pagbank-webhook → Logs**.
    5. Para conferir a queda para o manual, apague `PAGBANK_TOKEN_SANDBOX` e toque em **Assinar** de novo: deve aparecer o Pix manual com o aviso. Depois, crie o segredo de novo.
-5. **Produção.** Com o sandbox funcionando, troque para **Ambiente do PagBank: Produção**. Faça uma compra real de valor baixo para conferir. Os pagamentos de teste continuam no histórico com a etiqueta "Teste" e nunca entram no faturamento.
+5. **Produção.** Com o sandbox funcionando, troque para **Ambiente do PagBank: Produção**. Faça uma compra real de valor baixo para conferir. Teste e Produção têm histórico e faturamento separados: os pagamentos de teste só aparecem com o ambiente Teste escolhido.
 
 Se algo der errado, volte para **Manual** em **Admin > Pagamentos**: o app passa a usar o Pix estático na hora.
 
