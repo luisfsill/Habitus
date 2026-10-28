@@ -63,8 +63,6 @@ export default function AccountScreen() {
         )}
       </View>
       <View>
-        <ActionRow label="Ver planos" icon={{ ios: "creditcard", android: "credit_card" }} navigates onPress={() => router.push("/renovar")} />
-        <Divider />
         <ActionRow label="Resetar dados" icon={{ ios: "arrow.counterclockwise", android: "restart_alt" }} destructive onPress={resetData} />
         <Divider />
         <ActionRow label="Excluir conta" icon={{ ios: "trash", android: "delete" }} destructive onPress={remove} />
