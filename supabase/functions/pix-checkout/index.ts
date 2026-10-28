@@ -3,7 +3,7 @@
 // Respostas: { mode: "manual" | "needs_cpf" | "fallback" } ou { mode: "automatic", paymentId, qrText, expiresAt }.
 // Nunca devolve a resposta do PagBank nem o CPF.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { createPixOrder } from "../_shared/pagbank.ts";
+import { createPixOrder, saoPauloTime } from "../_shared/pagbank.ts";
 
 const QR_MINUTES = 30;
 const MAX_PER_HOUR = 5;
@@ -65,13 +65,15 @@ Deno.serve(async (req) => {
     const { data: profile } = await db.from("profiles").select("name, email").eq("id", uid).single();
     if (!row || !plan || !profile) throw new Error("dados do pagamento incompletos");
 
-    const expiresAt = new Date(Date.now() + QR_MINUTES * 60_000).toISOString().replace(/\.\d{3}Z$/, "Z");
+    // Ao PagBank vai o horário de São Paulo; ao app e ao banco, ISO em UTC.
+    const expires = new Date(Date.now() + QR_MINUTES * 60_000);
+    const expiresAt = expires.toISOString();
     const { orderId, qrText } = await createPixOrder({
       env: row.env,
       referenceId: pid,
       customer: { name: profile.name || profile.email, email: profile.email, taxId },
       item: { name: `Habitus ${plan.name}`, cents: row.amount_cents },
-      expiresAt,
+      expiresAt: saoPauloTime(expires),
       notificationUrl: `${url}/functions/v1/pagbank-webhook`,
     });
     const { error: attachError } = await db.rpc("attach_pagbank_order", { pid, order_id: orderId, qr: qrText, expires: expiresAt });

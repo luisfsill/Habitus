@@ -2,7 +2,9 @@
 // Roda no Supabase (Deno), publicada com --no-verify-jwt: o PagBank chama sem login.
 // O corpo serve só para achar o pagamento (reference_id ou id do pedido). Quem decide se foi pago é o pedido
 // reconsultado no PagBank com o token do ambiente da própria linha; o corpo nunca libera nada.
-// Sempre responde 200, para o PagBank não ficar repetindo; o motivo de ignorar vai para o log.
+// Responde 200 quando ignora o aviso (corpo ruim, sem pagamento, pedido não pago), para o PagBank não repetir;
+// o motivo vai para o log. Com o pagamento achado, falha ao consultar o PagBank ou ao liberar responde 500,
+// para o PagBank tentar de novo (grant_payment não paga duas vezes).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getOrder, isPaidOrder } from "../_shared/pagbank.ts";
 
@@ -14,8 +16,13 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function reply(body: unknown): Response {
-  return new Response(JSON.stringify(body), { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+function reply(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
+}
+
+function retry(reason: string): Response {
+  console.error("pagbank-webhook tentar de novo:", reason);
+  return reply({ paid: false }, 500);
 }
 
 function ignore(reason: string): Response {
@@ -43,12 +50,17 @@ Deno.serve(async (req) => {
     if (!row.pagbank_order_id) return ignore(`pagamento ${pid} sem pedido no PagBank`);
 
     // Pedido, ambiente e valor vêm da linha: um sandbox pago nunca é consultado com o token de produção, e vice-versa.
-    const order = await getOrder(row.env, row.pagbank_order_id);
+    let order: unknown;
+    try {
+      order = await getOrder(row.env, row.pagbank_order_id);
+    } catch (e) {
+      return retry(`consulta de ${pid}: ${e instanceof Error ? e.message : "erro"}`);
+    }
     if (!isPaidOrder(order, { orderId: row.pagbank_order_id, referenceId: row.id, cents: row.amount_cents })) {
       return ignore(`pedido de ${pid} ainda não pago`);
     }
     const { error } = await db.rpc("grant_payment", { pid });
-    if (error) return ignore(`grant_payment falhou para ${pid}`);
+    if (error) return retry(`grant_payment falhou para ${pid}`);
     console.log("pagbank-webhook liberado:", pid);
     return reply({ paid: true });
   } catch (e) {

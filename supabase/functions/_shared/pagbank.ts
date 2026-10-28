@@ -26,8 +26,17 @@ async function call(env: string, path: string, body?: unknown): Promise<unknown>
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   // Só o código vai para o log: a resposta pode trazer dados da pessoa.
-  if (!res.ok) throw new Error(`PagBank respondeu ${res.status} (${body === undefined ? "GET" : "POST"} /orders)`);
-  return await res.json();
+  const what = `PagBank respondeu ${res.status} (${body === undefined ? "GET" : "POST"} /orders)`;
+  if (!res.ok) throw new Error(what);
+  // O erro de parse do JSON cita trechos do corpo: troca por uma mensagem só com o código.
+  return await res.json().catch(() => {
+    throw new Error(`${what} sem JSON`);
+  });
+}
+
+/** Horário de São Paulo com offset, como nos exemplos do PagBank (2026-10-28T12:30:00-03:00). Sem horário de verão desde 2019. */
+export function saoPauloTime(date: Date): string {
+  return new Date(date.getTime() - 3 * 3_600_000).toISOString().slice(0, 19) + "-03:00";
 }
 
 /** O "copia e cola": formato atual (charges[].qr_code) ou o depreciado (qr_codes[]). */
