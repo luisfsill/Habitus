@@ -142,8 +142,8 @@ export function InstallStepsSheet({ kind, onClose, showToolbarHint }: Props) {
         <AppText variant="title2" align="center" accessibilityRole="header">
           {title}
         </AppText>
-        {/* Leaves room for the text and buttons on short screens (iPhone SE). */}
-        <InstallPhone bar={bar} scene={scene} height={Math.max(200, Math.min(300, height - 420))} onPress={() => go(last ? 0 : step + 1)} />
+        {/* As big as the screen allows, so the drawing's text is readable; leaves room for the text and buttons (iPhone SE). */}
+        <InstallPhone bar={bar} scene={scene} height={Math.max(200, Math.min(460, height - 360 - (showToolbarHint ? 80 : 0) - (kind === "inapp" ? 70 : 0)))} onPress={() => go(last ? 0 : step + 1)} />
         <Animated.View key={step} entering={FadeIn.duration(250)} style={styles.caption} accessibilityLiveRegion="polite">
           <AppText variant="footnote" color="secondaryLabel" align="center">
             Passo {step + 1} de {scenes.length}

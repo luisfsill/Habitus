@@ -8,6 +8,8 @@ import { SafariAdd, SafariBar, SafariShare } from "./install-safari";
 import type { Bar, Overlay, Scene } from "./install-scenes";
 
 const DIM = "rgba(0,0,0,0.3)";
+/** Height the drawing's sizes are tuned for; other heights scale the whole drawing, so text grows with the phone. */
+const BASE = 300;
 
 /** Chrome's or an in-app browser's top bar, with the menu button at the right. */
 function TopBar({ bar, hot, colors }: { bar: Bar; hot: boolean; colors: Palette }) {
@@ -111,26 +113,32 @@ export function InstallPhone({ bar: kindBar, scene, height, onPress }: Props) {
   const bar = scene.bar ?? kindBar;
   const dims = scene.overlay && scene.overlay.kind !== "add" && scene.overlay.kind !== "home";
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Mostrar o próximo passo" style={[styles.phone, { height, width: height * 0.57 }]}>
-      <View style={[styles.screen, { backgroundColor: colors.background }]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-        <View style={styles.status}>
-          <T bold color={colors.label}>
-            9:41
-          </T>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Mostrar o próximo passo" style={[styles.frame, { height, width: height * 0.57 }]}>
+      <View
+        style={[styles.phone, { height: BASE, width: BASE * 0.57, transform: [{ scale: height / BASE }] }]}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden>
+        <View style={[styles.screen, { backgroundColor: colors.background }]}>
+          <View style={styles.status}>
+            <T bold color={colors.label}>
+              9:41
+            </T>
+          </View>
+          <View style={styles.island} />
+          {bar !== "safari" && <TopBar bar={bar} hot={scene.hot === "more"} colors={colors} />}
+          <Page hot={scene.hot === "install"} colors={colors} />
+          {bar === "safari" && <SafariBar hot={scene.hot === "more"} colors={colors} />}
+          {dims && <Animated.View entering={FadeIn} style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />}
+          {scene.overlay && <OverlayView overlay={scene.overlay} bar={bar} colors={colors} />}
         </View>
-        <View style={styles.island} />
-        {bar !== "safari" && <TopBar bar={bar} hot={scene.hot === "more"} colors={colors} />}
-        <Page hot={scene.hot === "install"} colors={colors} />
-        {bar === "safari" && <SafariBar hot={scene.hot === "more"} colors={colors} />}
-        {dims && <Animated.View entering={FadeIn} style={[StyleSheet.absoluteFill, { backgroundColor: DIM }]} />}
-        {scene.overlay && <OverlayView overlay={scene.overlay} bar={bar} colors={colors} />}
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  phone: { alignSelf: "center", padding: 6, borderRadius: 32, backgroundColor: "#111114" },
+  frame: { alignSelf: "center", alignItems: "center", justifyContent: "center" },
+  phone: { padding: 6, borderRadius: 32, backgroundColor: "#111114" },
   screen: { flex: 1, borderRadius: 26, overflow: "hidden" },
   status: { height: 22, justifyContent: "center", paddingLeft: 18 },
   island: { position: "absolute", top: 6, alignSelf: "center", width: 44, height: 12, borderRadius: 6, backgroundColor: "#000" },

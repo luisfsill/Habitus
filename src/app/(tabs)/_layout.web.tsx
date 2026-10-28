@@ -4,7 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Icon } from "@/components/icon";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
 import { useIncomingCount } from "@/state/use-friends";
-import { playSplash, settleWater, stirWater } from "@/services/sound";
+import { playSplash, settleWater, stirWater } from "@/services/water-sound";
 import { MAX_WIDTH, pinned, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
