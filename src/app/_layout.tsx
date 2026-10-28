@@ -9,6 +9,7 @@ import { InstallGate } from "@/components/install-gate";
 import { DesktopLanding } from "@/components/landing-modal";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DesktopFrame } from "@/components/desktop-frame";
 import { RewardToast } from "@/components/reward-toast";
 import { useStackHeader } from "@/components/stack-header";
@@ -20,6 +21,7 @@ import { framedOnDesktop, inDesktopFrame, leaveLoginModal, mirrorToWindow } from
 import { TransitionProvider, useCurtainHold } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
+import { useConfirmHost } from "@/state/use-sign-out";
 import { WebSafeAreaInsets } from "@/state/web-safe-area";
 import { type Palette, palettes, stackBackdrop, ThemePreferenceContext, useTheme } from "@/theme";
 
@@ -209,7 +211,26 @@ function RootStack() {
       </Stack>
       {celebration !== null && <Celebration key={celebration} trick={celebration} onDone={dismissCelebration} />}
       {reward && <RewardToast reward={reward} onHide={dismissReward} />}
+      {Platform.OS === "web" && <WebConfirm />}
     </ThemeProvider>
+  );
+}
+
+/** Hosts the destructive confirmations asked with `confirm` on the web. */
+function WebConfirm() {
+  const [ask, close] = useConfirmHost();
+  if (!ask) return null;
+  return (
+    <ConfirmDialog
+      title={ask.title}
+      message={ask.message}
+      action={ask.action}
+      onCancel={close}
+      onConfirm={() => {
+        close();
+        ask.onConfirm();
+      }}
+    />
   );
 }
 
