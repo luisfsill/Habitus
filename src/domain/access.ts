@@ -34,6 +34,8 @@ export interface Plan {
 export type AccessStatus = "admin" | "unlimited" | "expired" | "trial" | "active";
 
 export const OWNER_WHATSAPP = "5537999216351";
+/** Where Pix payments for the plans go; the name and city are what the payer's bank shows. */
+export const OWNER_PIX = { key: "habitushub@gmail.com", name: "Luis Felipe S Vieira", city: "Piumhi" } as const;
 const DAY_MS = 86_400_000;
 
 export function hasAccess(p: Profile, now: Date): boolean {
@@ -90,8 +92,9 @@ export function matchesSearch(p: Profile, query: string): boolean {
   return !q || normalizeSearch(p.name).includes(q) || normalizeSearch(p.email).includes(q);
 }
 
-export function renewWhatsAppUrl(name: string, email: string, planName: string): string {
-  const text = `Olá! Sou ${name} (${email}) e quero renovar meu Habitus no plano ${planName}.`;
+/** The WhatsApp message after a Pix payment: who paid, which plan and the order code, to send the receipt with. */
+export function renewWhatsAppUrl(name: string, email: string, plan: Pick<Plan, "name" | "priceCents">, order: string): string {
+  const text = `Olá! Sou ${name} (${email}). Paguei o Habitus no plano ${plan.name} (${formatPrice(plan.priceCents)}) pelo Pix, pedido ${order}. Segue o comprovante.`;
   return `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(text)}`;
 }
 

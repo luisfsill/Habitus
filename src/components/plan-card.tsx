@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { formatPrice, type Plan } from "@/domain/access";
-import { HIT, radius, space, useTheme } from "@/theme";
+import { radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 
@@ -9,22 +9,34 @@ interface Props {
   plan: Plan;
   selected: boolean;
   onSelect: () => void;
+  /** 0…1 saved per month against the shortest plan; shown as "economize N%" when worth saying. */
+  saving?: number;
 }
 
-/** One plan to pick on the renewal screen; the highlighted one says "Mais vantajoso". */
-export function PlanCard({ plan, selected, onSelect }: Props) {
+/** One plan to pick: a large tile with name, length and price; the chosen one gets an accent border. */
+export function PlanCard({ plan, selected, onSelect, saving = 0 }: Props) {
   const { colors } = useTheme();
-  const perMonth = plan.days >= 60 ? ` · ${formatPrice(Math.round((plan.priceCents * 30) / plan.days))}/mês` : "";
+  const perMonth = plan.days >= 60 ? `${formatPrice(Math.round((plan.priceCents * 30) / plan.days))}/mês` : "";
+  const save = saving >= 0.05 ? `economize ${Math.round(saving * 100)}%` : "";
+  const detail = [`${plan.days} dias`, perMonth, save].filter(Boolean).join(" · ");
   return (
-    <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onSelect} style={styles.row}>
-      <View style={[styles.radio, { borderColor: selected ? colors.accent : colors.secondaryLabel }]}>
-        {selected && <View style={[styles.dot, { backgroundColor: colors.accent }]} />}
-      </View>
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={`${plan.name}, ${formatPrice(plan.priceCents)}, ${detail}${plan.highlight ? ", mais vantajoso" : ""}`}
+      onPress={onSelect}
+      style={({ pressed }) => [
+        styles.tile,
+        selected
+          ? { borderWidth: 2, borderColor: colors.accent, backgroundColor: colors.accentSoft }
+          : { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.separator },
+        { opacity: pressed ? 0.7 : 1 },
+      ]}>
       <View style={styles.flex}>
         <View style={styles.titleRow}>
           <AppText variant="headline">{plan.name}</AppText>
           {plan.highlight && (
-            <View style={[styles.badge, { backgroundColor: colors.accent }]}>
+            <View style={[styles.badge, { backgroundColor: colors.success }]}>
               <AppText variant="caption" style={styles.badgeText}>
                 Mais vantajoso
               </AppText>
@@ -32,10 +44,10 @@ export function PlanCard({ plan, selected, onSelect }: Props) {
           )}
         </View>
         <AppText variant="footnote" color="secondaryLabel">
-          {plan.days} dias{perMonth}
+          {detail}
         </AppText>
       </View>
-      <AppText variant="title2" color={selected ? "accentText" : "label"}>
+      <AppText variant="title2" color={selected ? "accentText" : "label"} style={styles.price}>
         {formatPrice(plan.priceCents)}
       </AppText>
     </Pressable>
@@ -43,11 +55,10 @@ export function PlanCard({ plan, selected, onSelect }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: HIT, paddingVertical: space.sm },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  tile: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 64, paddingHorizontal: space.lg, paddingVertical: space.md, borderRadius: radius.lg },
   flex: { flex: 1, gap: 2 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" },
   badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
-  badgeText: { color: "#FFFFFF", fontWeight: "700" },
+  badgeText: { color: "#04342C", fontWeight: "700" },
+  price: { fontVariant: ["tabular-nums"] },
 });

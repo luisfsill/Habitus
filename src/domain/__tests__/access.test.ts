@@ -97,10 +97,12 @@ describe("names and search", () => {
 });
 
 describe("renewWhatsAppUrl", () => {
-  it("opens the owner's WhatsApp with the account in the message", () => {
-    const url = renewWhatsAppUrl("Maria", "maria@x.com", "Anual");
+  it("opens the owner's WhatsApp with the account, plan and order code in the message", () => {
+    const url = renewWhatsAppUrl("Maria", "maria@x.com", { name: "Anual", priceCents: 7990 }, "HABK7Q2ZP");
     expect(url.startsWith("https://wa.me/5537999216351?text=")).toBe(true);
-    expect(decodeURIComponent(url.split("text=")[1])).toBe("Olá! Sou Maria (maria@x.com) e quero renovar meu Habitus no plano Anual.");
+    expect(decodeURIComponent(url.split("text=")[1])).toBe(
+      "Olá! Sou Maria (maria@x.com). Paguei o Habitus no plano Anual (R$ 79,90) pelo Pix, pedido HABK7Q2ZP. Segue o comprovante.",
+    );
   });
 });
 

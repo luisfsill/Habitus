@@ -51,7 +51,7 @@ Ao entrar (login, código confirmado ou nova senha) e ao sair, uma cortina cobre
 
 O botão de conta (`AccountMenu`: bonequinho num círculo de vidro dentro de um anel que enche com as dicas do dia, nome e e-mail; no celular só o avatar). Cada toque passa um reflexo de luz pelo vidro e acende a borda; o menu entra deslizando pela direita e sai pelo mesmo lado. O botão é o mesmo na barra do admin e no topo de todas as abas (`TabAccount`), à direita do título. Todo item do menu tem ícone. O botão e o menu (largura ajustada ao conteúdo, até 280 pt) usam o mesmo fundo do app (`backdrops`), sem borda azul.
 
-- Hoje: interruptor **Claro/Escuro** (`ThemeToggle`, porte para Reanimated do "cinematic theme switcher" do shadcn, com cerca de metade do tamanho original (56 × 32 pt): trilho em baixo-relevo com gradiente e sombras internas, bolinha que desliza com mola e solta um brilho ao trocar, sol e lua; grava `settings.theme`), **Renovar plano** (`/renovar`), **Termos e Privacidade** e **Sair**.
+- Hoje: interruptor **Claro/Escuro** (`ThemeToggle`, porte para Reanimated do "cinematic theme switcher" do shadcn, com cerca de metade do tamanho original (56 × 32 pt): trilho em baixo-relevo com gradiente e sombras internas, bolinha que desliza com mola e solta um brilho ao trocar, sol e lua; grava `settings.theme`), **Renovar plano** (`/renovar`) e **Sair** (Termos e Privacidade fica em Ajustes).
 - Admin: Voltar para o app, Meu perfil, Planos e preços, Termos e Privacidade e Sair, com a etiqueta ADMINISTRADOR.
 - Admin em tela estreita (celular, moldura do computador): sem a barra larga, o título "Admin" ganha em cima o link "‹ Hoje" (`Screen` com `back`) e, à direita, o mesmo avatar das abas (`TabAccount`), cujo menu troca "Área admin" por "Voltar para o app" enquanto se está em `/admin`.
 - Sair usa `useSignOut` nos dois lugares: pergunta antes de descartar mudanças não enviadas.
@@ -88,7 +88,7 @@ No computador, quem abre `/` sem estar logado vê `LandingPage` (`src/components
 
 ## Renovação de plano
 
-`/renovar` usa a `AuthShell` (céu noturno, como o login; o `body` também fica preto nessa rota). Título "Planos do Habitus" (com plano) ou "Seu teste grátis acabou"/"Seu plano acabou"; com plano, um botão redondo de voltar fica acima do título, não no rodapé. No cartão: os planos (`PlanCard`), "Renovar pelo WhatsApp" e, sem acesso, "Já paguei, atualizar". No rodapé só "Sair" e, sem acesso, "Excluir conta"; os links de termos e privacidade saíram (estão no menu da conta e na landing).
+`/renovar` é uma tela comum (`Screen`, sempre escura), com o conteúdo a partir do topo. Título "Planos" (com acesso, com "Voltar") ou "Seu teste grátis acabou"/"Seu plano acabou". Embaixo do título, entre linhas finas, o status ("Seu plano vale até 27 de novembro"). Depois os planos como opções grandes (`PlanCard`: o escolhido com borda azul; "Mais vantajoso" em verde; "economize N%" contra o plano mais curto) e três benefícios com tique. O botão fixo do rodapé diz "Assinar <plano> · <preço>" e abre o passo do Pix: QR Code (`PixQr`, BR Code estático de `src/domain/pix.ts` com a chave `OWNER_PIX`, o valor exato e um código de pedido `HABxxxxxx`), "Copiar Pix copia e cola" e os dois passos; o rodapé vira "Já paguei, enviar comprovante" (abre o WhatsApp com plano, valor e pedido) e "Trocar plano". A confirmação é manual: o dono confere o extrato e libera no Admin. Sem acesso, no fim da página: "Já paguei, atualizar", "Sair da conta" e "Excluir conta"; com acesso não há Sair.
 
 ## Tela de instalação (celular no navegador)
 

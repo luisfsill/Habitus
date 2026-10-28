@@ -1,48 +1,153 @@
+import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Alert, Linking, Platform, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
-import { AuthShell } from "@/components/auth-shell";
 import { Icon } from "@/components/icon";
+import { PixQr } from "@/components/pix-qr";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
-import { displayName, hasAccess as profileHasAccess, type Plan, renewWhatsAppUrl } from "@/domain/access";
+import { Screen } from "@/components/screen";
+import { accessStatus, displayName, formatPrice, hasAccess as profileHasAccess, OWNER_PIX, type Plan, type Profile, renewWhatsAppUrl } from "@/domain/access";
+import { orderCode, pixPayload } from "@/domain/pix";
 import { fetchPlans } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
-import { HIT, radius, space, ThemePreferenceContext } from "@/theme";
+import { space, ThemePreferenceContext, useTheme } from "@/theme";
 
-function confirm(message: string, onYes: () => void) {
+const BENEFITS = ["As 6 dicas com lembretes no seu horário", "Água, lembretes e histórico", "Amigos e ranking da semana"];
+const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+function ask(title: string, message: string, yes: string, onYes: () => void) {
   // Alert has no buttons on the web; the browser dialog stands in.
   if (Platform.OS === "web") {
     if (globalThis.confirm?.(message)) onYes();
     return;
   }
-  Alert.alert("Excluir conta", message, [
+  Alert.alert(title, message, [
     { text: "Cancelar", style: "cancel" },
-    { text: "Excluir", style: "destructive", onPress: onYes },
+    { text: yes, style: "destructive", onPress: onYes },
   ]);
 }
 
-function confirmLeave(onYes: () => void) {
-  const message = "Algumas mudanças ainda não foram enviadas e serão perdidas. Sair mesmo assim?";
-  if (Platform.OS === "web") {
-    if (globalThis.confirm?.(message)) onYes();
-    return;
+/** "Seu plano vale até 27 de novembro" and friends, for the line under the title. */
+function planStatus(p: Profile | null, now: Date): string {
+  if (!p) return "";
+  const until = p.accessUntil ? new Date(p.accessUntil) : null;
+  const day = until ? `${until.getDate()} de ${MONTHS[until.getMonth()]}` : "";
+  return {
+    admin: "Você é administrador: acesso sem prazo.",
+    unlimited: "Seu acesso é ilimitado.",
+    expired: day ? `${p.plan === "trial" ? "Seu teste grátis" : "Seu plano"} acabou em ${day}.` : "Seu acesso acabou.",
+    trial: `Teste grátis até ${day}.`,
+    active: `Seu plano vale até ${day}.`,
+  }[accessStatus(p, now)];
+}
+
+/** Monthly saving of each plan against the shortest one. */
+function savings(plans: readonly Plan[]): Record<string, number> {
+  const base = [...plans].sort((a, b) => a.days - b.days)[0];
+  if (!base) return {};
+  const perDay = base.priceCents / base.days;
+  return Object.fromEntries(plans.map((p) => [p.id, 1 - p.priceCents / p.days / perDay]));
+}
+
+/** The Pix step: QR, "copia e cola" and the order code, then the receipt goes over WhatsApp. */
+function PayWithPix({ plan, order, code }: { plan: Plan; order: string; code: string }) {
+  const { colors } = useTheme();
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await Clipboard.setStringAsync(code);
+    setCopied(true);
+  };
+  return (
+    <View style={styles.pay}>
+      <AppText variant="title2" align="center">
+        Pague com Pix
+      </AppText>
+      <AppText variant="subheadline" color="secondaryLabel" align="center">
+        {plan.name} · {formatPrice(plan.priceCents)}
+      </AppText>
+      <PixQr value={code} size={232} />
+      <PrimaryButton label={copied ? "Código copiado" : "Copiar Pix copia e cola"} variant="tinted" onPress={() => void copy()} />
+      <View style={[styles.steps, { borderColor: colors.separator }]}>
+        <AppText variant="subheadline">1. Abra o app do seu banco e pague pelo QR Code ou pelo código copiado.</AppText>
+        <AppText variant="subheadline">2. Toque em &quot;Já paguei&quot; e envie o comprovante pelo WhatsApp.</AppText>
+        <AppText variant="footnote" color="secondaryLabel">
+          Pedido {order}. O app é liberado assim que o pagamento for confirmado.
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+/** The plan tiles and what every plan includes. */
+function PlanPicker({ plans, selected, onSelect }: { plans: readonly Plan[]; selected: string | null; onSelect: (id: string) => void }) {
+  const { colors } = useTheme();
+  const saved = savings(plans);
+  return (
+    <>
+      <View style={styles.list}>
+        {plans.map((p) => (
+          <PlanCard key={p.id} plan={p} selected={p.id === selected} saving={saved[p.id]} onSelect={() => onSelect(p.id)} />
+        ))}
+      </View>
+      <View style={styles.list}>
+        {BENEFITS.map((b) => (
+          <View key={b} style={styles.benefit}>
+            <Icon ios="checkmark.circle.fill" android="check_circle" size={18} color={colors.success} />
+            <AppText variant="subheadline" style={styles.flex}>
+              {b}
+            </AppText>
+          </View>
+        ))}
+      </View>
+    </>
+  );
+}
+
+/** "Já paguei", "Sair da conta" and "Excluir conta": only once access has ended, when this is the only screen. */
+function Locked({ onRecheck, checking, onLeave, onRemove }: { onRecheck: () => void; checking: boolean; onLeave: () => void; onRemove: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.account, { borderColor: colors.separator }]}>
+      <PrimaryButton variant="tinted" label="Já paguei, atualizar" onPress={onRecheck} loading={checking} />
+      <PrimaryButton variant="plain" label="Sair da conta" onPress={onLeave} />
+      <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={onRemove} />
+    </View>
+  );
+}
+
+/** "Assinar <plano>", then, on the Pix step, "Já paguei, enviar comprovante" and "Trocar plano". */
+function RenewFooter({ plan, paying, onPay, onReceipt, onChange }: { plan?: Plan; paying: boolean; onPay: () => void; onReceipt: () => void; onChange: () => void }) {
+  if (paying) {
+    return (
+      <View style={styles.footer}>
+        <PrimaryButton label="Já paguei, enviar comprovante" icon={{ ios: "bubble.left.and.bubble.right", android: "chat" }} onPress={onReceipt} glow />
+        <PrimaryButton label="Trocar plano" variant="plain" onPress={onChange} />
+      </View>
+    );
   }
-  Alert.alert("Sair sem enviar?", message, [
-    { text: "Cancelar", style: "cancel" },
-    { text: "Sair", style: "destructive", onPress: onYes },
-  ]);
+  return (
+    <PrimaryButton
+      label={plan ? `Assinar ${plan.name} · ${formatPrice(plan.priceCents)}` : "Escolha um plano"}
+      icon={{ ios: "creditcard", android: "payments" }}
+      onPress={onPay}
+      disabled={!plan}
+      glow
+    />
+  );
 }
 
-/** "Seu plano acabou": the plans, renewal over WhatsApp, and a way out. */
+/** Plans and renewal by Pix. With access it sits on top of the app; once access ends it is the only screen. */
 function RenewScreen() {
+  const { colors } = useTheme();
   const { profile, hasAccess, refresh } = useAccess();
   const { signOut, deleteAccount } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [order, setOrder] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
@@ -63,12 +168,12 @@ function RenewScreen() {
 
   const plan = plans.find((p) => p.id === selected);
   const trial = profile?.plan === "trial";
-  const title = hasAccess ? "Planos do Habitus" : trial ? "Seu teste grátis acabou" : "Seu plano acabou";
-  const back = () => (router.canGoBack() ? router.back() : router.replace("/"));
+  const title = hasAccess ? "Planos" : trial ? "Seu teste grátis acabou" : "Seu plano acabou";
+  const pix = plan && order ? pixPayload({ ...OWNER_PIX, amountCents: plan.priceCents, txid: order }) : null;
 
-  const renew = () => {
-    if (!profile || !plan) return;
-    void Linking.openURL(renewWhatsAppUrl(displayName(profile), profile.email, plan.name));
+  const sendReceipt = () => {
+    if (!profile || !plan || !order) return;
+    void Linking.openURL(renewWhatsAppUrl(displayName(profile), profile.email, plan, order));
   };
 
   const recheck = async () => {
@@ -76,60 +181,41 @@ function RenewScreen() {
     const fresh = await refresh();
     setChecking(false);
     if (fresh === null) setMessage("Sem conexão. Tente de novo em instantes.");
-    else if (!profileHasAccess(fresh, new Date())) setMessage("Ainda não encontramos a renovação. Assim que for liberada, toque aqui de novo.");
+    else if (!profileHasAccess(fresh, new Date())) setMessage("Ainda não encontramos o pagamento. Assim que ele for confirmado, toque aqui de novo.");
   };
 
-  // With no plan the server refuses the upload anyway; with a plan, unsent changes need a warning.
-  const leave = async () => {
-    if ((await signOut({ force: !hasAccess })) === "unsynced") {
-      confirmLeave(() => void signOut({ force: true }));
-    }
-  };
+  // Without access the server refuses the upload anyway; unsent changes are lost either way.
+  const leave = () => void signOut({ force: true });
 
   const remove = () =>
-    confirm("Excluir sua conta e todo o seu progresso? Não dá para desfazer.", () =>
-      confirm("Tem certeza? A conta será excluída agora.", () => {
+    ask("Excluir conta", "Excluir sua conta e todo o seu progresso? Não dá para desfazer.", "Excluir", () =>
+      ask("Excluir conta", "Tem certeza? A conta será excluída agora.", "Excluir", () => {
         void deleteAccount().then((r) => setMessage(r.ok ? null : r.message));
       }),
     );
 
+  const footer = <RenewFooter plan={plan} paying={order !== null} onPay={() => setOrder(orderCode())} onReceipt={sendReceipt} onChange={() => setOrder(null)} />;
+
   return (
-    <AuthShell
-      title={
-        <>
-          {/* With a plan this screen sits on top of the app: a round back button, up where the thumb lands last. */}
-          {hasAccess && (
-            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Voltar" hitSlop={8} style={styles.back}>
-              <Icon ios="chevron.left" android="arrow_back" size={22} color="#FFFFFF" />
-            </Pressable>
-          )}
-          <AppText variant="largeTitle" style={styles.title}>
-            {title}
-          </AppText>
-        </>
-      }
-      subtitle={
-        <AppText variant="callout" color="secondaryLabel">
-          Escolha um plano e fale com a gente pelo WhatsApp. Assim que o pagamento for confirmado, o app é liberado.
+    <Screen title={title} back={hasAccess ? { label: "Voltar", onPress: () => (router.canGoBack() ? router.back() : router.replace("/")) } : undefined} footer={footer}>
+      <View style={[styles.status, { borderColor: colors.separator }]}>
+        <Icon ios="calendar" android="calendar_month" size={20} color={colors.accent} />
+        <AppText variant="subheadline" style={styles.flex}>
+          {planStatus(profile, new Date())}
         </AppText>
-      }
-      footer={
-        <View style={styles.links}>
-          <PrimaryButton variant="plain" label="Sair" onPress={() => void leave()} />
-          {!hasAccess && <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={remove} />}
-        </View>
-      }>
-      {plans.map((p) => (
-        <PlanCard key={p.id} plan={p} selected={p.id === selected} onSelect={() => setSelected(p.id)} />
-      ))}
-      <PrimaryButton label="Renovar pelo WhatsApp" onPress={renew} disabled={!plan} glow />
-      {!hasAccess && <PrimaryButton variant="tinted" label="Já paguei, atualizar" onPress={() => void recheck()} loading={checking} />}
+      </View>
+      {pix && plan && order ? (
+        <PayWithPix plan={plan} order={order} code={pix} />
+      ) : (
+        <PlanPicker plans={plans} selected={selected} onSelect={setSelected} />
+      )}
       {message && (
         <AppText variant="footnote" color="secondaryLabel" align="center" accessibilityLiveRegion="polite">
           {message}
         </AppText>
       )}
-    </AuthShell>
+      {!hasAccess && <Locked onRecheck={() => void recheck()} checking={checking} onLeave={leave} onRemove={remove} />}
+    </Screen>
   );
 }
 
@@ -142,17 +228,12 @@ export default function RenewRoute() {
 }
 
 const styles = StyleSheet.create({
-  title: { color: "#FFFFFF", fontWeight: "800" },
-  back: {
-    width: HIT,
-    height: HIT,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: space.sm,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  links: { gap: space.xs },
+  flex: { flex: 1 },
+  status: { flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
+  list: { gap: space.sm },
+  benefit: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  pay: { alignItems: "center", gap: space.md },
+  steps: { alignSelf: "stretch", gap: space.sm, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth },
+  footer: { gap: space.xs },
+  account: { gap: space.xs, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth },
 });
