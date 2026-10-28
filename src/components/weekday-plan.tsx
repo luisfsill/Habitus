@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   count: { flexDirection: "row", alignItems: "baseline", gap: space.sm },
   digits: { fontVariant: ["tabular-nums"] },
   presets: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  chip: { minHeight: 36, paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1, justifyContent: "center" },
+  chip: { minHeight: HIT, paddingHorizontal: space.md, borderRadius: radius.pill, borderWidth: 1, justifyContent: "center" },
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", gap: space.md },
   name: { flex: 1 },
 });

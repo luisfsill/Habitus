@@ -15,11 +15,19 @@ interface Props {
   label?: string;
 }
 
+/** The line under the field for a status; null when there is nothing to say. */
+function noteFor(status: UsernameStatus): string | null {
+  if (status === "idle") return null;
+  if (status === "checking") return "Verificando...";
+  if (status === "available") return "Disponível.";
+  return status === "taken" ? "Esse @ já está em uso." : status;
+}
+
 /** Text field with a fixed "@" on the left and the availability of the typed @ below. */
 export function UsernameField({ value, onChange, status, label }: Props) {
   const { colors } = useTheme();
   const ok = status === "available";
-  const note = status === "idle" ? null : status === "checking" ? "Verificando..." : ok ? "Disponível." : status === "taken" ? "Esse @ já está em uso." : status;
+  const note = noteFor(status);
   const error = note && !ok && status !== "checking";
   // Same glass as TextField, so both fields match side by side.
   const glass = { backgroundColor: colors.glass, borderColor: error ? colors.danger : colors.glassEdge, boxShadow: `inset 0 1px 0 ${colors.glassRim}` };
@@ -42,7 +50,7 @@ export function UsernameField({ value, onChange, status, label }: Props) {
           autoCapitalize="none"
           autoCorrect={false}
           maxLength={20}
-          accessibilityLabel="Seu @"
+          accessibilityLabel={label ?? "Seu @"}
           style={[type.body, styles.input, { color: colors.label }]}
         />
       </View>

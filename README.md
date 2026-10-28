@@ -96,7 +96,7 @@ Esse comando roda o ESLint rápido, o ESLint com tipos, o self-check das regras 
 ## Como testar as notificações
 
 1. Abra o app no aparelho (Expo Go ou development build), conclua o onboarding e **permita as notificações**.
-2. Vá em **Ajustes**:
+2. Vá em **Ajustes → Notificações**:
    - **Testar uma notificação agora**: dispara um lembrete da dica 2 em 3 segundos.
    - **Simular um dia em 5 minutos**: agenda a abertura em 10 s e as 6 dicas espalhadas pelos 5 minutos seguintes. Bloqueie a tela ou mande o app para segundo plano para ver os banners. O teste é somado ao horário normal, que continua agendado; reabrir o app não cancela nenhum dos dois.
    - **Ver notificações agendadas**: mostra quantas estão pendentes. Sem adiamentos nem testes, o número esperado é até 49 (7 por dia × 7 dias).

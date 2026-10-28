@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
@@ -46,12 +46,12 @@ export default function AccountScreen() {
           Se desligar, ninguém acha você e você também não pode buscar ninguém.
         </AppText>
         <Divider />
-        <View style={styles.row}>
+        <Pressable onPress={() => router.push("/settings/perfil")} accessibilityRole="link" accessibilityLabel="Apelido, editar" style={styles.row}>
           <AppText variant="body">Apelido</AppText>
           <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
             {profile?.username ? `@${profile.username}` : "Sem @"}
           </AppText>
-        </View>
+        </Pressable>
         {session?.user.email && <Divider />}
         {session?.user.email && (
           <View style={styles.row}>

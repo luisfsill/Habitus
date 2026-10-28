@@ -63,7 +63,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 2. Hoje: anel de progresso 0/6–6/6, linha do tempo, próxima dica com contagem regressiva.
 3. Dica: instrução, timer (2 e 4), afirmações (3), céu de gratidão (5), frase da noite (6), "Concluir".
 4. Histórico: sequência de dias, calendário mensal, percentual da semana.
-5. Ajustes: horários, hora de dormir, dias, afirmações, som, testes de notificação, água (ligar, meta, intervalo), aparência (auto/claro/escuro), conta (Termos, Política, sair, excluir conta), reset.
+5. Ajustes: uma lista no estilo do Instagram, cada item com a própria tela: Conta (editar perfil com nome e @, aparecer na busca, e-mail, resetar dados, excluir conta), Horário (começo, fim e hora de dormir, com a linha do tempo das 6 dicas), Dias da semana (resumo, atalhos e um dia por linha), Notificações (som e testes), Água (ligar, meta, intervalo), Afirmações e Aparência (auto/claro/escuro). Termos, Privacidade, Renovar plano e Sair ficam no menu da conta (foto no topo).
 6. Conquistas: nível, faixa, estatísticas, medalhas e regras de XP.
 7. Conta: criar conta (nome, e-mail, senha) ou entrar, código de 6 dígitos por e-mail, esqueci minha senha, aceite dos Termos de uso e da Política de privacidade. No celular a conta é criada depois de instalar.
 8. Acesso: 7 dias grátis no cadastro; depois, planos por tempo (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90). Vencido, só a tela "Seu plano acabou" com renovação pelo WhatsApp. Aviso nos 3 últimos dias do teste.

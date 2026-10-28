@@ -36,7 +36,8 @@ export default function EditProfileScreen() {
     try {
       if (nameChanged) await setName(name.trim());
       if (usernameChanged) await setUsername(username.value);
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace("/settings/conta");
     } catch (error) {
       setMessage((error as Error).message);
     } finally {

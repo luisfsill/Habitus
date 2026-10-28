@@ -177,13 +177,16 @@ export default function SettingsSectionScreen() {
   const { data, updateSettings } = useAppState();
   const [draft, setDraft] = useState(() => ({ ...data.settings }));
   const [status, setStatus] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   const change = async (patch: Partial<Settings>) => {
     // Validate the whole draft: an invalid start must not be merged with a saved end.
     const next = { ...draft, ...patch };
     setDraft(next);
     const result = await updateSettings(next);
-    setStatus(result.ok ? "Notificações reagendadas." : null);
+    // A rejected change (no days, start after end…) says why instead of silently keeping the old value.
+    setFailed(!result.ok);
+    setStatus(result.ok ? "Notificações reagendadas." : result.message);
   };
 
   const page = section in PAGES ? PAGES[section as keyof typeof PAGES] : null;
@@ -192,9 +195,16 @@ export default function SettingsSectionScreen() {
 
   return (
     <Screen title={title} underHeader>
-      <Page draft={draft} change={change} setStatus={setStatus} />
+      <Page
+        draft={draft}
+        change={change}
+        setStatus={(text) => {
+          setFailed(false);
+          setStatus(text);
+        }}
+      />
       {status && (
-        <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
+        <AppText variant="footnote" color={failed ? "danger" : "secondaryLabel"} accessibilityLiveRegion="polite">
           {status}
         </AppText>
       )}
