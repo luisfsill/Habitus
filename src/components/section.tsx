@@ -35,7 +35,8 @@ export function Section({ title, footer, accessory, plain, children }: Props) {
       </View>
       {plain ? <View>{rows}</View> : <Glass style={styles.list}>{rows}</Glass>}
       {footer && (
-        <AppText variant="footnote" color="secondaryLabel">
+        // Without a card, a hairline keeps the note apart from the controls above it.
+        <AppText variant="footnote" color="secondaryLabel" style={plain && [styles.note, line]}>
           {footer}
         </AppText>
       )}
@@ -51,4 +52,5 @@ const styles = StyleSheet.create({
   list: { marginHorizontal: -space.sm, paddingHorizontal: space.lg },
   row: { paddingVertical: space.md },
   divided: { borderTopWidth: StyleSheet.hairlineWidth },
+  note: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.md, marginTop: -space.sm },
 });

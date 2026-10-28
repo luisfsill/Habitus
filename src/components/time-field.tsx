@@ -6,12 +6,15 @@ import { formatTime, parseTime } from "@/domain/time";
 import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Icon } from "./icon";
 import { WheelTime } from "./wheel-time";
 
 interface Props {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  /** Leading icon, as in a settings list. */
+  icon?: { ios: string; android: string };
 }
 
 function toDate(value: string): Date {
@@ -26,7 +29,7 @@ function fromDate(date: Date): string {
 }
 
 /** A settings-style row: label on the left, native time picker on the right. */
-export function TimeField({ label, value, onChange }: Props) {
+export function TimeField({ label, value, onChange, icon }: Props) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const onPicked = (_event: unknown, date: Date) => onChange(fromDate(date));
@@ -74,6 +77,7 @@ export function TimeField({ label, value, onChange }: Props) {
   return (
     <View>
       <View style={styles.row}>
+        {icon && <Icon ios={icon.ios} android={icon.android} size={20} color={colors.accent} />}
         <AppText variant="body" style={styles.label}>
           {label}
         </AppText>

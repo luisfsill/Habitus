@@ -9,16 +9,18 @@ import { TimeField } from "./time-field";
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  icon?: { ios: string; android: string };
 }
 
 /** "Hora de dormir" row; rejects times that cannot be a bedtime. */
-export function BedtimeField({ value, onChange }: Props) {
+export function BedtimeField({ value, onChange, icon }: Props) {
   const [shown, setShown] = useState(value);
   const valid = parseBedtime(shown) !== null;
   return (
     <View>
       <TimeField
         label="Hora de dormir"
+        icon={icon}
         value={shown}
         onChange={(next) => {
           setShown(next);

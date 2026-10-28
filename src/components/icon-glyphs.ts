@@ -132,6 +132,7 @@ export const GLYPHS: Record<string, number> = {
   "water": 61572,
   "water_drop": 59288,
   "wb_sunny": 58416,
+  "wb_twilight": 57798,
   "web": 57425,
   "whatshot": 59406,
   "workspace_premium": 59311,

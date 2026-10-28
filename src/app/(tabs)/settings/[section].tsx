@@ -7,7 +7,7 @@ import { AffirmationsEditor } from "@/components/affirmations-editor";
 import { AppText } from "@/components/app-text";
 import { BedtimeField } from "@/components/bedtime-field";
 import { Icon } from "@/components/icon";
-import { SchedulePreview } from "@/components/schedule-preview";
+import { ScheduleTimeline } from "@/components/schedule-timeline";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
 import { Stepper } from "@/components/stepper";
@@ -23,14 +23,10 @@ import { pendingCount, scheduleTestRun, sendTestNotification } from "@/services/
 import { useAppState } from "@/state/app-state";
 import { HIT, useTheme } from "@/theme";
 
-function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
-  const when = formatTime(minutes);
-  const learned =
-    nights > 0
-      ? `Aprendido: ${when}, pelo horário em que você concluiu a dica nas últimas ${nights} noite${nights > 1 ? "s" : ""}.`
-      : `Hoje o lembrete chega às ${when}. O Habitus vai aprender seu horário real conforme você conclui a dica.`;
-  const early = missed > 0 ? " Como a dica ficou sem resposta recentemente, o aviso foi antecipado." : "";
-  return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
+/** One short line about where the bedtime comes from. */
+function bedtimeNote({ nights, missed }: BedtimeEstimate): string {
+  const learned = nights > 0 ? `A hora de dormir foi aprendida nas suas últimas ${nights} noite${nights > 1 ? "s" : ""}.` : "O Habitus aprende sua hora de dormir conforme você conclui a última dica.";
+  return missed > 0 ? `${learned} O aviso foi antecipado porque a dica ficou sem resposta.` : learned;
 }
 
 interface PageProps {
@@ -44,13 +40,13 @@ function Schedule({ draft, change }: PageProps) {
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
   return (
     <>
-      <Section plain title="Seu dia" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
-        <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
-        <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
-        <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
+      <Section plain title="Seu dia" footer={bedtimeNote(sleep)}>
+        <TimeField label="Começo do dia" icon={{ ios: "sunrise", android: "wb_sunny" }} value={draft.start} onChange={(start) => void change({ start })} />
+        <TimeField label="Fim do dia" icon={{ ios: "sunset", android: "wb_twilight" }} value={draft.end} onChange={(end) => void change({ end })} />
+        <BedtimeField icon={{ ios: "moon", android: "bedtime" }} value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
       </Section>
-      <Section plain title="Hora de dormir" footer={bedtimeFooter(sleep)}>
-        <BedtimeField value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
+      <Section plain title="Suas 6 dicas" footer="As 5 primeiras se espalham entre o começo e o fim do dia. A última chega na hora de dormir.">
+        <ScheduleTimeline start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
       </Section>
     </>
   );
