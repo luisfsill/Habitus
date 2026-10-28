@@ -303,7 +303,7 @@ as $$
 $$;
 
 -- Ranking global da semana (domingo a sábado de `today`, limitado a hoje UTC ± 1).
--- `me` é a linha de quem pede (null com 0 XP), mesmo fora do top 10 ou fora da busca.
+-- `me` é a linha de quem pede (null com 0 XP ou para admin, que não entra no ranking), mesmo fora do top 10 ou fora da busca.
 -- shortcut: calcula week_xp na hora para todo perfil elegível; com muitos usuários, materializar numa tabela atualizada pelo trigger.
 create or replace function public.global_ranking(today date)
 returns jsonb
@@ -346,7 +346,7 @@ begin
       from (select * from ranked order by pos, name limit 10) r
       left join public.public_stats s on s.user_id = r.id
     ), '[]'::jsonb),
-    case when my_xp > 0 then (
+    case when my_xp > 0 and not exists (select 1 from public.profiles a where a.id = viewer and a.role = 'admin') then (
       select jsonb_build_object(
         'position', 1 + (select count(*) from cand where cand.week_xp > my_xp),
         'id', p.id, 'name', p.name, 'username', p.username,

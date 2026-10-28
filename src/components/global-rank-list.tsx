@@ -13,9 +13,11 @@ interface Props {
   onAdd: (id: string) => void;
   /** Id of the person a friend request is being sent to. */
   requesting: string | null;
+  /** The viewer is an admin: admins never enter the ranking. */
+  excluded?: boolean;
 }
 
-function Row({ row, mine, first, pinned, onOpen, onAdd, requesting }: Omit<Props, "ranking"> & { row: GlobalRow; mine: boolean; first?: boolean; pinned?: boolean }) {
+function Row({ row, mine, first, pinned, onOpen, onAdd, requesting }: Omit<Props, "ranking" | "excluded"> & { row: GlobalRow; mine: boolean; first?: boolean; pinned?: boolean }) {
   const { colors } = useTheme();
   const name = pinned ? `${row.position} · Você` : mine ? "Você" : row.name;
   const podium = row.position <= 3;
@@ -85,7 +87,7 @@ function Row({ row, mine, first, pinned, onOpen, onAdd, requesting }: Omit<Props
 }
 
 /** The week's global top: tap a row to open the profile, "+" to ask for friendship. The viewer's row is pinned below when outside the top. */
-export function GlobalRankList({ ranking, onOpen, onAdd, requesting }: Props) {
+export function GlobalRankList({ ranking, onOpen, onAdd, requesting, excluded }: Props) {
   const { colors } = useTheme();
   const { top, me } = ranking;
   const meOutside = me && !top.some((r) => r.id === me.id);
@@ -104,7 +106,7 @@ export function GlobalRankList({ ranking, onOpen, onAdd, requesting }: Props) {
       ) : null}
       {me === null ? (
         <AppText variant="footnote" color="secondaryLabel" style={[styles.pinned, { borderColor: colors.separator }]}>
-          Você ainda não pontuou nesta semana
+          {excluded ? "Administradores não entram no ranking" : "Você ainda não pontuou nesta semana"}
         </AppText>
       ) : null}
     </View>

@@ -9,6 +9,7 @@ import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
 import { SegmentedTabs } from "@/components/segmented-tabs";
+import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
 import { TabAccount } from "@/state/tab-account";
 import { useGlobalRanking } from "@/state/use-global-ranking";
@@ -22,6 +23,7 @@ export default function AchievementsScreen() {
   const router = useRouter();
   const { progress } = useAppState();
   const { ranking, loading, error, reload, requesting, request } = useGlobalRanking();
+  const { isAdmin } = useAccess();
   const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("ranking");
   const { badges } = progress;
   const unlocked = badges.filter((b) => b.unlocked).length;
@@ -46,6 +48,7 @@ export default function AchievementsScreen() {
               onOpen={(id) => router.push(`/amigos/${id}`)}
               onAdd={(id) => void request(id)}
               requesting={requesting}
+              excluded={isAdmin}
             />
           ) : loading ? (
             <AppText variant="subheadline" color="secondaryLabel">
