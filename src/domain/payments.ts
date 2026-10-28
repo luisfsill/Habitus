@@ -88,6 +88,14 @@ export function revenueBars(points: readonly RevenuePoint[], period: "days" | "m
   return bars.map((b) => ({ ...b, ratio: max > 0 ? b.cents / max : 0 }));
 }
 
+const BRASILIA = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
+/** An ISO instant as "28/10 às 14:32", in Brasília time. */
+export function formatPaymentTime(iso: string): string {
+  const part = Object.fromEntries(BRASILIA.formatToParts(new Date(iso)).map((p) => [p.type, p.value]));
+  return `${part.day}/${part.month} às ${part.hour}:${part.minute}`;
+}
+
 export function paymentSummary(points: readonly RevenuePoint[]): { cents: number; count: number; averageCents: number } {
   const cents = points.reduce((a, p) => a + p.cents, 0);
   const count = points.reduce((a, p) => a + p.count, 0);

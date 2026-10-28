@@ -5,9 +5,9 @@ import { MAX_WIDTH, radius, space, useTheme } from "@/theme";
 import { AccountMenu, type AccountMenuItem } from "./account-menu";
 import { AppText } from "./app-text";
 
-export type AdminSection = "users" | "plans" | "invites";
+export type AdminSection = "users" | "plans" | "payments" | "invites";
 
-const LABELS: Record<AdminSection, string> = { users: "Usuários", plans: "Planos e preços", invites: "Convites" };
+const LABELS: Record<AdminSection, string> = { users: "Usuários", plans: "Planos e preços", payments: "Pagamentos", invites: "Convites" };
 
 interface Props {
   section: AdminSection;
@@ -30,7 +30,7 @@ export function AdminTopBar({ section, onSection, name, email, menu }: Props) {
           Admin
         </AppText>
         <View style={styles.sections}>
-          {(["users", "plans", "invites"] as const).map((s) => (
+          {(["users", "plans", "payments", "invites"] as const).map((s) => (
             <Pressable
               key={s}
               onPress={() => onSection(s)}

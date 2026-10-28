@@ -1,4 +1,4 @@
-import { parseAdminPayment, parseCheckout, parseConfig, parseRevenue, paymentSummary, revenueBars } from "../payments";
+import { formatPaymentTime, parseAdminPayment, parseCheckout, parseConfig, parseRevenue, paymentSummary, revenueBars } from "../payments";
 
 const TODAY = new Date(2026, 9, 28);
 
@@ -80,5 +80,13 @@ describe("parseAdminPayment", () => {
   });
   it("drops a row without id", () => {
     expect(parseAdminPayment({ ...row, id: undefined })).toBeNull();
+  });
+});
+
+describe("formatPaymentTime", () => {
+  it("shows day, month and time in Brasília", () => {
+    expect(formatPaymentTime("2026-10-28T17:32:00Z")).toBe("28/10 às 14:32");
+    // 01:05 UTC is still the previous evening in São Paulo.
+    expect(formatPaymentTime("2026-11-01T01:05:00Z")).toBe("31/10 às 22:05");
   });
 });
