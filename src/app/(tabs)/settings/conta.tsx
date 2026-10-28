@@ -43,6 +43,12 @@ export default function AccountScreen() {
         <AppText variant="footnote" color="secondaryLabel">
           Se desligar, ninguém acha você e você também não pode buscar ninguém.
         </AppText>
+        <View style={styles.row}>
+          <AppText variant="body">Apelido</AppText>
+          <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
+            {profile?.username ? `@${profile.username}` : "Sem @"}
+          </AppText>
+        </View>
         {session?.user.email && (
           <View style={styles.row}>
             <AppText variant="body">E-mail</AppText>
