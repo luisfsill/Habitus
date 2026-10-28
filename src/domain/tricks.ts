@@ -72,7 +72,7 @@ export const TRICKS: readonly Trick[] = [
     title: "Gratidão antecipada",
     summary: "Agradeça pelo que ainda está por vir.",
     instruction:
-      "Agradeça pelo que você ainda não tem, como se já estivesse aqui. Escreva uma frase curta, se quiser.",
+      "Agradeça pelo que você ainda não tem, como se já estivesse aqui. Escreva uma frase curta: ela vira uma estrela no seu céu.",
     why: "Agradecer pelo que está por vir, como se já estivesse aqui, cria uma ordem interna que muda suas decisões, seu comportamento e seu destino.",
     notificationBody: "Agradeça por algo que ainda está a caminho.",
     kind: "gratitude",

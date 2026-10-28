@@ -128,6 +128,15 @@ export function playSplash(): void {
   }
 }
 
+/**
+ * Gratidão antecipada: a twinkle as today's star is born, and when it completes a constellation a magic
+ * flourish a moment later, while the lines draw (assets/sounds).
+ */
+export function playStarBorn(newConstellation: boolean): void {
+  play(require("../../assets/sounds/star-born.mp3") as number);
+  if (newConstellation) setTimeout(() => play(require("../../assets/sounds/constellation.mp3") as number), 1200);
+}
+
 // Tips that have their own celebration sound so far.
 const CELEBRATION_SOUNDS: Partial<Record<TrickIndex, number>> = {
   0: require("../../assets/sounds/sun-chime.wav") as number,
@@ -139,6 +148,7 @@ const AMBIENT_SOUNDS: Partial<Record<TrickIndex, number>> = {
   1: require("../../assets/sounds/wind.mp3") as number,
   2: require("../../assets/sounds/metas-528hz.mp3") as number,
   3: require("../../assets/sounds/fire.mp3") as number,
+  4: require("../../assets/sounds/night.mp3") as number,
 };
 
 /** Starts a tip's background sound in a loop, if it has one; the returned function stops it. */

@@ -1,6 +1,6 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useContext, useEffect, useRef, useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { Bonfire } from "@/components/bonfire";
@@ -9,16 +9,17 @@ import { FireFocus, type FirePhase } from "@/components/fire-focus";
 import { FireIntro } from "@/components/fire-intro";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
+import { SkyTrick } from "@/components/sky-trick";
 import { VideoBackdrop } from "@/components/video-backdrop";
 import { Icon } from "@/components/icon";
-import { MAX_TEXT_LENGTH } from "@/domain/app-data";
 import { trickDayKey } from "@/domain/bedtime";
+import { closesConstellation, skyOf } from "@/domain/sky";
 import { dayKey } from "@/domain/time";
 import { isTrickIndex, type Trick, TRICKS } from "@/domain/tricks";
-import { playAmbient } from "@/services/sound";
+import { playAmbient, playStarBorn } from "@/services/sound";
 import { useAppState } from "@/state/app-state";
 import { useFire } from "@/state/use-fire";
-import { radius, space, ThemePreferenceContext, type, useTheme } from "@/theme";
+import { radius, space, ThemePreferenceContext, useTheme } from "@/theme";
 
 /** Foco total: the tip with the interactive bonfire. */
 const FIRE = 3;
@@ -65,37 +66,7 @@ function Affirmations() {
   );
 }
 
-function Gratitude({ text, onChange, onCommit }: { text: string; onChange: (t: string) => void; onCommit: () => void }) {
-  const { colors } = useTheme();
-  return (
-    <View>
-      <AppText variant="footnote" color="secondaryLabel" style={styles.label} nativeID="gratitude-label">
-        PELO QUE VOCÊ AGRADECE HOJE?
-      </AppText>
-      <TextInput
-        value={text}
-        onChangeText={onChange}
-        onBlur={onCommit}
-        placeholder="Obrigado por…"
-        placeholderTextColor={colors.secondaryLabel}
-        maxLength={MAX_TEXT_LENGTH}
-        multiline
-        accessibilityLabel="Frase de gratidão"
-        accessibilityLabelledBy="gratitude-label"
-        style={[type.body, styles.input, { color: colors.label, backgroundColor: colors.fill }]}
-      />
-    </View>
-  );
-}
-
-interface PracticeProps {
-  trick: Trick;
-  gratitude: string;
-  onGratitude: (t: string) => void;
-  onCommitGratitude: () => void;
-}
-
-function Practice({ trick, gratitude, onGratitude, onCommitGratitude }: PracticeProps) {
+function Practice({ trick }: { trick: Trick }) {
   if (trick.kind === "timer" && trick.durationSeconds) {
     return (
       <View>
@@ -105,9 +76,6 @@ function Practice({ trick, gratitude, onGratitude, onCommitGratitude }: Practice
   }
   if (trick.kind === "affirmations") return <Affirmations />;
   if (trick.kind === "phrase" && trick.phrase) return <Phrase text={trick.phrase} />;
-  if (trick.kind === "gratitude") {
-    return <Gratitude text={gratitude} onChange={onGratitude} onCommit={onCommitGratitude} />;
-  }
   return null;
 }
 
@@ -219,6 +187,32 @@ export default function TrickScreen() {
       </ThemePreferenceContext.Provider>
     );
   }
+  // Gratidão antecipada: the phrase becomes today's star in the person's gratitude sky.
+  if (trick.kind === "gratitude") {
+    return (
+      <ThemePreferenceContext.Provider value="dark">
+        <SkyTrick
+          subtitle={`Dica ${index + 1} de ${TRICKS.length}`}
+          title={trick.title}
+          instruction={trick.instruction}
+          why={trick.why}
+          sky={skyOf(data.gratitude)}
+          today={dayKey(new Date())}
+          text={gratitude}
+          onChangeText={setGratitudeText}
+          onLight={async () => {
+            // A first phrase today adds a star; rewriting today's phrase only lights the same one again.
+            const added = !(dayKey(new Date()) in data.gratitude);
+            const stars = skyOf(data.gratitude).stars.length;
+            await setGratitude(gratitude);
+            playStarBorn(added && closesConstellation(stars + 1));
+          }}
+          done={done}
+          onFinish={() => void finish()}
+        />
+      </ThemePreferenceContext.Provider>
+    );
+  }
   // Tips with a live scene: a video behind the page, always in the dark theme so the text reads over it.
   const backdrop = backdropFor(index);
   const dark = backdrop !== null;
@@ -246,12 +240,7 @@ export default function TrickScreen() {
       <AppText variant="title3" style={styles.instruction}>
         {trick.instruction}
       </AppText>
-      <Practice
-        trick={trick}
-        gratitude={gratitude}
-        onGratitude={setGratitudeText}
-        onCommitGratitude={() => void setGratitude(gratitude)}
-      />
+      <Practice trick={trick} />
       {trick.why && <Why text={trick.why} overVideo={dark} />}
     </Screen>
     </ThemePreferenceContext.Provider>
@@ -266,5 +255,4 @@ const styles = StyleSheet.create({
   affirmation: { marginVertical: space.xs },
   phrase: { lineHeight: 30, marginVertical: space.xs },
   inlineButton: { marginTop: space.sm, alignItems: "flex-start" },
-  input: { minHeight: 96, borderRadius: radius.md, padding: space.md, textAlignVertical: "top" },
 });
