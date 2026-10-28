@@ -144,7 +144,7 @@ Em tela larga sem moldura (tablet, janela estreita que depois foi alargada) vale
 ## Regras visuais
 
 - Tipografia nos estilos de texto do iOS (largeTitle 34, title1 28 … caption 12). O texto acompanha o tamanho de fonte do sistema, com `maxFontSizeMultiplier` para títulos grandes não quebrarem o layout.
-- Listas no estilo de tabela (direção "C", escolhida em outubro de 2026), agora dentro de cartões de vidro no tema água e vidro.
+- Listas no estilo de tabela (direção "C", escolhida em outubro de 2026), sem cartões.
   - Sem cards: seções separadas por hairline, cabeçalho `headline`; textos de apoio dentro da linha (`ActionRow.detail` ou última linha da seção), nunca soltos acima ou abaixo.
   - `Section`: hairline no topo, título `headline` (com `accessory` opcional à direita) e as linhas separadas por divisórias finas (hairline). Sem `plain` nem `footer`: a nota vira um `AppText footnote` secundário como último filho.
   - Cada filho direto de `Section` é um grupo separado por divisória; agrupe linhas relacionadas numa `View` para não dividir cada uma. Fora de uma `Section`, `Divider` desenha a mesma linha.
