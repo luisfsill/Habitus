@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
+import { useIncomingCount } from "@/state/use-friends";
 import { playSplash, settleWater, stirWater } from "@/services/sound";
 import { MAX_WIDTH, pinned, useTheme } from "@/theme";
 
@@ -26,9 +27,10 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
   // In the admin area (reached from the account menu) no tab is lit, so any tab leads back.
   const active = getTrigger("admin")?.isFocused ? -1 : Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
   const { colors, scheme } = useTheme();
+  const incoming = useIncomingCount();
   const items = tabs.map((tab, i) => ({
     key: tab.key,
-    label: tab.label,
+    label: tab.key === "amigos" && incoming > 0 ? `${tab.label}, ${incoming} ${incoming === 1 ? "pedido" : "pedidos"}` : tab.label,
     fx: tab.fx,
     icon: <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />,
   }));

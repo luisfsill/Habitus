@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 
 import { AppText } from "@/components/app-text";
 import { AuthShell } from "@/components/auth-shell";
@@ -17,6 +18,7 @@ function ArrobaScreen() {
   const { value, status, change } = useUsernameCheck(isAdmin);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const typed = useRef(false);
   const name = profile?.name ?? "";
 
@@ -72,6 +74,12 @@ function ArrobaScreen() {
         }}
         status={status}
       />
+      <AppText variant="footnote" color="secondaryLabel">
+        Seu nome, @, faixa e nível aparecem na busca de outras pessoas. Você pode desligar em Ajustes {">"} Conta.
+      </AppText>
+      <AppText variant="footnote" color="accentText" accessibilityRole="link" onPress={() => router.push("/legal/privacy")}>
+        Política de privacidade
+      </AppText>
       <PrimaryButton label="Continuar" onPress={save} disabled={status !== "available"} loading={saving} glow />
       {error && (
         <AppText variant="footnote" align="center" accessibilityLiveRegion="polite" color="danger">

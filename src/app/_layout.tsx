@@ -87,7 +87,7 @@ function useGates() {
     // Signed in with an active plan (or admin): the app itself.
     open: signedIn && access.hasAccess,
     // Every account picks a @ before the app opens.
-    named: access.profile?.username != null,
+    named: access.profile?.username !== null,
     // Signed in but the plan is unknown (offline, never cached): ask to reconnect.
     offline: signedIn && access.ready && access.offline,
     ready: !signedIn || access.ready,

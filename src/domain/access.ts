@@ -12,8 +12,8 @@ export interface Profile {
   accessUntil: string | null;
   unlimited: boolean;
   createdAt: string;
-  /** The @ chosen for friends; null until set. */
-  username: string | null;
+  /** The @ chosen for friends; null until set, undefined when the server has no such column yet (not deployed). */
+  username: string | null | undefined;
   /** Whether strangers can find this account by search. */
   searchable: boolean;
 }
@@ -113,7 +113,7 @@ export function parseProfile(row: unknown): Profile | null {
     accessUntil: typeof access_until === "string" ? access_until : null,
     unlimited: unlimited === true,
     createdAt: created_at,
-    username: typeof username === "string" ? username : null,
+    username: typeof username === "string" ? username : username === null ? null : undefined,
     searchable: searchable !== false,
   };
 }

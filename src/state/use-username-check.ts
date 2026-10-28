@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { UsernameStatus } from "@/components/username-field";
+import { OFFLINE } from "@/domain/auth-rules";
 import { cleanUsername, usernameError } from "@/domain/username";
 import { usernameAvailable } from "@/services/social";
 
@@ -31,7 +32,7 @@ export function useUsernameCheck(isAdmin: boolean, initial = "") {
       timer.current = setTimeout(() => {
         usernameAvailable(u)
           .then((free) => id === latest.current && setStatus(free ? "available" : "taken"))
-          .catch((e: Error) => id === latest.current && setStatus(e.message));
+          .catch((e: Error) => id === latest.current && setStatus(e.message === OFFLINE ? "Conecte-se à internet para escolher seu @." : e.message));
       }, delay);
     },
     [isAdmin],

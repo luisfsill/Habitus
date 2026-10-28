@@ -29,7 +29,7 @@ export function normalizeCode(text: string): string | null {
   return /^\d{6}$/.test(code) ? code : null;
 }
 
-const OFFLINE = "Sem conexão. Verifique sua internet e tente de novo.";
+export const OFFLINE = "Sem conexão. Verifique sua internet e tente de novo.";
 
 const AUTH_ERRORS: Record<string, string> = {
   invalid_credentials: "E-mail ou senha incorretos.",

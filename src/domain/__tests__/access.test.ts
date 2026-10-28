@@ -107,7 +107,8 @@ describe("renewWhatsAppUrl", () => {
 describe("parsing rows", () => {
   it("reads a profile row and rejects bad roles", () => {
     const row = { id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", access_until: null, unlimited: true, created_at: "2026-10-25T00:00:00Z" };
-    expect(parseProfile(row)).toEqual({ id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", accessUntil: null, unlimited: true, createdAt: "2026-10-25T00:00:00Z", username: null, searchable: true });
+    expect(parseProfile(row)).toEqual({ id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", accessUntil: null, unlimited: true, createdAt: "2026-10-25T00:00:00Z", username: undefined, searchable: true });
+    expect(parseProfile({ ...row, username: null })?.username).toBeNull();
     expect(parseProfile({ ...row, username: "ana", searchable: false })).toMatchObject({ username: "ana", searchable: false });
     expect(parseProfile({ ...row, role: "root" })).toBeNull();
     expect(parseProfile(null)).toBeNull();
@@ -126,6 +127,9 @@ describe("parseCachedProfile", () => {
     expect(parseCachedProfile(JSON.parse(JSON.stringify(p)))).toEqual(p);
     const social = profile({ username: "ana", searchable: false });
     expect(parseCachedProfile(JSON.parse(JSON.stringify(social)))).toEqual(social);
+    const absent = parseCachedProfile(JSON.parse(JSON.stringify(profile({ username: undefined }))));
+    expect(absent?.username).toBeUndefined();
+    expect(parseCachedProfile(JSON.parse(JSON.stringify(profile({ username: null }))))?.username).toBeNull();
     expect(parseCachedProfile({ ...p, plan: "gold" })).toBeNull();
   });
 });

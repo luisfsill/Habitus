@@ -1,5 +1,5 @@
 -- Habitus: amigos (@usuário, busca, pedidos de amizade e ranking da semana).
--- Rode DEPOIS de admin.sql e push.sql: cole tudo no SQL Editor do Supabase e clique em Run.
+-- Rode DEPOIS de admin.sql (push.sql é opcional): cole tudo no SQL Editor do Supabase e clique em Run.
 -- Pode rodar de novo sem problema.
 -- As funções abaixo são o único caminho para uma conta ler dados de outra. Nenhuma devolve e-mail.
 
@@ -318,6 +318,9 @@ begin
   if uid is null or uid = me then
     raise exception 'Você não pode pedir amizade a si mesmo.' using errcode = '42501';
   end if;
+  if not exists (select 1 from public.profiles where id = me and username is not null) then
+    raise exception 'Escolha seu @ antes de pedir amizade.' using errcode = '42501';
+  end if;
   if public.blocked_between(me, uid) or not exists (select 1 from public.profiles where id = uid and username is not null) then
     raise exception 'Perfil não encontrado.' using errcode = '42501';
   end if;
@@ -344,7 +347,17 @@ begin
     raise exception 'Tente de novo mais tarde.' using errcode = '42501';
   end if;
 
-  insert into public.friendships (requester, addressee) values (me, uid);
+  begin
+    insert into public.friendships (requester, addressee) values (me, uid);
+  exception when unique_violation then
+    -- Pedido cruzado ao mesmo tempo: se o dele chegou primeiro, vira amizade.
+    if public.relation_of(me, uid) = 'incoming' then
+      update public.friendships set status = 'accepted' where requester = uid and addressee = me;
+      perform public.queue_social_push(uid, 'accepted', '{nome} aceitou seu pedido de amizade');
+      return 'accepted';
+    end if;
+    raise exception 'Vocês já são amigos ou já há um pedido entre vocês.' using errcode = '42501';
+  end;
   push := not exists (
     select 1 from public.friend_request_log
     where requester = me and addressee = uid and pushed_at > now() - interval '7 days'
