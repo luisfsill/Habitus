@@ -29,8 +29,9 @@ function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boo
   }
   if (p.relation === "outgoing") {
     return (
-      <Section title="Pedido enviado" footer={`${p.name} ainda não respondeu.`}>
+      <Section title="Pedido enviado">
         <ActionRow label="Cancelar pedido" icon={{ ios: "xmark.circle", android: "cancel" }} destructive onPress={() => run(() => cancelFriendRequest(p.id))} />
+        <AppText variant="footnote" color="secondaryLabel">{`${p.name} ainda não respondeu.`}</AppText>
       </Section>
     );
   }

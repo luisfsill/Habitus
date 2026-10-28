@@ -63,7 +63,7 @@ export default function AdminInvitesScreen() {
   const now = new Date();
   return (
     <Screen title="Convites" subtitle="Quem cria a conta pelo link já entra com a licença" underHeader>
-      <Section title="Licença gratuita" footer="O link vale por 7 dias e para uma única conta.">
+      <Section title="Licença gratuita">
         <View style={styles.options}>
           {INVITE_OPTIONS.map((o) => (
             <Pressable
@@ -79,6 +79,7 @@ export default function AdminInvitesScreen() {
           ))}
         </View>
         <PrimaryButton label="Gerar convite" onPress={() => void generate()} loading={busy} />
+        <AppText variant="footnote" color="secondaryLabel">O link vale por 7 dias e para uma única conta.</AppText>
       </Section>
 
       {error && <AppText variant="footnote" color="danger">{error}</AppText>}

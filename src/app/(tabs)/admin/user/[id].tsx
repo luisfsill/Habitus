@@ -92,7 +92,7 @@ function AccessSection({ p, now, run, report }: { p: Profile; now: Date; run: (a
   };
 
   return (
-    <Section title="Acesso" footer="Os dias somam à validade atual. Uma data nova substitui a validade.">
+    <Section title="Acesso">
       <View style={styles.grants}>
         {GRANTS.map((n) => (
           <Pressable
@@ -125,6 +125,7 @@ function AccessSection({ p, now, run, report }: { p: Profile; now: Date; run: (a
         destructive
         onPress={() => void run(() => setAccess(p.id, { until: now.toISOString(), unlimited: false, plan: p.plan }), "Acesso removido.")}
       />
+      <AppText variant="footnote" color="secondaryLabel">Os dias somam à validade atual. Uma data nova substitui a validade.</AppText>
     </Section>
   );
 }
@@ -201,14 +202,15 @@ export default function AdminUserScreen() {
 
       <AccessSection p={p} now={now} run={run} report={setStatus} />
 
-      <Section title="Dados" footer="As mudanças salvam ao sair do campo.">
+      <Section title="Dados">
         <View>
           <FieldRow label="Nome" value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} autoCapitalize="words" placeholder="Nome" />
           <FieldRow label="E-mail" value={email} onChangeText={setEmail} onBlur={saveEmail} onSubmitEditing={saveEmail} keyboardType="email-address" autoCapitalize="none" placeholder="email@exemplo.com" />
         </View>
+        <AppText variant="footnote" color="secondaryLabel">As mudanças salvam ao sair do campo.</AppText>
       </Section>
 
-      <Section title="Cargo" footer={self ? "Você não pode mudar o seu próprio cargo." : "Administradores veem o painel Admin."}>
+      <Section title="Cargo">
         <View style={styles.row}>
           <AppText variant="body">Administrador</AppText>
           {self ? (
@@ -221,6 +223,7 @@ export default function AdminUserScreen() {
             />
           )}
         </View>
+        <AppText variant="footnote" color="secondaryLabel">{self ? "Você não pode mudar o seu próprio cargo." : "Administradores veem o painel Admin."}</AppText>
       </Section>
 
       <Section title="Conta">

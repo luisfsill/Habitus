@@ -63,8 +63,7 @@ export default function AchievementsScreen() {
       />
 
       <Section
-        title="Patentes"
-        footer={upcoming ? `Próxima: ${upcoming.name}, no nível ${upcoming.minLevel}.` : "Você chegou à faixa preta!"}>
+        title="Patentes">
         <View style={styles.belts}>
           {BELTS.map((belt) => {
             const reached = level.level >= belt.minLevel;
@@ -86,6 +85,7 @@ export default function AchievementsScreen() {
             );
           })}
         </View>
+          <AppText variant="footnote" color="secondaryLabel">{upcoming ? `Próxima: ${upcoming.name}, no nível ${upcoming.minLevel}.` : "Você chegou à faixa preta!"}</AppText>
       </Section>
 
       <Section title={`Medalhas · ${unlocked}/${badges.length}`}>

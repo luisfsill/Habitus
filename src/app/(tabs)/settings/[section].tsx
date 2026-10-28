@@ -40,13 +40,15 @@ function Schedule({ draft, change }: PageProps) {
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
   return (
     <>
-      <Section plain title="Seu dia" footer={bedtimeNote(sleep)}>
+      <Section title="Seu dia">
         <TimeField label="Começo do dia" icon={{ ios: "sunrise", android: "wb_sunny" }} value={draft.start} onChange={(start) => void change({ start })} />
         <TimeField label="Fim do dia" icon={{ ios: "sunset", android: "wb_twilight" }} value={draft.end} onChange={(end) => void change({ end })} />
         <BedtimeField icon={{ ios: "moon", android: "bedtime" }} value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
+        <AppText variant="footnote" color="secondaryLabel">{bedtimeNote(sleep)}</AppText>
       </Section>
-      <Section plain title="Suas 6 dicas" footer="As 5 primeiras se espalham entre o começo e o fim do dia. A última chega na hora de dormir.">
+      <Section title="Suas 6 dicas">
         <ScheduleTimeline start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
+      <AppText variant="footnote" color="secondaryLabel">As 5 primeiras se espalham entre o começo e o fim do dia. A última chega na hora de dormir.</AppText>
       </Section>
     </>
   );
@@ -56,13 +58,14 @@ function Days({ draft, change }: PageProps) {
   const set = (days: Weekday[]) => void change({ days });
   return (
     <>
-      <Section plain title="Sua semana">
+      <Section title="Sua semana">
         <WeekdaySummary value={draft.days} onChange={set} />
       </Section>
-      <Section plain title="Dia a dia" footer="Nos dias desligados você não recebe dicas, e a sequência não quebra.">
+      <Section title="Dia a dia">
         {ALL_WEEKDAYS.map((day) => (
           <WeekdayRow key={day} day={day} value={draft.days} onChange={set} />
         ))}
+      <AppText variant="footnote" color="secondaryLabel">Nos dias desligados você não recebe dicas, e a sequência não quebra.</AppText>
       </Section>
     </>
   );
@@ -71,8 +74,9 @@ function Days({ draft, change }: PageProps) {
 function Affirmations({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section plain title="Afirmações" footer="Aparecem na dica 3, Metas em voz alta. Escreva no presente.">
+    <Section title="Afirmações">
       <AffirmationsEditor value={data.settings.affirmations} onChange={(affirmations) => void change({ affirmations })} />
+      <AppText variant="footnote" color="secondaryLabel">Aparecem na dica 3, Metas em voz alta. Escreva no presente.</AppText>
     </Section>
   );
 }
@@ -94,7 +98,7 @@ function Notifications({ draft, change, setStatus }: PageProps) {
   };
 
   return (
-    <Section plain title="Notificações">
+    <Section title="Notificações">
       <View style={styles.row}>
         <AppText variant="body">Som</AppText>
         <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
@@ -114,14 +118,7 @@ function Water({ draft, change }: PageProps) {
   const { colors } = useTheme();
   const water = draft.water;
   return (
-    <Section
-      plain
-      title="Água"
-      footer={
-        water.enabled
-          ? "Os lembretes vêm entre o início e o fim do seu dia, fora dos horários das dicas, e param quando você bate a meta."
-          : "Opcional. Ligue para receber lembretes de beber água e marcar os copos na tela Hoje."
-      }>
+    <Section title="Água">
       <View style={styles.row}>
         <View style={styles.label}>
           <Icon ios="drop.fill" android="water_drop" color={colors.accent} />
@@ -149,6 +146,11 @@ function Water({ draft, change }: PageProps) {
           onPlus={() => void change({ water: { ...water, everyMinutes: water.everyMinutes + WATER_EVERY.step } })}
         />
       )}
+      <AppText variant="footnote" color="secondaryLabel">
+        {water.enabled
+          ? "Os lembretes vêm entre o início e o fim do seu dia, fora dos horários das dicas, e param quando você bate a meta."
+          : "Opcional. Ligue para receber lembretes de beber água e marcar os copos na tela Hoje."}
+      </AppText>
     </Section>
   );
 }
@@ -156,8 +158,9 @@ function Water({ draft, change }: PageProps) {
 function Appearance({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section plain title="Aparência" footer="Auto segue o modo claro ou escuro do aparelho.">
+    <Section title="Aparência">
       <ThemeTabs value={data.settings.theme} onChange={(theme) => void change({ theme })} />
+      <AppText variant="footnote" color="secondaryLabel">Auto segue o modo claro ou escuro do aparelho.</AppText>
     </Section>
   );
 }

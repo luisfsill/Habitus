@@ -128,11 +128,12 @@ function Leads({ draft, onChange, now }: Props) {
     return open ? [row, picker] : [row];
   });
   return (
-    <Section title="Antecipar" footer={alertsFooter(draft, now)}>
+    <Section title="Antecipar">
       {rows}
       {leads.length < MAX_LEADS && (
         <ActionRow label="Adicionar antecipação" icon={{ ios: "plus.circle.fill", android: "add_circle" }} onPress={add} />
       )}
+      <AppText variant="footnote" color="secondaryLabel">{alertsFooter(draft, now)}</AppText>
     </Section>
   );
 }
@@ -143,7 +144,7 @@ function Repeat({ draft, onChange, now }: Props) {
   const { repeat } = draft;
   const footer = repeat ? `Próximas: ${joinList(draftOccurrences(draft, now, 3).map((at) => shortDate(at, now)))}` : undefined;
   return (
-    <Section title="Repetir" footer={footer}>
+    <Section title="Repetir">
       <View style={styles.row}>
         <Icon ios="arrow.clockwise" android="repeat" size={20} color={colors.accent} />
         <AppText variant="body" style={styles.grow}>
@@ -175,6 +176,7 @@ function Repeat({ draft, onChange, now }: Props) {
         </Pressable>
       )}
       {repeat && open && <RepeatPicker value={repeat} onChange={(next) => onChange({ ...draft, repeat: next })} />}
+      {footer && <AppText variant="footnote" color="secondaryLabel">{footer}</AppText>}
     </Section>
   );
 }

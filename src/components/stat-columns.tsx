@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { type Palette, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { Glass } from "./glass";
 
 export interface Stat {
   value: string;
@@ -20,12 +19,12 @@ interface Props {
   columns?: number;
 }
 
-/** Row of figures on a glass card, split by hairlines like a table header. */
+/** Row of figures split by hairlines like a table header. */
 export function StatColumns({ stats, columns = stats.length }: Props) {
   const { colors } = useTheme();
   const rows = Math.ceil(stats.length / columns);
   return (
-    <Glass style={styles.wrap}>
+    <View style={[styles.wrap, { borderColor: colors.separator }]}>
       {stats.map((stat, i) => {
         const cell = [
           styles.cell,
@@ -54,7 +53,7 @@ export function StatColumns({ stats, columns = stats.length }: Props) {
           </View>
         );
       })}
-    </Glass>
+    </View>
   );
 }
 
@@ -62,7 +61,7 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -space.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   cell: { alignItems: "center", justifyContent: "center", paddingVertical: space.md, paddingHorizontal: space.xs, gap: 2 },
   right: { borderRightWidth: StyleSheet.hairlineWidth },

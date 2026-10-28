@@ -68,7 +68,7 @@ function TodayReminders({ now }: { now: Date }) {
   const { data } = useAppState();
   const pending = pendingReminders(data.reminders, now);
   const [first, ...rest] = pending;
-  const add = <ActionRow label="Novo lembrete" icon={{ ios: "plus.circle.fill", android: "add_circle" }} onPress={() => openReminder("novo")} />;
+  const add = <ActionRow label="Novo lembrete" detail="Estudo, compras, contas e o que mais precisar" icon={{ ios: "plus.circle.fill", android: "add_circle" }} onPress={() => openReminder("novo")} />;
   const all = (pending.length > 0 || doneReminders(data.reminders).length > 0) && (
     <Pressable onPress={() => router.push("/lembretes")} accessibilityRole="link" accessibilityLabel="Ver todos os lembretes" hitSlop={12}>
       <AppText variant="subheadline" color="accentText">
@@ -78,7 +78,7 @@ function TodayReminders({ now }: { now: Date }) {
   );
   if (!first) {
     return (
-      <Section title="Lembretes" accessory={all} footer="Crie lembretes para estudo, compras, contas e o que mais precisar.">
+      <Section title="Lembretes" accessory={all}>
         {add}
       </Section>
     );
