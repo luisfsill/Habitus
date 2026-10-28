@@ -22,6 +22,7 @@ begin
     -- auth.uid() passa a ser esse usuário, como se a chamada viesse do app.
     perform set_config('request.jwt.claims', jsonb_build_object('sub', uid, 'role', 'authenticated')::text, true);
     update public.profiles set role = 'admin', unlimited = false, access_until = now() - interval '1 day' where id = uid;
+    update public.app_config set value = 'sandbox' where key = 'pagbank_env';
     select coalesce(sum((e ->> 'cents')::int), 0) into base from jsonb_array_elements(public.admin_revenue('days')) e;
 
     -- validade vencida: conta a partir de agora; o segundo aviso não soma de novo
@@ -73,12 +74,23 @@ begin
     values (uid, 'monthly', 990, 30, 'automatic', 'sandbox') returning id into pid;
     st := public.my_payment_status(pid);
     if st is distinct from 'pending' then raise exception 'pagamento recente esperava pending, obteve %', st; end if;
+    -- com QR gravado, vale o expires_at; reaproveita só QR com mais de 2 min de prazo
+    perform public.attach_pagbank_order(pid, 'ORDE_TESTE_' || pid, 'qr-teste', now() + interval '30 minutes');
+    item := public.open_auto_payment(uid, 'monthly');
+    if item ->> 'id' is distinct from pid::text or item ->> 'qr_text' is distinct from 'qr-teste' or item ? 'pagbank_order_id' then
+      raise exception 'open_auto_payment devolveu %', item;
+    end if;
+    update public.payments set expires_at = now() + interval '1 minute' where id = pid;
+    if public.open_auto_payment(uid, 'monthly') is not null then raise exception 'open_auto_payment reaproveitou QR quase vencido'; end if;
+    update public.payments set expires_at = now() - interval '1 second' where id = pid;
+    st := public.my_payment_status(pid);
+    if st is distinct from 'expired' then raise exception 'expires_at vencido esperava expired, obteve %', st; end if;
 
-    -- pedido manual: código HAB sem 0/O/1/I; o histórico do admin não leva o CPF
+    -- pedido manual: código HAB sem 0/O/1/I e sempre production; o histórico do admin não leva o CPF nem o QR
     code := public.start_manual_payment('monthly');
     if code !~ '^HAB[A-HJ-NP-Z2-9]{6}$' then raise exception 'código do pedido fora do formato: %', code; end if;
     select e into item from jsonb_array_elements(public.admin_payments('pending', null, 100)) e where e ->> 'order_code' = code;
-    if item is null or item ->> 'plan_name' is null or item ? 'tax_id' then
+    if item is null or item ->> 'plan_name' is null or item ->> 'env' <> 'production' or item ? 'tax_id' or item ? 'qr_text' then
       raise exception 'admin_payments devolveu %', item;
     end if;
 

@@ -7,9 +7,9 @@
 --     marca pago e soma os dias à conta; idempotente; true só quando liberou agora.
 --   create_auto_payment(uid uuid, plan text, order_code text) returns uuid
 --     cria um pagamento automatic/pending com preço e dias do plano ativo e o pagbank_env atual;
---     antes, marca expired os automáticos pending da conta com mais de 30 min.
---   attach_pagbank_order(pid uuid, order_id text) returns void
---     grava o id do pedido do PagBank (ORDE_...), só se ainda não tem.
+--     antes, marca expired os automáticos pending vencidos da conta.
+--   attach_pagbank_order(pid uuid, order_id text, qr text, expires timestamptz) returns void
+--     grava o id do pedido do PagBank (ORDE_...), o "copia e cola" e o vencimento do QR, só se ainda não tem pedido.
 --   fail_payment(pid uuid) returns void
 --     um pending vira failed (erro ao criar a cobrança).
 --   payment_for_webhook(pid uuid) returns jsonb
@@ -17,8 +17,8 @@
 --   payment_id_for_order(order_id text) returns uuid
 --     o pagamento de um pedido do PagBank, ou null.
 --   open_auto_payment(uid uuid, plan text) returns jsonb
---     {id, pagbank_order_id, env, created_at} do automático pending mais novo do plano, no ambiente atual,
---     criado há menos de 25 min (sobram pelo menos 5 dos 30 do QR); ou null.
+--     {id, qr_text, expires_at} do automático pending mais novo do plano, no ambiente atual,
+--     com QR que ainda vale por mais de 2 min; ou null. Reaproveitar não precisa chamar o PagBank.
 --   recent_auto_payments(uid uuid) returns int
 --     quantas cobranças automáticas a conta criou na última hora (limite de 5 fica na função).
 --   tax_id_of(uid uuid) returns text
@@ -59,6 +59,10 @@ create table if not exists public.payments (
   granted_until timestamptz
 );
 
+-- QR do Pix automático, para reaproveitar um pending sem chamar o PagBank. Nunca sai em admin_payments.
+alter table public.payments add column if not exists qr_text text;
+alter table public.payments add column if not exists expires_at timestamptz;
+
 create index if not exists payments_created_at_idx on public.payments (created_at desc);
 create index if not exists payments_user_id_idx on public.payments (user_id, created_at desc);
 
@@ -67,6 +71,14 @@ alter table public.payments enable row level security;
 drop policy if exists "read own payments" on public.payments;
 create policy "read own payments" on public.payments for select to authenticated using ((select auth.uid()) = user_id);
 -- Sem políticas de escrita: só as funções abaixo criam e mudam pagamentos.
+
+-- Automático vencido: pelo expires_at do QR ou, sem ele, 30 min depois de criado.
+create or replace function public.payment_overdue(p public.payments)
+returns boolean language sql stable set search_path = ''
+as $$
+  select p.method = 'automatic' and p.status = 'pending'
+    and coalesce(p.expires_at, p.created_at + interval '30 minutes') < now();
+$$;
 
 -- CPF de quem paga ---------------------------------------------------------------
 -- Só pix-checkout lê (pelo service_role) para mandar ao PagBank. Nenhuma função de amigos, ranking ou admin devolve.
@@ -142,8 +154,7 @@ begin
   if not found then
     raise exception 'Plano indisponível.' using errcode = '22023';
   end if;
-  update public.payments set status = 'expired'
-  where user_id = uid and method = 'automatic' and status = 'pending' and created_at < now() - interval '30 minutes';
+  update public.payments pay set status = 'expired' where pay.user_id = uid and public.payment_overdue(pay);
   insert into public.payments (user_id, plan_id, amount_cents, days, method, status, env, order_code)
   values (
     uid, pl.id, pl.price_cents, pl.days, 'automatic', 'pending',
@@ -155,10 +166,12 @@ begin
 end;
 $$;
 
-create or replace function public.attach_pagbank_order(pid uuid, order_id text)
+drop function if exists public.attach_pagbank_order(uuid, text);
+create or replace function public.attach_pagbank_order(pid uuid, order_id text, qr text, expires timestamptz)
 returns void language sql security definer set search_path = ''
 as $$
-  update public.payments set pagbank_order_id = order_id where id = pid and pagbank_order_id is null;
+  update public.payments set pagbank_order_id = order_id, qr_text = qr, expires_at = expires
+  where id = pid and pagbank_order_id is null;
 $$;
 
 create or replace function public.fail_payment(pid uuid)
@@ -186,10 +199,10 @@ $$;
 create or replace function public.open_auto_payment(uid uuid, plan text)
 returns jsonb language sql stable security definer set search_path = ''
 as $$
-  select jsonb_build_object('id', id, 'pagbank_order_id', pagbank_order_id, 'env', env, 'created_at', created_at)
+  select jsonb_build_object('id', id, 'qr_text', qr_text, 'expires_at', expires_at)
   from public.payments
   where user_id = uid and plan_id = plan and method = 'automatic' and status = 'pending'
-    and pagbank_order_id is not null and created_at > now() - interval '25 minutes'
+    and qr_text is not null and expires_at > now() + interval '2 minutes'
     and env = (select value from public.app_config where key = 'pagbank_env')
   order by created_at desc
   limit 1;
@@ -230,6 +243,7 @@ as $$
 $$;
 
 -- Modo manual: grava o pedido no histórico e devolve o código HAB... que vai no Pix estático.
+-- O Pix estático cai na conta real do dono: env é sempre production (pagbank_env vale só para o automático).
 create or replace function public.start_manual_payment(plan text)
 returns text language plpgsql security definer set search_path = ''
 as $$
@@ -254,8 +268,7 @@ begin
     begin
       insert into public.payments (user_id, plan_id, amount_cents, days, method, status, env, order_code)
       values (
-        me, pl.id, pl.price_cents, pl.days, 'manual', 'pending',
-        coalesce((select value from public.app_config where key = 'pagbank_env'), 'sandbox'), code
+        me, pl.id, pl.price_cents, pl.days, 'manual', 'pending', 'production', code
       );
       return code;
     exception when unique_violation then
@@ -266,14 +279,13 @@ begin
 end;
 $$;
 
--- Status do próprio pagamento; um automático pending com mais de 30 min vira expired antes de responder.
+-- Status do próprio pagamento; um automático pending vencido vira expired antes de responder.
 create or replace function public.my_payment_status(pid uuid)
 returns text language plpgsql security definer set search_path = ''
 as $$
 begin
-  update public.payments set status = 'expired'
-  where id = pid and user_id = auth.uid() and method = 'automatic' and status = 'pending'
-    and created_at < now() - interval '30 minutes';
+  update public.payments pay set status = 'expired'
+  where pay.id = pid and pay.user_id = auth.uid() and public.payment_overdue(pay);
   return (select status from public.payments where id = pid and user_id = auth.uid());
 end;
 $$;
@@ -378,12 +390,12 @@ $$;
 do $$
 declare f text;
 begin
-  foreach f in array array['cpf_ok(text)', 'new_order_code()'] loop
+  foreach f in array array['cpf_ok(text)', 'new_order_code()', 'payment_overdue(public.payments)'] loop
     execute format('revoke execute on function public.%s from public, anon, authenticated, service_role', f);
   end loop;
   -- grant_payment fica só no servidor: o app libera dias apenas por admin_confirm_payment.
   foreach f in array array[
-    'grant_payment(uuid)', 'create_auto_payment(uuid, text, text)', 'attach_pagbank_order(uuid, text)',
+    'grant_payment(uuid)', 'create_auto_payment(uuid, text, text)', 'attach_pagbank_order(uuid, text, text, timestamptz)',
     'fail_payment(uuid)', 'payment_for_webhook(uuid)', 'payment_id_for_order(text)', 'open_auto_payment(uuid, text)',
     'recent_auto_payments(uuid)', 'tax_id_of(uuid)'
   ] loop
