@@ -7,10 +7,12 @@ import { AppText } from "@/components/app-text";
 import { PersonRow } from "@/components/person-row";
 import { PrimaryButton } from "@/components/primary-button";
 import { ProfileCard } from "@/components/profile-card";
+import type { Stat } from "@/components/stat-columns";
 import { RankList } from "@/components/rank-list";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
 import { TextField } from "@/components/text-field";
+import type { Progress } from "@/domain/achievements";
 import type { PublicUser } from "@/domain/friends";
 import { respondFriendRequest } from "@/services/social";
 import { useAccess } from "@/state/access";
@@ -79,6 +81,16 @@ function Results({ search }: { search: ReturnType<typeof useUserSearch> }) {
   );
 }
 
+/** Streak, total XP and medals for the viewer's own card. */
+function myStats({ stats, badges }: Progress): Stat[] {
+  const medals = badges.filter((b) => b.unlocked).length;
+  return [
+    { value: String(stats.currentStreak), label: stats.currentStreak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
+    { value: String(stats.xp), label: "XP no total", color: "accentText" },
+    { value: String(medals), label: medals === 1 ? "medalha" : "medalhas", color: "successText" },
+  ];
+}
+
 export default function FriendsScreen() {
   const { profile } = useAccess();
   const { progress } = useAppState();
@@ -115,7 +127,14 @@ export default function FriendsScreen() {
   return (
     <Screen title="Perfil">
       {profile && (
-        <ProfileCard name={profile.name} username={profile.username ?? null} photo={profile.avatarUrl} progress={progress} onEdit={() => router.navigate("/settings/conta")} />
+        <ProfileCard
+          name={profile.name}
+          username={profile.username ?? null}
+          photo={profile.avatarUrl}
+          level={progress.level.level}
+          stats={myStats(progress)}
+          onEdit={() => router.navigate("/settings/conta")}
+        />
       )}
       {searchField}
       {userSearch.query !== "" ? (

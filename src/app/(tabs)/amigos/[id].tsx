@@ -4,12 +4,13 @@ import { StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
-import { Avatar } from "@/components/avatar";
-import { BeltChip } from "@/components/person-row";
+import { BadgeList } from "@/components/badge-list";
 import { PrimaryButton } from "@/components/primary-button";
+import { ProfileCard } from "@/components/profile-card";
+import type { Stat } from "@/components/stat-columns";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
-import { BADGES } from "@/domain/achievements";
+import { BADGES, type BadgeState } from "@/domain/achievements";
 import { STAFF_BADGE, type UserProfile } from "@/domain/friends";
 import { blockUser, cancelFriendRequest, getUserProfile, removeFriend, respondFriendRequest, sendFriendRequest } from "@/services/social";
 import { confirm } from "@/state/use-sign-out";
@@ -23,7 +24,7 @@ const goBack = () => (router.canGoBack() ? router.back() : router.replace("/amig
 function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boolean }) {
   if (p.relation === "none") {
     return p.canRequest ? (
-      <PrimaryButton label="Pedir amizade" onPress={() => run(() => sendFriendRequest(p.id))} loading={busy} />
+      <PrimaryButton label="Pedir amizade" icon={{ ios: "person.badge.plus", android: "person_add" }} onPress={() => run(() => sendFriendRequest(p.id))} loading={busy} />
     ) : (
       <PrimaryButton label="Tente de novo mais tarde" onPress={() => undefined} disabled />
     );
@@ -58,15 +59,50 @@ function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boo
   );
 }
 
-function FriendDetails({ p }: { p: UserProfile }) {
-  if (p.relation !== "friends") return null;
-  const titles = BADGES.filter((b) => p.badges?.includes(b.id)).map((b) => b.title);
+const RELATION_TAG: Partial<Record<UserProfile["relation"], string>> = { friends: "Amigos", outgoing: "Pedido enviado", incoming: "Quer ser seu amigo" };
+
+/** A small pill beside the belt. */
+function Tag({ label, tone }: { label: string; tone: "accent" | "success" }) {
+  const { colors } = useTheme();
   return (
-    <Section title="Conquistas">
-      <AppText variant="body">Sequência: {p.streak ?? 0} dias</AppText>
-      <AppText variant="body" color={titles.length ? "label" : "secondaryLabel"}>
-        {titles.length ? titles.join(", ") : "Nenhuma conquista ainda."}
+    <View style={[styles.tag, { backgroundColor: tone === "accent" ? colors.accentSoft : colors.successSoft }]}>
+      <AppText variant="caption" color={tone === "accent" ? "accentText" : "successText"} style={styles.bold}>
+        {label}
       </AppText>
+    </View>
+  );
+}
+
+/** Streak and medals, only for friends (the server hides them from anyone else). */
+function friendStats({ relation, streak, badges }: UserProfile): Stat[] | undefined {
+  if (relation !== "friends") return undefined;
+  const days = streak ?? 0;
+  const medals = badges?.length ?? 0;
+  return [
+    { value: String(days), label: days === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
+    { value: String(medals), label: medals === 1 ? "medalha" : "medalhas", color: "successText" },
+  ];
+}
+
+/** Friends see the streak and medals; anyone else gets a line saying so. */
+function FriendDetails({ p }: { p: UserProfile }) {
+  if (p.relation !== "friends") {
+    return (
+      <AppText variant="footnote" color="secondaryLabel" align="center">
+        Sequência e medalhas aparecem quando vocês forem amigos.
+      </AppText>
+    );
+  }
+  const medals: BadgeState[] = BADGES.filter((b) => p.badges?.includes(b.id)).map((def) => ({ def, unlocked: true, progress: def.target }));
+  return (
+    <Section title={`Medalhas · ${medals.length}`}>
+      {medals.length ? (
+        <BadgeList badges={medals} />
+      ) : (
+        <AppText variant="body" color="secondaryLabel">
+          Nenhuma medalha ainda.
+        </AppText>
+      )}
     </Section>
   );
 }
@@ -85,7 +121,6 @@ function Failed({ error, retry }: { error: string; retry: () => void }) {
 
 export default function PersonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors } = useTheme();
   const [p, setP] = useState<UserProfile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -124,25 +159,22 @@ export default function PersonScreen() {
     );
   }
 
+  const relation = RELATION_TAG[p.relation];
   return (
-    <Screen title={p.name} underHeader>
-      <Avatar url={p.avatarUrl} size={96} />
-      <View style={styles.tags}>
-        <AppText variant="subheadline" color="secondaryLabel">
-          @{p.username}
-        </AppText>
-        <BeltChip level={p.level} />
-        <AppText variant="subheadline" color="secondaryLabel">
-          Nível {p.level}
-        </AppText>
-        {p.isAdmin && (
-          <View style={[styles.staff, { backgroundColor: colors.accentSoft }]}>
-            <AppText variant="caption" color="accentText" style={styles.bold}>
-              {STAFF_BADGE}
-            </AppText>
-          </View>
-        )}
-      </View>
+    <Screen underHeader>
+      <ProfileCard
+        name={p.name}
+        username={p.username}
+        photo={p.avatarUrl}
+        level={p.level}
+        stats={friendStats(p)}
+        tags={
+          <>
+            {p.isAdmin && <Tag label={STAFF_BADGE} tone="accent" />}
+            {relation && <Tag label={relation} tone="success" />}
+          </>
+        }
+      />
       {(status ?? loadError) && (
         <AppText variant="subheadline" color="danger" accessibilityLiveRegion="polite">
           {status ?? loadError}
@@ -155,8 +187,7 @@ export default function PersonScreen() {
 }
 
 const styles = StyleSheet.create({
-  tags: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
-  staff: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
+  tag: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
   bold: { fontWeight: "700" },
   pair: { flexDirection: "row", gap: space.sm },
   grow: { flex: 1 },
