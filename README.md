@@ -57,7 +57,7 @@ A pasta `dist/` é um site estático. Publique-a em qualquer hospedagem com HTTP
 
 **Vercel:** o `vercel.json` já define o build (`npx expo export -p web`), a pasta `dist` e o modo SPA. Importe o repositório na Vercel e faça o deploy, sem configuração extra.
 
-**Lembretes no PWA:** com o Web Push configurado (passo 8 de [docs/supabase-setup.md](docs/supabase-setup.md)), o app manda a lista de lembretes para o Supabase e uma função envia cada um na hora, então eles chegam com o Habitus fechado. Sem o Web Push, os lembretes só chegam enquanto o app está aberto ou foi minimizado há pouco. O toque abre a dica. No iPhone, as notificações só existem depois de instalar na Tela de Início (iOS 16.4+). As ações "Feita"/"Adiar" existem só no app nativo.
+**Lembretes no PWA:** com o Web Push configurado (passo 9 de [docs/supabase-setup.md](docs/supabase-setup.md)), o app manda a lista de lembretes para o Supabase e uma função envia cada um na hora, então eles chegam com o Habitus fechado. Sem o Web Push, os lembretes só chegam enquanto o app está aberto ou foi minimizado há pouco. O toque abre a dica. No iPhone, as notificações só existem depois de instalar na Tela de Início (iOS 16.4+). As ações "Feita"/"Adiar" existem só no app nativo.
 
 ## Hora de dormir (6ª dica)
 

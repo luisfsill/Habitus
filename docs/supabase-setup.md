@@ -78,7 +78,18 @@ Isso cria os perfis (nome, cargo, validade do acesso), os planos com os preços 
 
 Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele reaplica a regra de que só quem tem acesso ativo sincroniza.
 
-## 7. Publicar a função `admin-users`
+## 7. Amigos
+
+Cria o @usuário, a busca, os pedidos de amizade e o ranking da semana. Rode **depois** de `admin.sql` (passo 6) e de `push.sql` (passo 9): os avisos de amizade entram na mesma fila do Web Push.
+
+1. Abra **SQL Editor → New query**.
+2. Cole todo o conteúdo de [`supabase/social.sql`](../supabase/social.sql) e clique em **Run**.
+
+Isso liga a extensão `unaccent` (busca sem acento), acrescenta `username` e `searchable` aos perfis e cria `public_stats`, `friendships`, `blocks` e `friend_request_log`. Os perfis continuam sem leitura pública: uma conta só vê outra pelas funções do arquivo, que nunca devolvem e-mail, plano ou validade. Se aparecer erro dizendo que `extensions.unaccent` não existe, a extensão foi ligada antes em outro esquema: em **Database → Extensions**, desligue `unaccent` e rode o arquivo de novo.
+
+O roteiro para conferir está no fim desta página, em "Conferir os amigos".
+
+## 8. Publicar a função `admin-users`
 
 Criar usuários, trocar e-mail e gerar senha pelo painel usam uma pequena função que roda no Supabase.
 
@@ -96,7 +107,7 @@ npx supabase functions deploy admin-users --project-ref SEU_PROJECT_REF
 
 A função usa a chave secreta que o próprio Supabase fornece a ela. Você não precisa copiar nenhuma chave.
 
-## 8. Lembretes com o app fechado (Web Push)
+## 9. Lembretes com o app fechado (Web Push)
 
 Sem este passo, no iPhone e no navegador os lembretes só chegam com o Habitus aberto. Faça uma vez:
 
@@ -117,7 +128,7 @@ Sem este passo, no iPhone e no navegador os lembretes só chegam com o Habitus a
 
 Para conferir o agendador: **Integrations → Cron** (ou `select * from cron.job_run_details order by start_time desc limit 5;`) mostra uma execução por minuto. Os registros da função ficam em **Edge Functions → push-send → Logs**.
 
-## 9. Virar administrador
+## 10. Virar administrador
 
 Crie sua conta no app normalmente. Depois, no **SQL Editor**, rode (com o seu e-mail):
 
@@ -126,3 +137,15 @@ update public.profiles set role = 'admin', unlimited = true where email = 'seu_e
 ```
 
 Feche e abra o app: a aba **Admin** aparece na barra de baixo.
+
+## Conferir os amigos
+
+Depois do passo 7, use duas contas de teste (A e B), cada uma num navegador ou aparelho:
+
+1. Crie as duas contas e escolha um @ para cada uma na tela "Escolha seu @".
+2. Em A, abra **Amigos → Buscar amigos** e busque `%` e depois `ab`. Nenhuma das duas buscas deve listar alguém.
+3. Em A, busque o @ de B. B aparece.
+4. Em B, desligue **Ajustes → Conta → Aparecer na busca**. Em A, busque o @ de B de novo: B some. Em B, abra a busca: aparece o aviso de que B está fora da busca e nenhuma busca é feita. Ligue de novo em B.
+5. Em A, abra o perfil de B e toque em **Pedir amizade**. Em B, o pedido aparece em **Pedidos** na aba Amigos.
+6. Em B, toque em **Recusar**. Em A, o perfil de B mostra "Tente de novo mais tarde" no lugar de "Pedir amizade".
+7. Torne uma terceira conta administradora (passo 10). Em A, busque o @ dela: ela não aparece.
