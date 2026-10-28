@@ -51,7 +51,7 @@ export default function SearchFriendsScreen() {
         <AppText variant="body" color="secondaryLabel">
           Você está fora da busca. Ative &quot;Aparecer na busca&quot; em Ajustes para buscar pessoas.
         </AppText>
-        <PrimaryButton label="Abrir Ajustes" variant="tinted" onPress={() => router.navigate("/settings")} />
+        <PrimaryButton label="Abrir Ajustes" variant="tinted" onPress={() => router.navigate("/settings/conta")} />
       </Screen>
     );
   }

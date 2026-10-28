@@ -113,7 +113,7 @@ export default function AdminUsersScreen() {
           email={me.email}
           menu={[
             { label: "Voltar para o app", icon: { ios: "house", android: "home" }, onPress: () => router.navigate("/") },
-            { label: "Meu perfil", icon: { ios: "person.crop.circle", android: "account_circle" }, onPress: () => router.navigate("/settings") },
+            { label: "Meu perfil", icon: { ios: "person.crop.circle", android: "account_circle" }, onPress: () => router.navigate("/settings/conta") },
             { label: "Planos e preços", icon: { ios: "creditcard", android: "credit_card" }, onPress: () => router.push("/admin/plans") },
             { label: "Convites", icon: { ios: "envelope", android: "email" }, onPress: () => router.push("/admin/invites") },
             { label: "Termos e Privacidade", icon: { ios: "doc.text", android: "description" }, onPress: () => router.push("/legal/terms") },

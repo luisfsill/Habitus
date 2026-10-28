@@ -59,7 +59,7 @@ function Affirmations() {
         </AppText>
       ))}
       <View style={styles.inlineButton}>
-        <PrimaryButton label="Editar afirmações" variant="plain" onPress={() => router.navigate("/settings")} />
+        <PrimaryButton label="Editar afirmações" variant="plain" onPress={() => router.navigate("/settings/afirmacoes")} />
       </View>
     </View>
   );

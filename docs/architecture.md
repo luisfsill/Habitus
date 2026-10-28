@@ -89,6 +89,7 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 - Domínio puro: `src/domain/username.ts` (validar, normalizar, reservados, sugestão) e `src/domain/friends.ts` (relação, ordenação do ranking, XP da semana).
 - `src/services/social.ts`: chamadas RPC e gravação de `public_stats`. `src/state/use-friends.ts` alimenta a aba e a contagem de pedidos do badge.
 - Telas: `/arroba` ("Escolha seu @", obrigatória para contas sem @), aba Amigos (`(tabs)/amigos`: ranking da semana, pedidos, amigos, `buscar` e o perfil `[id]`) e, em Ajustes > Conta, o @ editável e "Aparecer na busca".
+- Ajustes (`(tabs)/settings`) é um menu agrupado no estilo do Instagram; cada item abre a própria tela: `[section]` (horario, dormir, dias, afirmacoes, notificacoes, agua, aparencia) e `conta`.
 - Avisos de pedido e aceite entram em `push_queue` com ids `social:<tipo>:<id>`. Esses ids só saem da fila pela `push-send`: `unqueuePush` (cancelamento de lembretes) nunca os apaga (`isSocialPushId`).
 - shortcut: o XP da semana é calculado no aparelho e publicado em `public_stats`, então pode ser inflado pela API. Aceitável para um ranking só entre amigos; recalcular no servidor se o ranking virar global.
 
