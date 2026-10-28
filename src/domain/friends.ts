@@ -13,7 +13,7 @@ export interface RankRow { id: string; name: string; username: string; level: nu
 
 export const STAFF_BADGE = "Fundador";
 
-const RELATIONS: readonly string[] = ["none", "outgoing", "incoming", "friends"];
+export const RELATIONS: readonly string[] = ["none", "outgoing", "incoming", "friends"];
 
 // shortcut: XP calculado no aparelho e publicado pelo próprio app; recalcular no servidor se o ranking virar global.
 export function publicStats(data: Pick<AppData, "completions" | "gratitude" | "settings" | "water">, now: Date): PublicStats {
@@ -46,9 +46,9 @@ export function rankWeek(me: Omit<RankRow, "me" | "position">, friends: readonly
 }
 
 type Row = Record<string, unknown>;
-const isRow = (v: unknown): v is Row => typeof v === "object" && v !== null && !Array.isArray(v);
-const str = (v: unknown): v is string => typeof v === "string" && v.length > 0;
-const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+export const isRow = (v: unknown): v is Row => typeof v === "object" && v !== null && !Array.isArray(v);
+export const str = (v: unknown): v is string => typeof v === "string" && v.length > 0;
+export const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 export function parsePublicUser(row: unknown): PublicUser | null {
   if (!isRow(row)) return null;

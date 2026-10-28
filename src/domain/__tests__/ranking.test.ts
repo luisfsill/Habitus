@@ -4,7 +4,7 @@ import { join } from "path";
 import { progressOf } from "../achievements";
 import { defaultData } from "../app-data";
 import { weekDays } from "../history";
-import { weekXp, type RankingLog } from "../ranking";
+import { parseGlobalRanking, weekXp, type RankingLog } from "../ranking";
 import { addDays, dayKey } from "../time";
 
 interface Vector { name: string; log: RankingLog; weekStart: string; lenientFrom: string; expected: number }
@@ -37,5 +37,27 @@ describe("weekXp", () => {
       activeDays: data.settings.days,
     };
     expect(weekXp(log, dayKey(sunday), "2026-10-28")).toBe(expected);
+  });
+});
+
+describe("parseGlobalRanking", () => {
+  const row = (o: Record<string, unknown> = {}) => ({ position: 1, id: "a", name: "Ana", username: "ana", level: 3, week_xp: 40, relation: "none", ...o });
+
+  it("maps week_xp to weekXp", () => {
+    expect(parseGlobalRanking({ top: [row()], me: null }).top).toEqual([{ position: 1, id: "a", name: "Ana", username: "ana", level: 3, weekXp: 40, relation: "none" }]);
+  });
+  it("drops rows with a bad relation or no username", () => {
+    const { username: _u, ...noUser } = row();
+    expect(parseGlobalRanking({ top: [row({ relation: "x" }), noUser, row({ id: "b" })], me: null }).top.map((r) => r.id)).toEqual(["b"]);
+  });
+  it("returns empty for null or a null top", () => {
+    expect(parseGlobalRanking(null)).toEqual({ top: [], me: null });
+    expect(parseGlobalRanking({ week_start: "2026-10-25", top: null, me: null })).toEqual({ top: [], me: null });
+  });
+  it("keeps me when outside the top", () => {
+    expect(parseGlobalRanking({ top: [row()], me: row({ id: "z", position: 99 }) }).me?.id).toBe("z");
+  });
+  it("keeps ties", () => {
+    expect(parseGlobalRanking({ top: [row({ id: "a" }), row({ id: "b" })], me: null }).top.map((r) => r.position)).toEqual([1, 1]);
   });
 });

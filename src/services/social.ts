@@ -1,4 +1,5 @@
 import { type FriendsOverview, parseFriendsOverview, parsePublicUser, parseUserProfile, type PublicStats, type PublicUser, type UserProfile } from "@/domain/friends";
+import { type GlobalRanking, parseGlobalRanking } from "@/domain/ranking";
 
 import { serviceError } from "./profile";
 import { requireSupabase } from "./supabase";
@@ -58,6 +59,10 @@ export async function unblockUser(id: string): Promise<void> {
 
 export async function myFriends(): Promise<FriendsOverview> {
   return parseFriendsOverview(await call("my_friends"));
+}
+
+export async function fetchGlobalRanking(today: string): Promise<GlobalRanking> {
+  return parseGlobalRanking(await call("global_ranking", { today }));
 }
 
 /** Upserts the numbers friends can see (RLS lets each user write only their own row). */
