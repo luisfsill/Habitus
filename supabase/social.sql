@@ -185,15 +185,21 @@ end;
 $$;
 
 -- Aviso de amizade na fila de Web Push. O mesmo id substitui o aviso anterior.
+-- plpgsql só resolve push_queue ao executar: sem push.sql (Web Push opcional), não avisa e não falha.
 create or replace function public.queue_social_push(target uuid, kind text, message text)
-returns void language sql security definer set search_path = ''
+returns void language plpgsql security definer set search_path = ''
 as $$
+begin
+  if to_regclass('public.push_queue') is null then
+    return;
+  end if;
   insert into public.push_queue (user_id, id, send_at, title, body, url)
   select target, 'social:' || kind || ':' || p.id, now(), 'Habitus',
     replace(message, '{nome}', coalesce(nullif(trim(p.name), ''), '@' || p.username, 'Alguém')), '/amigos'
   from public.profiles p where p.id = auth.uid()
   on conflict (user_id, id) do update
     set send_at = excluded.send_at, title = excluded.title, body = excluded.body, url = excluded.url;
+end;
 $$;
 
 -- Funções do app ----------------------------------------------------------------

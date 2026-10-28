@@ -80,7 +80,9 @@ Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele re
 
 ## 7. Amigos
 
-Cria o @usuário, a busca, os pedidos de amizade e o ranking da semana. Rode **depois** de `admin.sql` (passo 6) e de `push.sql` (passo 9): os avisos de amizade entram na mesma fila do Web Push.
+**Rode antes de publicar esta versão do app.** Sem estas tabelas e funções, a aba Amigos e a tela "Escolha seu @" não funcionam.
+
+Cria o @usuário, a busca, os pedidos de amizade e o ranking da semana. Rode **depois** de `admin.sql` (passo 6). O Web Push (passo 9) é opcional: os avisos de pedido e de amizade aceita só começam a chegar quando `push.sql` estiver instalado, e os pedidos aparecem na aba Amigos de qualquer forma.
 
 1. Abra **SQL Editor → New query**.
 2. Cole todo o conteúdo de [`supabase/social.sql`](../supabase/social.sql) e clique em **Run**.
