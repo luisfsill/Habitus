@@ -14,6 +14,7 @@ import {
   parsePrice,
   parseProfile,
   type Profile,
+  helpWhatsAppUrl,
   renewWhatsAppUrl,
   statusLabel,
 } from "../access";
@@ -103,6 +104,14 @@ describe("renewWhatsAppUrl", () => {
     expect(decodeURIComponent(url.split("text=")[1])).toBe(
       "Olá! Sou Maria (maria@x.com). Paguei o Habitus no plano Anual (R$ 79,90) pelo Pix, pedido HABK7Q2ZP. Segue o comprovante.",
     );
+  });
+});
+
+describe("helpWhatsAppUrl", () => {
+  it("opens the owner's WhatsApp asking for help with the payment code", () => {
+    const url = helpWhatsAppUrl("Maria", "maria@x.com", "AB12CD34");
+    expect(url.startsWith("https://wa.me/5537999216351?text=")).toBe(true);
+    expect(decodeURIComponent(url.split("text=")[1])).toBe("Olá! Sou Maria (maria@x.com). Preciso de ajuda com o pagamento do Habitus, pedido AB12CD34.");
   });
 });
 

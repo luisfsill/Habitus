@@ -98,6 +98,12 @@ export function renewWhatsAppUrl(name: string, email: string, plan: Pick<Plan, "
   return `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(text)}`;
 }
 
+/** The WhatsApp message to ask for help with a payment, with its code. */
+export function helpWhatsAppUrl(name: string, email: string, code: string): string {
+  const text = `Olá! Sou ${name} (${email}). Preciso de ajuda com o pagamento do Habitus, pedido ${code}.`;
+  return `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(text)}`;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

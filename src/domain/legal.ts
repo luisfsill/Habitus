@@ -97,6 +97,7 @@ export const PRIVACY: LegalDocument = {
         "Seu nome, seu @usuário e a foto ou avatar do perfil, se você escolher um, e, para o ranking, o seu XP da semana, nível, faixa, sequência de dias e conquistas.",
         "O que você registra no app: horários de início e fim do dia, dias da semana, horário de dormir, afirmações, frases de gratidão, dicas feitas e os horários em que você fez a dica antes de dormir.",
         "A data e a versão destes documentos quando você os aceitou.",
+        "Seu CPF, se você pagar pelo Pix automático, guardado só para gerar a cobrança no PagBank.",
       ],
     },
     {
