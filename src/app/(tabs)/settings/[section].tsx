@@ -44,12 +44,12 @@ function Schedule({ draft, change }: PageProps) {
   const sleep = estimateBedtime(data.settings.bedtime, data.sleepLog, data.completions, new Date());
   return (
     <>
-      <Section title="Seu dia" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
+      <Section plain title="Seu dia" footer="As 5 primeiras dicas são distribuídas igualmente entre o início e o fim. A 6ª chega na hora de dormir.">
         <TimeField label="Início" value={draft.start} onChange={(start) => void change({ start })} />
         <TimeField label="Fim" value={draft.end} onChange={(end) => void change({ end })} />
         <SchedulePreview start={draft.start} end={draft.end} days={draft.days} bedtime={sleep.minutes} />
       </Section>
-      <Section title="Hora de dormir" footer={bedtimeFooter(sleep)}>
+      <Section plain title="Hora de dormir" footer={bedtimeFooter(sleep)}>
         <BedtimeField value={draft.bedtime} onChange={(bedtime) => void change({ bedtime })} />
       </Section>
     </>
@@ -58,7 +58,7 @@ function Schedule({ draft, change }: PageProps) {
 
 function Days({ draft, change }: PageProps) {
   return (
-    <Section title="Dias da semana">
+    <Section plain title="Dias da semana">
       <WeekdayPicker value={draft.days} onChange={(days) => void change({ days })} />
     </Section>
   );
@@ -67,7 +67,7 @@ function Days({ draft, change }: PageProps) {
 function Affirmations({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section title="Afirmações" footer="Aparecem na dica 3, Metas em voz alta. Escreva no presente.">
+    <Section plain title="Afirmações" footer="Aparecem na dica 3, Metas em voz alta. Escreva no presente.">
       <AffirmationsEditor value={data.settings.affirmations} onChange={(affirmations) => void change({ affirmations })} />
     </Section>
   );
@@ -90,20 +90,18 @@ function Notifications({ draft, change, setStatus }: PageProps) {
   };
 
   return (
-    <Section title="Notificações">
+    <Section plain title="Notificações">
       <View style={styles.row}>
         <AppText variant="body">Som</AppText>
         <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
       </View>
-      <View>
-        <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
-        <ActionRow label="Simular um dia em 5 minutos" icon={{ ios: "timer", android: "timer" }} onPress={() => void testRun()} />
-        <ActionRow
-          label="Ver notificações agendadas"
-          icon={{ ios: "list.bullet", android: "list" }}
-          onPress={() => void pendingCount().then((n) => setStatus(`${n} notificações agendadas.`))}
-        />
-      </View>
+      <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
+      <ActionRow label="Simular um dia em 5 minutos" icon={{ ios: "timer", android: "timer" }} onPress={() => void testRun()} />
+      <ActionRow
+        label="Ver notificações agendadas"
+        icon={{ ios: "list.bullet", android: "list" }}
+        onPress={() => void pendingCount().then((n) => setStatus(`${n} notificações agendadas.`))}
+      />
     </Section>
   );
 }
@@ -113,6 +111,7 @@ function Water({ draft, change }: PageProps) {
   const water = draft.water;
   return (
     <Section
+      plain
       title="Água"
       footer={
         water.enabled
@@ -127,24 +126,24 @@ function Water({ draft, change }: PageProps) {
         <ToggleSwitch value={water.enabled} onValueChange={(enabled) => void change({ water: { ...water, enabled } })} accessibilityLabel="Lembretes de água" />
       </View>
       {water.enabled && (
-        <View>
-          <Stepper
-            label="Meta do dia"
-            value={`${water.goal} copos`}
-            canMinus={water.goal > WATER_GOAL.min}
-            canPlus={water.goal < WATER_GOAL.max}
-            onMinus={() => void change({ water: { ...water, goal: water.goal - 1 } })}
-            onPlus={() => void change({ water: { ...water, goal: water.goal + 1 } })}
-          />
-          <Stepper
-            label="Lembrar a cada"
-            value={formatEvery(water.everyMinutes)}
-            canMinus={water.everyMinutes > WATER_EVERY.min}
-            canPlus={water.everyMinutes < WATER_EVERY.max}
-            onMinus={() => void change({ water: { ...water, everyMinutes: water.everyMinutes - WATER_EVERY.step } })}
-            onPlus={() => void change({ water: { ...water, everyMinutes: water.everyMinutes + WATER_EVERY.step } })}
-          />
-        </View>
+        <Stepper
+          label="Meta do dia"
+          value={`${water.goal} copos`}
+          canMinus={water.goal > WATER_GOAL.min}
+          canPlus={water.goal < WATER_GOAL.max}
+          onMinus={() => void change({ water: { ...water, goal: water.goal - 1 } })}
+          onPlus={() => void change({ water: { ...water, goal: water.goal + 1 } })}
+        />
+      )}
+      {water.enabled && (
+        <Stepper
+          label="Lembrar a cada"
+          value={formatEvery(water.everyMinutes)}
+          canMinus={water.everyMinutes > WATER_EVERY.min}
+          canPlus={water.everyMinutes < WATER_EVERY.max}
+          onMinus={() => void change({ water: { ...water, everyMinutes: water.everyMinutes - WATER_EVERY.step } })}
+          onPlus={() => void change({ water: { ...water, everyMinutes: water.everyMinutes + WATER_EVERY.step } })}
+        />
       )}
     </Section>
   );
@@ -153,7 +152,7 @@ function Water({ draft, change }: PageProps) {
 function Appearance({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section title="Aparência" footer="Auto segue o modo claro ou escuro do aparelho.">
+    <Section plain title="Aparência" footer="Auto segue o modo claro ou escuro do aparelho.">
       <ThemeTabs value={data.settings.theme} onChange={(theme) => void change({ theme })} />
     </Section>
   );
