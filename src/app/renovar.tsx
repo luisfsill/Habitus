@@ -11,11 +11,12 @@ import { PixReceipt } from "@/components/pix-receipt";
 import { CpfStep, PixStep } from "@/components/pix-step";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
+import { RedeemCode } from "@/components/redeem-code";
 import { Screen } from "@/components/screen";
 import { accessStatus, displayName, formatPrice, hasAccess as profileHasAccess, helpWhatsAppUrl, OWNER_PIX, type Plan, type Profile, renewWhatsAppUrl } from "@/domain/access";
 import { formatPaymentTime } from "@/domain/payments";
 import { pixPayload } from "@/domain/pix";
-import { fetchPlans } from "@/services/profile";
+import { fetchPlans, redeemInvite } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
 import { type PixStep as Step, usePixCheckout } from "@/state/pix-checkout";
@@ -117,11 +118,15 @@ function PlanPicker({ plans, selected, onSelect }: { plans: readonly Plan[]; sel
   );
 }
 
-/** "Já paguei", "Sair da conta" and "Excluir conta": only once access has ended, when this is the only screen. */
+/**
+ * A gift code, "Já paguei", "Sair da conta" and "Excluir conta": only once access has ended, when this is the only screen
+ * (no account menu with Gift Code). The plan reloads only after the gift animation, which would otherwise leave with the screen.
+ */
 function Locked({ onRecheck, checking, onLeave, onRemove }: { onRecheck: () => void; checking: boolean; onLeave: () => void; onRemove: () => void }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.account, { borderColor: colors.separator }]}>
+      <RedeemCode onRedeem={redeemInvite} onDone={onRecheck} />
       <PrimaryButton variant="tinted" label="Já paguei, atualizar" onPress={onRecheck} loading={checking} />
       <PrimaryButton variant="plain" label="Sair da conta" onPress={onLeave} />
       <PrimaryButton variant="plain" destructive label="Excluir conta" onPress={onRemove} />

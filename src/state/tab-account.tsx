@@ -7,20 +7,19 @@ import { GiftCodeModal } from "@/components/gift-code-modal";
 import { doneCount } from "@/domain/history";
 import { dayKey } from "@/domain/time";
 import { TRICK_COUNT } from "@/domain/tricks";
+import { redeemInvite } from "@/services/profile";
 
 import { useAccess } from "./access";
 import { useAppState } from "./app-state";
 import { useAuth } from "./auth";
-import { useRedeem } from "./use-redeem";
 import { useSignOut } from "./use-sign-out";
 
 /** The account button in the top-right corner of every tab. */
 export function TabAccount() {
   const { data, updateSettings } = useAppState();
-  const { profile, isAdmin } = useAccess();
+  const { profile, isAdmin, refresh } = useAccess();
   const { session } = useAuth();
   const signOut = useSignOut();
-  const redeem = useRedeem();
   const [gift, setGift] = useState(false);
   const inAdmin = usePathname().startsWith("/admin");
   // On a phone the name and e-mail would push the title onto three lines.
@@ -78,8 +77,12 @@ export function TabAccount() {
       />
       <GiftCodeModal
         visible={gift}
-        onClose={() => setGift(false)}
-        onRedeem={redeem}
+        onClose={() => {
+          setGift(false);
+          // Picks up the redeemed days (after the celebration, which a change of access would cut short).
+          void refresh();
+        }}
+        onRedeem={redeemInvite}
       />
     </>
   );
