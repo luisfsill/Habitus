@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -77,14 +77,21 @@ function TitleBlock({ title, subtitle, accessory, dense, back }: Pick<Props, "ti
 export function Screen({ title, subtitle, children, footer, accessory, underHeader, backdrop, dense, back }: Props) {
   const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const content = [styles.content, dense && styles.dense, pagePadding(insets, { dense, underHeader, footer: Boolean(footer) })];
+  // A taller footer (two buttons, say) needs more room under the content than the fixed padding gives.
+  const [footHeight, setFootHeight] = useState(0);
+  const padding = pagePadding(insets, { dense, underHeader, footer: Boolean(footer) });
+  const content = [styles.content, dense && styles.dense, padding, footer ? { paddingBottom: Math.max(padding.paddingBottom, footHeight + space.lg) } : null];
   const body = (
     <>
       {(title || subtitle) && <TitleBlock title={title} subtitle={subtitle} accessory={accessory} dense={dense} back={back} />}
       {children}
     </>
   );
-  const foot = footer && <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>{footer}</View>;
+  const foot = footer && (
+    <View onLayout={(e) => setFootHeight(e.nativeEvent.layout.height)} style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
+      {footer}
+    </View>
+  );
   // On the web the page itself scrolls (so mobile Safari tucks its bars away); the footer pins to the viewport.
   // The page is clear there: the root layout's water canvas shows through, and the footer bar is frosted glass.
   if (Platform.OS === "web") {
