@@ -1,7 +1,9 @@
 import { type Href, router } from "expo-router";
+import { Fragment } from "react";
 import { View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
+import { Divider } from "@/components/divider";
 import { PermissionBanners } from "@/components/permission-banner";
 import { Screen } from "@/components/screen";
 import { openSystemSettings } from "@/services/notifications";
@@ -30,8 +32,11 @@ export default function SettingsMenuScreen() {
         onAllowExactAlarms={() => void askExactAlarms()}
       />
       <View>
-        {ITEMS.map((item) => (
-          <ActionRow key={item.label} label={item.label} icon={item.icon} navigates onPress={() => router.push(item.href)} />
+        {ITEMS.map((item, i) => (
+          <Fragment key={item.label}>
+            {i > 0 && <Divider />}
+            <ActionRow label={item.label} icon={item.icon} navigates onPress={() => router.push(item.href)} />
+          </Fragment>
         ))}
       </View>
     </Screen>

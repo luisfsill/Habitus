@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
+import { Divider } from "@/components/divider";
 import { Screen } from "@/components/screen";
 import { ToggleSwitch } from "@/components/toggle-switch";
 import { useAppState } from "@/state/app-state";
@@ -32,6 +33,7 @@ export default function AccountScreen() {
     <Screen title="Conta" underHeader>
       <View>
         <ActionRow label="Editar perfil" icon={{ ios: "pencil", android: "edit" }} navigates onPress={() => router.push("/settings/perfil")} />
+        <Divider />
         <View style={styles.row}>
           <AppText variant="body">Aparecer na busca</AppText>
           <ToggleSwitch
@@ -43,12 +45,14 @@ export default function AccountScreen() {
         <AppText variant="footnote" color="secondaryLabel">
           Se desligar, ninguém acha você e você também não pode buscar ninguém.
         </AppText>
+        <Divider />
         <View style={styles.row}>
           <AppText variant="body">Apelido</AppText>
           <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
             {profile?.username ? `@${profile.username}` : "Sem @"}
           </AppText>
         </View>
+        {session?.user.email && <Divider />}
         {session?.user.email && (
           <View style={styles.row}>
             <AppText variant="body">E-mail</AppText>
@@ -60,7 +64,9 @@ export default function AccountScreen() {
       </View>
       <View>
         <ActionRow label="Ver planos" icon={{ ios: "creditcard", android: "credit_card" }} navigates onPress={() => router.push("/renovar")} />
+        <Divider />
         <ActionRow label="Resetar dados" icon={{ ios: "arrow.counterclockwise", android: "restart_alt" }} destructive onPress={resetData} />
+        <Divider />
         <ActionRow label="Excluir conta" icon={{ ios: "trash", android: "delete" }} destructive onPress={remove} />
         {message && (
           <AppText variant="footnote" color="secondaryLabel" accessibilityLiveRegion="polite">
