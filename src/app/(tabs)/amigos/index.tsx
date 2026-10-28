@@ -108,21 +108,15 @@ export default function FriendsScreen() {
 
   const retry = error ? () => void reload() : undefined;
 
-  if (!overview) {
-    return (
-      <Screen title="Amigos" accessory={<TabAccount />}>
-        {searchField}
-        {error ? <Problem message={error} retry={retry} loading={loading} /> : <AppText variant="body" color="secondaryLabel">Carregando…</AppText>}
-      </Screen>
-    );
-  }
-
-  const { friends, incoming } = overview;
+  const friends = overview?.friends ?? [];
+  const incoming = overview?.incoming ?? [];
   return (
     <Screen title="Amigos" accessory={<TabAccount />}>
       {searchField}
       {userSearch.query !== "" ? (
         <Results search={userSearch} />
+      ) : !overview ? (
+        error ? <Problem message={error} retry={retry} loading={loading} /> : <AppText variant="body" color="secondaryLabel">Carregando…</AppText>
       ) : (
         <>
           <Problem message={error ?? status} retry={retry} loading={loading} />

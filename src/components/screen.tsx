@@ -101,7 +101,7 @@ export function Screen({ title, subtitle, children, footer, accessory, underHead
   return (
     <View style={[styles.root, backdrop ? styles.clear : backdrops[scheme]]}>
       {backdrop ?? <WaterBackdrop scheme={scheme} />}
-      <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={content}>
+      <ScrollView contentInsetAdjustmentBehavior="never" keyboardShouldPersistTaps="handled" contentContainerStyle={content}>
         {body}
       </ScrollView>
       {foot}

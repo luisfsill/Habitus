@@ -15,15 +15,17 @@ interface Props {
   requesting: string | null;
 }
 
-function Row({ row, mine, onOpen, onAdd, requesting }: Omit<Props, "ranking"> & { row: GlobalRow; mine: boolean }) {
+function Row({ row, mine, first, pinned, onOpen, onAdd, requesting }: Omit<Props, "ranking"> & { row: GlobalRow; mine: boolean; first?: boolean; pinned?: boolean }) {
   const { colors } = useTheme();
-  const name = mine ? "Você" : row.name;
+  const name = pinned ? `${row.position} · Você` : mine ? "Você" : row.name;
   const podium = row.position <= 3;
   const body = (
     <>
-      <AppText variant="headline" color={podium ? "warm" : "secondaryLabel"} style={styles.position}>
-        {row.position}
-      </AppText>
+      {pinned ? null : (
+        <AppText variant="headline" color={podium ? "warm" : "secondaryLabel"} style={styles.position}>
+          {row.position}
+        </AppText>
+      )}
       <View style={styles.who}>
         <AppText variant="headline" color={mine ? "accentText" : "label"} numberOfLines={1}>
           {name}
@@ -39,7 +41,7 @@ function Row({ row, mine, onOpen, onAdd, requesting }: Omit<Props, "ranking"> & 
     </>
   );
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, !first && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.separator }]}>
       {mine ? (
         <View
           style={styles.main}
@@ -95,12 +97,10 @@ export function GlobalRankList({ ranking, onOpen, onAdd, requesting }: Props) {
           Ninguém pontuou nesta semana ainda
         </AppText>
       ) : (
-        top.map((r) => <Row key={r.id} row={r} mine={r.id === me?.id} {...shared} />)
+        top.map((r, i) => <Row key={r.id} row={r} mine={r.id === me?.id} first={i === 0} {...shared} />)
       )}
       {meOutside ? (
-        <View style={[styles.pinned, { borderColor: colors.separator }]}>
-          <Row row={me} mine {...shared} />
-        </View>
+        <Row row={me} mine pinned {...shared} />
       ) : null}
       {me === null ? (
         <AppText variant="footnote" color="secondaryLabel" style={[styles.pinned, { borderColor: colors.separator }]}>
@@ -112,7 +112,7 @@ export function GlobalRankList({ ranking, onOpen, onAdd, requesting }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { minHeight: HIT, flexDirection: "row", alignItems: "center", gap: space.sm },
+  row: { minHeight: HIT, flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: space.md },
   main: { flex: 1, minHeight: HIT, flexDirection: "row", alignItems: "center", gap: space.md },
   position: { minWidth: 24, textAlign: "center" },
   who: { flex: 1, gap: 2 },
