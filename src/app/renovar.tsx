@@ -186,6 +186,15 @@ function PayBody({ plan, flow }: { plan: Plan; flow: ReturnType<typeof usePixChe
   return <PayWithPix plan={plan} order={flow.order} code={pixPayload({ ...OWNER_PIX, amountCents: plan.priceCents, txid: flow.order })} notice={flow.notice} />;
 }
 
+/** Pix confirmed by the server: refresh the profile once; the screen says so and "Ir para o app" leaves. */
+function useRefreshWhenPaid(outcome: string, refresh: () => Promise<unknown>): boolean {
+  const paid = outcome === "paid";
+  useEffect(() => {
+    if (paid) void refresh();
+  }, [paid, refresh]);
+  return paid;
+}
+
 /** Plans and renewal by Pix. With access it sits on top of the app; once access ends it is the only screen. */
 function RenewScreen() {
   const { colors } = useTheme();
@@ -208,10 +217,11 @@ function RenewScreen() {
       .catch((error: Error) => setMessage(error.message));
   }, []);
 
-  // Paid while this screen was the only route: go to the app (nothing to go back to).
+  // Paid while this screen was the only route: go to the app (nothing to go back to). After an automatic Pix the
+  // confirmation stays on screen until "Ir para o app".
   useEffect(() => {
-    if (hasAccess && !router.canGoBack()) router.replace("/");
-  }, [hasAccess]);
+    if (hasAccess && !router.canGoBack() && pixFlow.outcome !== "paid") router.replace("/");
+  }, [hasAccess, pixFlow.outcome]);
 
   const plan = plans.find((p) => p.id === selected);
   const title = hasAccess ? "Planos" : profile?.plan === "trial" ? "Seu teste grátis acabou" : "Seu plano acabou";
@@ -221,11 +231,7 @@ function RenewScreen() {
     void Linking.openURL(renewWhatsAppUrl(displayName(profile), profile.email, plan, pixFlow.order));
   };
 
-  // Pix confirmed by the server: refresh the profile and go to the app.
-  useEffect(() => {
-    if (pixFlow.outcome !== "paid") return;
-    void refresh().then(() => router.replace("/"));
-  }, [pixFlow.outcome, refresh]);
+  const paid = useRefreshWhenPaid(pixFlow.outcome, refresh);
 
   const recheck = async () => {
     setChecking(true);
@@ -245,7 +251,9 @@ function RenewScreen() {
       }),
     );
 
-  const footer = (
+  const footer = paid ? (
+    <PrimaryButton label="Ir para o app" icon={{ ios: "checkmark.circle.fill", android: "check_circle" }} onPress={() => router.replace("/")} glow />
+  ) : (
     <RenewFooter
       plan={plan}
       step={step}
