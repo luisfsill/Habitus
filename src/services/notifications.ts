@@ -258,13 +258,6 @@ export async function sendTestNotification(trickIndex: TrickIndex = 1): Promise<
   await schedule(tricks[trickIndex]);
 }
 
-/** Adds a compressed 5-minute "day" on top of the real schedule. */
-export async function scheduleTestRun(windowMinutes = 5): Promise<Date[]> {
-  const plan = planTestRun(new Date(), windowMinutes);
-  await scheduleAll(plan);
-  return plan.map((n) => n.date);
-}
-
 export async function pendingCount(): Promise<number> {
   if (!supported) return webPendingCount();
   return (await Notifications.getAllScheduledNotificationsAsync()).length;

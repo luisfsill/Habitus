@@ -19,7 +19,7 @@
 
 ## Testar notificações rapidamente
 
-Ajustes → "Simular um dia em 5 minutos": agenda a abertura em 10 s e as 5 dicas nos centros das fatias de 1 min (40 s, 100 s, 160 s, 220 s, 280 s). "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
+Ajustes → Notificações → "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
 
 ## Armadilhas conhecidas
 

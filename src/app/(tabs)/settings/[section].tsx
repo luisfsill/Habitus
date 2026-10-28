@@ -17,9 +17,9 @@ import { ToggleSwitch } from "@/components/toggle-switch";
 import { WeekdayRow, WeekdaySummary } from "@/components/weekday-plan";
 import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
-import { ALL_WEEKDAYS, formatTime, minutesOfDay, type Weekday } from "@/domain/time";
+import { ALL_WEEKDAYS, type Weekday } from "@/domain/time";
 import { formatEvery, WATER_EVERY, WATER_GOAL } from "@/domain/water";
-import { pendingCount, scheduleTestRun, sendTestNotification } from "@/services/notifications";
+import { pendingCount, sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
 import { HIT, useTheme } from "@/theme";
 
@@ -90,13 +90,6 @@ function Notifications({ draft, change, setStatus }: PageProps) {
     setStatus("Notificação de teste chega em 3 segundos.");
   };
 
-  const testRun = async () => {
-    if (permission !== "granted" && (await askPermission()) !== "granted") return;
-    const dates = await scheduleTestRun(5);
-    const last = dates[dates.length - 1];
-    setStatus(`Dia simulado: ${dates.length} notificações até ${formatTime(minutesOfDay(last))}.`);
-  };
-
   return (
     <Section title="Notificações">
       <View style={styles.row}>
@@ -104,7 +97,6 @@ function Notifications({ draft, change, setStatus }: PageProps) {
         <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
       </View>
       <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
-      <ActionRow label="Simular um dia em 5 minutos" icon={{ ios: "timer", android: "timer" }} onPress={() => void testRun()} />
       <ActionRow
         label="Ver notificações agendadas"
         icon={{ ios: "list.bullet", android: "list" }}
