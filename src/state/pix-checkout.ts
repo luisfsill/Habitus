@@ -10,10 +10,10 @@ export type PixStep = "idle" | "loading" | "cpf" | "manual" | "auto";
 export type PixOutcome = "pending" | "paid" | "expired";
 
 const POLL_MS = 5000;
-/** "Gerando o seu Pix" ticks its first two steps on a timer (1.2 s each): the answer waits for them... */
-const MIN_LOADING_MS = 2400;
-/** ...then the last tick and the end of the scan show for a moment before the Pix appears. */
-const FINISH_MS = 700;
+/** The scan of "Gerando o seu Pix" runs in passes of this length (same value as SCAN_PASS_MS in the component). */
+const SCAN_PASS_MS = 3600;
+/** The last tick, with the scan at the bottom, shows for a moment before the Pix appears. */
+const FINISH_MS = 500;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** While a payment is pending: a clock tick each second and a status poll every 5 s, both stopped once it settles. */
@@ -33,7 +33,7 @@ function usePolling(paymentId: string | undefined, outcome: PixOutcome, setOutco
   }, [paymentId, outcome, setOutcome, setNow]);
 }
 
-/** Pacing of the loading screen: `begin` marks its start, `land` waits out the timed steps and the last tick, then applies. */
+/** Pacing of the loading screen: `begin` marks its start, `land` waits for the end of a scan pass, shows the last tick, then applies. */
 function useLanding(setStep: (step: PixStep) => void) {
   const [finishing, setFinishing] = useState(false);
   const since = useRef(0);
@@ -42,7 +42,9 @@ function useLanding(setStep: (step: PixStep) => void) {
     setStep("loading");
   }, [setStep]);
   const land = useCallback(async (apply: () => void) => {
-    await sleep(Math.max(0, MIN_LOADING_MS - (Date.now() - since.current)));
+    // Wait for the end of the scan pass in progress, so the last tick lands with the line at the bottom.
+    const elapsed = Date.now() - since.current;
+    await sleep(SCAN_PASS_MS - (elapsed % SCAN_PASS_MS));
     setFinishing(true);
     await sleep(FINISH_MS);
     setFinishing(false);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { cancelAnimation, Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming, ZoomIn } from "react-native-reanimated";
 
 import { space, useTheme } from "@/theme";
 
@@ -11,11 +11,13 @@ const GRID = 11;
 const BOX = 180;
 const PAD = 14;
 const STEPS = ["Conferindo o plano", "Criando a cobrança no PagBank", "Preparando o QR Code"] as const;
-/** The first two steps tick on a timer; the last one waits for the server. */
-const STEP_MS = 1200;
-/** The scan creeps down while waiting and only reaches the bottom when the Pix is ready. */
-const CREEP_MS = 7000;
-const CREEP_TO = 0.85;
+/**
+ * One scan pass, top to bottom at a constant speed. The steps tick at a third and two thirds of the first pass; the
+ * Pix is shown at the end of a pass (`SCAN_PASS_MS` in state/pix-checkout.ts), so the last tick lands with the scan
+ * at the bottom. A slow server just gets more passes.
+ */
+const SCAN_PASS_MS = 3600;
+const STEP_MS = SCAN_PASS_MS / 3;
 
 const isFinder = (r: number, c: number) => (r < 3 && c < 3) || (r < 3 && c >= GRID - 3) || (r >= GRID - 3 && c < 3);
 /** A fixed scatter of "modules" so the drawing looks like a QR without being one. */
@@ -43,10 +45,13 @@ function AssemblingQr({ done }: { done: boolean }) {
   const pulses = [usePulse(0, still), usePulse(530, still), usePulse(1060, still)];
   const scan = useSharedValue(0);
   useEffect(() => {
-    if (!still) scan.set(withTiming(CREEP_TO, { duration: CREEP_MS, easing: Easing.out(Easing.quad) }));
+    if (!still) scan.set(withRepeat(withTiming(1, { duration: SCAN_PASS_MS, easing: Easing.linear }), -1));
   }, [scan, still]);
+  // Done arrives at the end of a pass: hold the line at the bottom instead of starting the next one.
   useEffect(() => {
-    if (done) scan.set(withTiming(1, { duration: 450, easing: Easing.inOut(Easing.cubic) }));
+    if (!done) return;
+    cancelAnimation(scan);
+    scan.set(1);
   }, [done, scan]);
   const line = useAnimatedStyle(() => ({ transform: [{ translateY: scan.get() * (BOX - 2 * PAD) }] }));
   const ink = "#0A2A44";
@@ -69,7 +74,10 @@ function Step({ label, state }: { label: string; state: "done" | "running" | "wa
     <View style={styles.step}>
       <View style={styles.mark}>
         {state === "done" ? (
-          <Icon ios="checkmark.circle.fill" android="check_circle" size={20} color={colors.success} />
+          // Mounted once per step (same key), so only the new tick pops; the earlier ones stay put.
+          <Animated.View entering={ZoomIn.duration(300)}>
+            <Icon ios="checkmark.circle.fill" android="check_circle" size={20} color={colors.success} />
+          </Animated.View>
         ) : state === "running" ? (
           <ActivityIndicator size="small" color={colors.accent} />
         ) : (
