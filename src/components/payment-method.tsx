@@ -64,7 +64,7 @@ export function PaymentMethodPicker({ config, onMode, onEnv }: Props) {
       {config.mode === "automatic" && (
         <AppText variant="footnote" color="secondaryLabel">
           {config.env === "sandbox"
-            ? "Em Teste, ninguém paga de verdade e nada entra no faturamento. "
+            ? "Em Teste, ninguém paga de verdade e nada entra no faturamento; só administradores recebem o QR de teste, os demais seguem no Pix manual. "
             : "Em Produção, os Pix são reais. "}
           Os tokens do PagBank ficam nos segredos do Supabase (PAGBANK_TOKEN_SANDBOX e PAGBANK_TOKEN_PRODUCTION). Sem o token do ambiente escolhido, quem assina cai no Pix manual.
         </AppText>

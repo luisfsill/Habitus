@@ -24,6 +24,7 @@ async function call(env: string, path: string, body?: unknown): Promise<unknown>
     method: body === undefined ? "GET" : "POST",
     headers: { Authorization: `Bearer ${tokenFor(env)}`, "Content-Type": "application/json", Accept: "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(15_000), // o estouro vira erro: checkout cai no fallback e o webhook pede nova tentativa
   });
   // Só o código vai para o log: a resposta pode trazer dados da pessoa.
   const what = `PagBank respondeu ${res.status} (${body === undefined ? "GET" : "POST"} /orders)`;

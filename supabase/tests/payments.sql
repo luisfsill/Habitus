@@ -94,6 +94,17 @@ begin
       raise exception 'admin_payments devolveu %', item;
     end if;
 
+    -- Só service_role executa estas funções: nem anon nem authenticated.
+    if exists (
+      select 1 from unnest(array['anon', 'authenticated']) r, unnest(array[
+        'public.grant_payment(uuid)',
+        'public.tax_id_of(uuid)',
+        'public.create_auto_payment(uuid, text, text)',
+        'public.attach_pagbank_order(uuid, text, text, timestamptz)'
+      ]) f
+      where has_function_privilege(r, f, 'execute')
+    ) then raise exception 'anon/authenticated não deveriam executar funções internas de pagamento'; end if;
+
     raise exception 'rollback-sentinel';
   exception when others then
     if sqlerrm <> 'rollback-sentinel' then raise; end if;

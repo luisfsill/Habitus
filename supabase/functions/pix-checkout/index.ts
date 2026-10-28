@@ -45,6 +45,14 @@ Deno.serve(async (req) => {
   const { data: mode } = await db.from("app_config").select("value").eq("key", "payment_mode").maybeSingle();
   if (mode?.value !== "automatic") return reply({ mode: "manual" });
 
+  // Sandbox só para admin testar: membro de verdade nunca recebe QR de teste.
+  const { data: env } = await db.from("app_config").select("value").eq("key", "pagbank_env").maybeSingle();
+  if (env?.value !== "production") {
+    const caller = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${jwt}` } } });
+    const { data: isAdmin } = await caller.rpc("is_admin");
+    if (isAdmin !== true) return reply({ mode: "manual" });
+  }
+
   // Toques repetidos em "Assinar": o mesmo QR, sem chamar o PagBank.
   const { data: open } = await db.rpc("open_auto_payment", { uid, plan: planId });
   if (open) return reply({ mode: "automatic", paymentId: open.id, qrText: open.qr_text, expiresAt: open.expires_at });

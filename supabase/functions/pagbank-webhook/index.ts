@@ -41,10 +41,15 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
     let pid = UUID.test(referenceId) ? referenceId : null;
-    if (!pid && orderId) pid = (await db.rpc("payment_id_for_order", { order_id: orderId })).data ?? null;
+    if (!pid && orderId) {
+      const found = await db.rpc("payment_id_for_order", { order_id: orderId });
+      if (found.error) return retry(`busca do pedido ${orderId}: ${found.error.message}`);
+      pid = found.data ?? null;
+    }
     if (!pid) return ignore("sem pagamento no corpo");
 
-    const { data: row } = await db.rpc("payment_for_webhook", { pid });
+    const { data: row, error: rowError } = await db.rpc("payment_for_webhook", { pid });
+    if (rowError) return retry(`leitura de ${pid}: ${rowError.message}`);
     if (!row) return ignore(`pagamento ${pid} não existe`);
     if (row.status === "paid") return reply({ paid: true });
     if (!row.pagbank_order_id) return ignore(`pagamento ${pid} sem pedido no PagBank`);

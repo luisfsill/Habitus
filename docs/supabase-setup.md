@@ -180,7 +180,7 @@ Só é preciso para o modo **Automático** de **Admin > Pagamentos**. O modo **M
    `pagbank-webhook` fica sem verificação de JWT porque o PagBank chama sem login. Ela não confia no corpo do aviso: reconsulta o pedido no PagBank antes de liberar qualquer coisa.
 4. **Teste no sandbox.**
    1. Em **Admin > Pagamentos**, deixe **Ambiente do PagBank: Teste** e escolha **Automático**.
-   2. Com uma conta de teste, toque em **Assinar** num plano, informe um CPF válido e confira se o QR aparece. Use um e-mail diferente do e-mail da conta PagBank: o PagBank pode recusar comprador e vendedor iguais.
+   2. Teste com a conta de administrador: no ambiente Teste, só administradores recebem o QR do sandbox; os membros continuam pagando no Pix manual até o ambiente ser Produção. Toque em **Assinar** num plano, informe um CPF válido e confira se o QR aparece. Use um e-mail diferente do e-mail da conta PagBank: o PagBank pode recusar comprador e vendedor iguais.
    3. Simule o pagamento do pedido (`ORDE_...`) como a documentação de sandbox do PagBank indicar. Em até 10 s depois do aviso, a tela mostra "Pagamento confirmado" e a conta ganha os dias do plano.
    4. Se o aviso não chegar, toque em **Consultar no PagBank** no detalhe do pagamento. Os motivos de cada aviso ignorado ficam em **Edge Functions → pagbank-webhook → Logs**.
    5. Para conferir a queda para o manual, apague `PAGBANK_TOKEN_SANDBOX` e toque em **Assinar** de novo: deve aparecer o Pix manual com o aviso. Depois, crie o segredo de novo.
