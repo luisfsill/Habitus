@@ -153,8 +153,12 @@ function RootStack() {
   }, [ready]);
 
   useEffect(() => {
-    // The web document scrolls: a new screen starts at the top, like a new page.
-    if (Platform.OS === "web") window.scrollTo(0, 0);
+    // The web document scrolls: a new screen starts at the top, like a new page. Again on the next frame, once the
+    // new screen has replaced the old one (a taller page left behind could keep the scroll down).
+    if (Platform.OS === "web") {
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
+    }
     mirrorToWindow();
     if (signedIn) leaveLoginModal();
   }, [pathname, signedIn]);

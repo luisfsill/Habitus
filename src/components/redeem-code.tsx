@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
 
 import { INVITE_CODE_LENGTH, normalizeInviteCode } from "@/domain/invites";
 import { space } from "@/theme";
@@ -27,7 +27,10 @@ export function RedeemCode({ onRedeem, onDone }: Props) {
     setBusy(true);
     setError(null);
     try {
-      setGift(await onRedeem(code));
+      const days = await onRedeem(code);
+      // Out of the field first: closing the celebration would hand focus back to it and scroll the page down to it.
+      Keyboard.dismiss();
+      setGift(days);
       setCode("");
     } catch (e) {
       setError((e as Error).message);
@@ -47,7 +50,7 @@ export function RedeemCode({ onRedeem, onDone }: Props) {
         onSubmitEditing={() => code.length === INVITE_CODE_LENGTH && void redeem()}
         error={error ?? undefined}
       />
-      <PrimaryButton label="Resgatar código" variant="tinted" onPress={() => void redeem()} disabled={code.length !== INVITE_CODE_LENGTH} loading={busy} />
+      <PrimaryButton label="Resgatar código" variant="tinted" icon={{ ios: "gift", android: "redeem" }} onPress={() => void redeem()} disabled={code.length !== INVITE_CODE_LENGTH} loading={busy} />
       {gift !== undefined && (
         <GiftOpening
           days={gift}
