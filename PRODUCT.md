@@ -47,7 +47,15 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 - Patentes são faixas: Branca 1, Amarela 3, Laranja 5, Verde 8, Azul 12, Roxa 16, Marrom 21, Preta 27.
 - 11 medalhas com progresso visível (`src/domain/achievements.ts`).
 - XP e medalhas são recalculados do histórico; não há estado próprio salvo.
-- Fora de escopo por exigir servidor: ligas e ranking entre usuários.
+- Fora de escopo: ligas e ranking global.
+
+## Amigos
+
+- Cada conta tem um @ único (escolhido na tela "Escolha seu @"; troca em Ajustes > Conta). A busca acha por nome ou por @.
+- Pedido de amizade com aceite, recusa, cancelamento, desfazer amizade e bloqueio. Aba Amigos com o ranking da semana (XP) só entre amigos, pedidos e lista.
+- Perfil: nome, @, faixa e nível para todos; sequência e conquistas só para amigos. O e-mail nunca aparece. Administradores têm selo "Fundador" e não aparecem na busca de usuários comuns.
+- "Aparecer na busca" em Ajustes > Conta: desligado, a pessoa some da busca e também não consegue buscar. Plano vencido sai da busca e do ranking, mas mantém as amizades.
+- Avisos de pedido por Web Push, quando ativo. Sem chat, mural ou texto livre entre usuários.
 
 ## Fluxos críticos
 
