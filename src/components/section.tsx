@@ -18,7 +18,7 @@ export function Section({ title, accessory, children }: Props) {
   const { colors } = useTheme();
   const line = { borderColor: colors.separator };
   return (
-    <View style={[styles.wrap, line]}>
+    <View style={[styles.wrap, title !== undefined && styles.titled, line]}>
       {title !== undefined && (
         <View style={styles.head}>
           <AppText variant="headline" accessibilityRole="header">
@@ -39,7 +39,9 @@ export function Section({ title, accessory, children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.sm, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.md },
+  wrap: { gap: space.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  // Without a title the first row's own padding already spaces it from the hairline, like the rows below.
+  titled: { paddingTop: space.md },
   head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 20 },
   row: { paddingVertical: space.md },
   divided: { borderTopWidth: StyleSheet.hairlineWidth },
