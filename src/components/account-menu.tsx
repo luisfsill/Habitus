@@ -1,5 +1,5 @@
 import { type ComponentRef, useEffect, useRef, useState } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { Easing, FadeInRight, FadeOutRight, interpolateColor, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
@@ -7,6 +7,7 @@ import Svg, { Circle } from "react-native-svg";
 import { backdrops, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Avatar as ProfilePhoto } from "./avatar";
 import { Icon } from "./icon";
 import { ThemeToggle, TRACK_W } from "./theme-toggle";
 
@@ -86,7 +87,7 @@ function Avatar({ progress = 0, flash, photo }: { progress?: number; flash: numb
       </Svg>
       <Animated.View style={[styles.avatar, glass, rimStyle]}>
         {photo ? (
-          <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <ProfilePhoto url={photo} size={PHOTO} />
         ) : (
           <Icon ios="person.fill" android="person" size={Math.round(PHOTO * 0.5)} color={colors.label} />
         )}

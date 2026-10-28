@@ -47,9 +47,9 @@ export async function uploadAvatar(userId: string, asset: ImagePicker.ImagePicke
   await removeFile(previous);
 }
 
-/** Back to the person icon; the file goes too. */
-export async function removeAvatar(previous: string | null): Promise<void> {
-  const saved = await requireSupabase().rpc("set_my_avatar", { url: null });
+/** A default avatar (`preset:<id>`), or null for the person icon; an uploaded photo it replaces is deleted. */
+export async function setPresetAvatar(preset: string | null, previous: string | null): Promise<void> {
+  const saved = await requireSupabase().rpc("set_my_avatar", { url: preset });
   if (saved.error) throw serviceError(saved.error);
   await removeFile(previous);
 }

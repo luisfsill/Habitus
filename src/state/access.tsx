@@ -3,7 +3,7 @@ import type { ImagePickerAsset } from "expo-image-picker";
 import { AppState } from "react-native";
 
 import { hasAccess as profileHasAccess, type Profile } from "@/domain/access";
-import { removeAvatar, uploadAvatar } from "@/services/avatar";
+import { setPresetAvatar, uploadAvatar } from "@/services/avatar";
 import { log } from "@/services/log";
 import { setMySearchable, setMyUsername } from "@/services/social";
 import { fetchMyProfile, updateMyName } from "@/services/profile";
@@ -22,8 +22,8 @@ interface AccessValue {
   setName: (name: string) => Promise<void>;
   setUsername: (username: string) => Promise<void>;
   setSearchable: (on: boolean) => Promise<void>;
-  /** A new photo from the picker, or null to go back to the person icon. */
-  setAvatar: (asset: ImagePickerAsset | null) => Promise<void>;
+  /** A new photo from the picker, a default avatar (`preset:<id>`), or null to go back to the person icon. */
+  setAvatar: (choice: ImagePickerAsset | string | null) => Promise<void>;
 }
 
 const Context = createContext<AccessValue | null>(null);
@@ -100,9 +100,11 @@ export function AccessProvider({ userId, children }: { userId: string | null; ch
         await setMySearchable(on);
         await refresh();
       },
-      async setAvatar(asset) {
+      async setAvatar(choice) {
         if (!profile) return;
-        await (asset ? uploadAvatar(profile.id, asset, profile.avatarUrl) : removeAvatar(profile.avatarUrl));
+        await (choice !== null && typeof choice === "object"
+          ? uploadAvatar(profile.id, choice, profile.avatarUrl)
+          : setPresetAvatar(choice, profile.avatarUrl));
         await refresh();
       },
     }),

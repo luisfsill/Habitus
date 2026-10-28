@@ -99,8 +99,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** A profile photo link; anything but https (or missing, before the column exists) means no photo. */
-export const photoLink = (v: unknown): string | null => (typeof v === "string" && v.startsWith("https://") ? v : null);
+/** A profile photo: an https link or a default avatar (`preset:<id>`); anything else (or missing, before the column exists) means none. */
+export const photoLink = (v: unknown): string | null =>
+  typeof v === "string" && (v.startsWith("https://") || /^preset:[a-z0-9-]{1,32}$/.test(v)) ? v : null;
 
 /** A `profiles` row from Supabase, or null when it is not one. */
 export function parseProfile(row: unknown): Profile | null {

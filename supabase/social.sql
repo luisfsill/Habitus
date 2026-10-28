@@ -463,13 +463,15 @@ begin
 end;
 $$;
 
--- Troca (ou, com null, tira) a foto do perfil. Só aceita um arquivo da própria pasta do bucket "avatars".
+-- Troca (ou, com null, tira) a foto do perfil. Aceita um arquivo da própria pasta do bucket "avatars" ou um avatar
+-- padrão do app ("preset:<id>", desenhado pelo próprio app).
 create or replace function public.set_my_avatar(url text)
 returns void language plpgsql security definer set search_path = ''
 as $$
 begin
   perform public.require_access();
-  if url is not null and url !~ ('^https://[^/]+/storage/v1/object/public/avatars/' || auth.uid()::text || '/[A-Za-z0-9_-]+\.jpg$') then
+  if url is not null and url !~ '^preset:[a-z0-9-]{1,32}$'
+    and url !~ ('^https://[^/]+/storage/v1/object/public/avatars/' || auth.uid()::text || '/[A-Za-z0-9_-]+\.jpg$') then
     raise exception 'Foto inválida.' using errcode = '22023';
   end if;
   update public.profiles set avatar_url = url where id = auth.uid();

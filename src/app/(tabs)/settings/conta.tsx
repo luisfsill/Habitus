@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
 import { Avatar } from "@/components/avatar";
+import { AVATAR_PRESETS } from "@/components/avatar-presets";
 import { Divider } from "@/components/divider";
 import { Icon } from "@/components/icon";
 import { PrimaryButton } from "@/components/primary-button";
@@ -18,6 +19,8 @@ import { confirm } from "@/state/use-sign-out";
 import { HIT, space, useTheme } from "@/theme";
 
 const AVATAR = 112;
+// Five per row on a phone; each keeps a 44 pt target with its ring.
+const PRESET = 48;
 const editProfile = () => router.push("/settings/perfil");
 
 /** A label and its value on one line; tappable rows open "Editar perfil". */
@@ -43,19 +46,21 @@ function InfoRow({ label, value, onPress }: { label: string; value: string; onPr
   );
 }
 
-/** The big profile photo with "Adicionar/Trocar foto" and "Remover". */
+/** The big profile photo with "Adicionar/Trocar foto", "Remover" and a row of default avatars to pick instead. */
 function Photo() {
   const { profile, setAvatar } = useAccess();
+  const { colors } = useTheme();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const photo = profile?.avatarUrl ?? null;
 
-  const change = async (remove: boolean) => {
-    const asset = remove ? null : await pickAvatar();
-    if (!remove && !asset) return;
+  /** "library" opens the photo picker; a `preset:<id>` or null is saved as is. */
+  const change = async (choice: "library" | string | null) => {
+    const value = choice === "library" ? await pickAvatar() : choice;
+    if (choice === "library" && !value) return;
     setBusy(true);
     try {
-      await setAvatar(asset);
+      await setAvatar(value);
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -68,8 +73,29 @@ function Photo() {
     <View style={styles.photo}>
       <Avatar url={photo} size={AVATAR} />
       <View style={styles.photoActions}>
-        <PrimaryButton label={photo ? "Trocar foto" : "Adicionar foto"} variant="tinted" loading={busy} onPress={() => void change(false)} />
-        {photo && <PrimaryButton label="Remover" variant="plain" disabled={busy} onPress={() => void change(true)} />}
+        <PrimaryButton label={photo ? "Trocar foto" : "Adicionar foto"} variant="tinted" loading={busy} onPress={() => void change("library")} />
+        {photo && <PrimaryButton label="Remover" variant="plain" disabled={busy} onPress={() => void change(null)} />}
+      </View>
+      <AppText variant="footnote" color="secondaryLabel">
+        Ou escolha um avatar
+      </AppText>
+      <View style={styles.presets}>
+        {AVATAR_PRESETS.map(({ id }, i) => {
+          const value = `preset:${id}`;
+          const chosen = photo === value;
+          return (
+            <Pressable
+              key={id}
+              disabled={busy || chosen}
+              onPress={() => void change(value)}
+              accessibilityRole="button"
+              accessibilityLabel={`Avatar ${i + 1}`}
+              accessibilityState={{ selected: chosen }}
+              style={({ pressed }) => [styles.preset, { borderColor: chosen ? colors.accent : "transparent", opacity: pressed ? 0.6 : 1 }]}>
+              <Avatar url={value} size={PRESET} />
+            </Pressable>
+          );
+        })}
       </View>
       {error && (
         <AppText variant="footnote" color="danger" align="center" accessibilityLiveRegion="polite">
@@ -134,6 +160,8 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   photo: { alignItems: "center", gap: space.md },
   photoActions: { flexDirection: "row", gap: space.sm },
+  presets: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: space.sm },
+  preset: { borderWidth: 2, borderRadius: PRESET / 2 + 4, padding: 2 },
   row: { minHeight: HIT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm },
   value: { flex: 1, textAlign: "right", marginLeft: 16 },
 });

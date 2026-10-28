@@ -73,6 +73,12 @@ export const TERMS: LegalDocument = {
       title: "9. Contato",
       paragraphs: [`Dúvidas: ${LEGAL_CONTACT}. Estes termos seguem as leis do Brasil.`],
     },
+    {
+      title: "10. Créditos",
+      paragraphs: [
+        "Os avatares padrão são do estilo \"Fun Emoji\" do DiceBear, uma adaptação do Fun Emoji Set de Davis Uche, sob a licença CC BY 4.0 (creativecommons.org/licenses/by/4.0).",
+      ],
+    },
   ],
 };
 
@@ -88,7 +94,7 @@ export const PRIVACY: LegalDocument = {
       title: "2. Quais dados guardamos",
       paragraphs: [
         "Seu e-mail e sua senha (guardada de forma protegida; nem nós conseguimos lê-la).",
-        "Seu nome e seu @usuário, e, para o ranking, o seu XP da semana, nível, faixa, sequência de dias e conquistas.",
+        "Seu nome, seu @usuário e a foto ou avatar do perfil, se você escolher um, e, para o ranking, o seu XP da semana, nível, faixa, sequência de dias e conquistas.",
         "O que você registra no app: horários de início e fim do dia, dias da semana, horário de dormir, afirmações, frases de gratidão, dicas feitas e os horários em que você fez a dica antes de dormir.",
         "A data e a versão destes documentos quando você os aceitou.",
       ],
@@ -110,7 +116,7 @@ export const PRIVACY: LegalDocument = {
     {
       title: "5. Amigos: o que outras pessoas veem",
       paragraphs: [
-        "Qualquer pessoa com conta e plano ativo que encontrar você na busca vê seu nome, seu @, sua faixa e seu nível. Só os seus amigos veem também sua sequência de dias e suas conquistas, e o seu XP da semana no ranking entre amigos. Seu e-mail nunca aparece para ninguém.",
+        "Qualquer pessoa com conta e plano ativo que encontrar você na busca vê seu nome, seu @, sua foto ou avatar, sua faixa e seu nível. Só os seus amigos veem também sua sequência de dias e suas conquistas, e o seu XP da semana no ranking entre amigos. Seu e-mail nunca aparece para ninguém.",
         "O XP da semana é calculado e publicado pelo próprio app, a partir do seu histórico.",
         "Para sair da busca, desligue \"Aparecer na busca\" em Ajustes > Conta. Nesse caso ninguém acha você e você também não pode buscar ninguém; amizades que já existem continuam.",
         "Quem você bloqueia não consegue achar você, ver seu perfil nem pedir amizade. A equipe do Habitus não aparece na busca de usuários comuns.",
