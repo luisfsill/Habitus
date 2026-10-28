@@ -8,6 +8,8 @@ import { pinned } from "@/theme";
 interface Props {
   /** A bundled video, from require(). */
   source: number;
+  /** Where the video sits, when a scene must line it up with something drawn over it; it fills the screen otherwise. */
+  frame?: { left: number; top: number; width: number; height: number };
 }
 
 /** Dark fades at the top (behind the text) and the bottom (behind the button); the middle of the video stays clear. */
@@ -29,7 +31,7 @@ function Scrims() {
 }
 
 /** Full-screen looping video behind a page, muted and without controls. Decorative. */
-export function VideoBackdrop({ source }: Props) {
+export function VideoBackdrop({ source, frame }: Props) {
   const player = useVideoPlayer(source, (p) => {
     p.loop = true;
     p.muted = true;
@@ -42,7 +44,7 @@ export function VideoBackdrop({ source }: Props) {
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, pinned]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <VideoView
         player={player}
-        style={styles.video}
+        style={[styles.video, frame]}
         contentFit="cover"
         nativeControls={false}
         fullscreenOptions={{ enable: false }}

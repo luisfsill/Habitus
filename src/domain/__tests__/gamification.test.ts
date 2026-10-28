@@ -42,6 +42,14 @@ describe("computeStats", () => {
     expect(stats.totalTricks).toBe(2);
   });
 
+  it("pays a bonus for each full moon (8 nights of Antes de dormir)", () => {
+    const seven = computeStats(week(10, 16, [5]), {}, [], saturday);
+    const eight = computeStats(week(10, 17, [5]), {}, [], saturday);
+    expect(seven.fullMoons).toBe(0);
+    expect(eight.fullMoons).toBe(1);
+    expect(eight.xp - seven.xp).toBe(XP_RULES.trick + XP_RULES.fullMoon);
+  });
+
   it("adds the perfect-day bonus, growing with the streak", () => {
     const one = computeStats(week(23, 23), {}, ALL_WEEKDAYS, saturday);
     expect(one.xp).toBe(60 + XP_RULES.perfectDay);

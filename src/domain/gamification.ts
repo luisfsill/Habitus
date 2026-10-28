@@ -1,4 +1,5 @@
 import { type Completions, doneCount, isDayComplete, weekDays } from "./history";
+import { moonOf } from "./moon";
 import { addDays, dayKey, fromDayKey, type Weekday } from "./time";
 import { TRICK_COUNT } from "./tricks";
 
@@ -12,6 +13,8 @@ export const XP_RULES = {
   perfectWeek: 150,
   /** A day the water goal was met (only when water reminders are used). */
   waterGoal: 15,
+  /** Each full moon of Antes de dormir (8 nights, domain/moon.ts). */
+  fullMoon: 50,
 } as const;
 
 /** XP needed to go from `level` to `level + 1`; grows so early levels come fast. */
@@ -80,6 +83,8 @@ export interface Stats {
   gratitudeDays: number;
   /** Days the water goal was met. */
   waterDays: number;
+  /** Full moons of Antes de dormir. */
+  fullMoons: number;
 }
 
 /**
@@ -93,10 +98,11 @@ export function computeStats(
   activeDays: readonly Weekday[],
   today: Date,
 ): Stats {
-  const todayKey = dayKey(today);
+  const todayKey = dayKey(today),
+    { fullMoons } = moonOf(completions);
   const days = Object.keys(completions).filter((k) => doneCount(completions, k) > 0).sort();
   const stats: Stats = {
-    xp: 0,
+    xp: fullMoons * XP_RULES.fullMoon,
     totalTricks: 0,
     perfectDays: 0,
     perfectWeeks: 0,
@@ -104,6 +110,7 @@ export function computeStats(
     bestStreak: 0,
     gratitudeDays: Object.keys(gratitude).length,
     waterDays: 0,
+    fullMoons,
   };
   if (days.length === 0) return stats;
 

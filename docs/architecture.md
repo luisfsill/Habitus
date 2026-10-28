@@ -47,7 +47,7 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 
 ## Gamificação
 
-- `computeStats` (`src/domain/gamification.ts`) percorre o histórico dia a dia e soma XP, sequência atual e melhor sequência, dias e semanas perfeitas.
+- `computeStats` (`src/domain/gamification.ts`) percorre o histórico dia a dia e soma XP, sequência atual e melhor sequência, dias e semanas perfeitas, e as luas cheias do Antes de dormir (`moonOf`, `src/domain/moon.ts`: noites com a dica 6, de 8 em 8).
 - `progressFrom`/`progressOf` (`src/domain/achievements.ts`) derivam nível, faixa e medalhas. `rewardBetween` compara dois snapshots e gera a celebração.
 - `AppStateProvider` expõe `progress`, que é derivado de `data`, e `reward`, preenchido em `completeTrick`. `RewardToast` é renderizado no layout raiz.
 

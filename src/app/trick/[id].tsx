@@ -7,6 +7,7 @@ import { Bonfire } from "@/components/bonfire";
 import { CircularTimer } from "@/components/circular-timer";
 import { FireFocus, type FirePhase } from "@/components/fire-focus";
 import { FireIntro } from "@/components/fire-intro";
+import { MoonTrick } from "@/components/moon-trick";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { SkyTrick } from "@/components/sky-trick";
@@ -15,10 +16,13 @@ import { Icon } from "@/components/icon";
 import { trickDayKey } from "@/domain/bedtime";
 import { closesConstellation, skyOf } from "@/domain/sky";
 import { dayKey } from "@/domain/time";
-import { isTrickIndex, type Trick, TRICKS } from "@/domain/tricks";
-import { playAmbient, playStarBorn } from "@/services/sound";
+import { beforeTonight, litFraction, type Moon, MOON_NIGHTS, moonLine, moonOf, nextNight } from "@/domain/moon";
+import { BEDTIME_TRICK, isTrickIndex, type Trick, TRICKS } from "@/domain/tricks";
+import { canListen } from "@/services/fire-sensors";
+import { playAmbient, playMoonLit, playStarBorn } from "@/services/sound";
 import { useAppState } from "@/state/app-state";
 import { useFire } from "@/state/use-fire";
+import { useVoice } from "@/state/use-voice";
 import { radius, space, ThemePreferenceContext, useTheme } from "@/theme";
 
 /** Foco total: the tip with the interactive bonfire. */
@@ -33,19 +37,6 @@ const SCENES: Partial<Record<number, number>> = {
   1: require("../../../assets/videos/postura.mp4") as number,
   2: require("../../../assets/videos/metas.mp4") as number,
 };
-
-function Phrase({ text }: { text: string }) {
-  return (
-    <View>
-      <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
-        DIGA, DEVAGAR
-      </AppText>
-      <AppText variant="title2" color="accentText" style={styles.phrase} accessibilityRole="text">
-        “{text}”
-      </AppText>
-    </View>
-  );
-}
 
 function Affirmations() {
   const { data } = useAppState();
@@ -75,7 +66,6 @@ function Practice({ trick }: { trick: Trick }) {
     );
   }
   if (trick.kind === "affirmations") return <Affirmations />;
-  if (trick.kind === "phrase" && trick.phrase) return <Phrase text={trick.phrase} />;
   return null;
 }
 
@@ -98,6 +88,45 @@ function Why({ text, overVideo }: { text: string; overVideo: boolean }) {
 function backdropFor(index: number) {
   const scene = SCENES[index];
   return scene === undefined ? null : <VideoBackdrop source={scene} />;
+}
+
+const MOONLIGHT = "#E6E9F5";
+
+/** Moon state for the screen: lit part, its line and whether it is full. */
+function moonView(moon: Moon) {
+  return { lit: litFraction(moon.phase), line: moonLine(moon), full: moon.phase === MOON_NIGHTS };
+}
+
+/** Antes de dormir: the phrase fills tonight's phase of the person's moon (moon-trick.tsx, domain/moon.ts). */
+function BedtimeTrick({ trick, done }: { trick: Trick; done: boolean }) {
+  const { data, completeTrick } = useAppState();
+  // Frozen when the screen opens: finishing tonight must not move the starting point under the animation.
+  const [{ moon, doneAtOpen }] = useState(() => ({ moon: moonOf(data.completions), doneAtOpen: done }));
+  const [listening, setListening] = useState(false);
+  const voice = useVoice(listening);
+  const after = doneAtOpen ? moon : nextNight(moon);
+  return (
+    <ThemePreferenceContext.Provider value="dark">
+      <Stack.Screen options={{ headerTintColor: MOONLIGHT }} />
+      <MoonTrick
+        subtitle={`Dica ${trick.index + 1} de ${TRICKS.length}`}
+        title={trick.title}
+        phrase={trick.phrase ?? ""}
+        before={moonView(doneAtOpen ? moon : beforeTonight(moon))}
+        after={moonView(after)}
+        done={doneAtOpen}
+        canSpeak={canListen()}
+        listening={listening}
+        onListen={() => setListening(true)}
+        voice={voice}
+        onLit={() => {
+          playMoonLit(after.phase === MOON_NIGHTS);
+          void completeTrick(BEDTIME_TRICK);
+        }}
+        onClose={leave}
+      />
+    </ThemePreferenceContext.Provider>
+  );
 }
 
 /** Back to where the user came from; a trick opened by URL or notification has no history. */
@@ -165,6 +194,7 @@ export default function TrickScreen() {
   const trick = TRICKS[index];
   const done = (data.completions[trickDayKey(index, new Date())] ?? []).includes(index);
 
+  if (index === BEDTIME_TRICK) return <BedtimeTrick trick={trick} done={done} />;
   // Foco total: the intro over the still fire, then nothing but the fire and a small timer.
   if (isFire) {
     return (
@@ -253,6 +283,5 @@ const styles = StyleSheet.create({
   instruction: { fontWeight: "400", lineHeight: 26 },
   label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.xs },
   affirmation: { marginVertical: space.xs },
-  phrase: { lineHeight: 30, marginVertical: space.xs },
   inlineButton: { marginTop: space.sm, alignItems: "flex-start" },
 });

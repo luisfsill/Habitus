@@ -1,6 +1,7 @@
 import { log } from "./log";
 
-// The Foco total fire listens for a blow on the microphone and follows the phone's tilt. Web only for now:
+// The Foco total fire listens for a blow on the microphone and follows the phone's tilt; Antes de dormir listens
+// for the voice saying its phrase. Web only for now:
 // on native both calls do nothing (the app build has the microphone turned off, see app.json).
 // The audio is only measured on the device, never recorded or sent.
 
@@ -18,7 +19,25 @@ function onFirstTap(fn: () => void): Stop {
 
 /** Calls `onLevel` about 30 times a second with how hard someone is blowing (0 still, 1 a strong blow). */
 export function listenForBlow(onLevel: (level: number) => void): Stop {
-  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof AudioContext === "undefined") return () => undefined;
+  // A blow is loud, low rumble on the microphone: keep the lows and measure how loud they are.
+  return listenToMic("lowpass", 600, onLevel);
+}
+
+/**
+ * Antes de dormir: calls `onLevel` about 30 times a second with how loud someone is speaking (0 silence, 1 loud).
+ * Only the volume of the speech band, never what is said.
+ */
+export function listenForVoice(onLevel: (level: number) => void): Stop {
+  return listenToMic("bandpass", 1000, onLevel);
+}
+
+/** The microphone can be listened to here (the web; the app build has it off). */
+export function canListen(): boolean {
+  return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof AudioContext !== "undefined";
+}
+
+function listenToMic(type: BiquadFilterType, frequency: number, onLevel: (level: number) => void): Stop {
+  if (!canListen()) return () => undefined;
   let stopped = false;
   let cleanup: Stop = () => undefined;
   void navigator.mediaDevices
@@ -26,14 +45,15 @@ export function listenForBlow(onLevel: (level: number) => void): Stop {
     .then((stream) => {
       if (stopped) return stream.getTracks().forEach((t) => t.stop());
       const ctx = new AudioContext();
-      // A blow is loud, low rumble on the microphone: keep the lows and measure how loud they are.
-      const low = ctx.createBiquadFilter();
-      low.type = "lowpass";
-      low.frequency.value = 600;
+      const filter = ctx.createBiquadFilter();
+      filter.type = type;
+      filter.frequency.value = frequency;
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
-      ctx.createMediaStreamSource(stream).connect(low).connect(analyser);
+      ctx.createMediaStreamSource(stream).connect(filter).connect(analyser);
       const samples = new Float32Array(analyser.fftSize);
+      // Right away when the browser allows it (the tap that started listening is recent), else on the next tap.
+      void ctx.resume();
       const untap = onFirstTap(() => void ctx.resume());
       const id = setInterval(() => {
         analyser.getFloatTimeDomainData(samples);
@@ -49,7 +69,7 @@ export function listenForBlow(onLevel: (level: number) => void): Stop {
         void ctx.close();
       };
     })
-    .catch((error: unknown) => log.warn("no microphone for the fire", error));
+    .catch((error: unknown) => log.warn("no microphone", error));
   return () => {
     stopped = true;
     cleanup();

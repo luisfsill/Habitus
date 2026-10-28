@@ -34,6 +34,14 @@ export function playStarBorn(newConstellation: boolean): void {
   if (newConstellation) setTimeout(() => play(require("../../assets/sounds/constellation.mp3") as number), 1200);
 }
 
+/**
+ * Antes de dormir: tonight's phase of the moon fills, with the flourish on a full moon.
+ * shortcut: borrows the gratitude sky's sounds; swap in the moon's own once they are picked.
+ */
+export function playMoonLit(full: boolean): void {
+  playStarBorn(full);
+}
+
 // Tips that have their own celebration sound so far.
 const CELEBRATION_SOUNDS: Partial<Record<TrickIndex, number>> = {
   0: require("../../assets/sounds/sun-chime.wav") as number,

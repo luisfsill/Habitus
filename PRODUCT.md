@@ -12,7 +12,7 @@ Pessoas que querem criar o hábito de pequenas práticas mentais ao longo do dia
 4. **Foco total (2 min)** — olhar fixamente para a fogueira e, no fim, soprar para apagar. Timer de 120 s.
 5. **Gratidão antecipada** — agradecer pelo que ainda não chegou. A frase vira uma estrela no céu de gratidão da pessoa (365 por ano, uma constelação a cada 7 estrelas, uma por semana).
 
-6. **Antes de dormir** — já deitado, dizer: "Deus, universo, vida: me surpreenda positivamente amanhã." Chega na hora de dormir aprendida.
+6. **Antes de dormir** — já deitado, dizer: "Deus, universo, vida: me surpreenda positivamente amanhã." Chega na hora de dormir aprendida. As palavras acendem com a voz (ou segurando a lua) e cada noite enche a lua uma fase; 8 noites fazem uma lua cheia.
 
 São apresentados como práticas de bem-estar. O app não faz afirmações médicas ou científicas.
 
@@ -42,7 +42,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 
 ## Gamificação
 
-- XP: 10 por dica; 25 por dia perfeito (6 de 6) + 5 por dia de sequência (máx. +50); 150 por semana perfeita (todos os dias ativos, domingo a sábado); 15 por dia com a meta de água batida.
+- XP: 10 por dica; 25 por dia perfeito (6 de 6) + 5 por dia de sequência (máx. +50); 150 por semana perfeita (todos os dias ativos, domingo a sábado); 15 por dia com a meta de água batida; 50 por lua cheia (8 noites de Antes de dormir).
 - Nível n → n+1 custa 100 + 50 × (n − 1) XP.
 - Patentes são faixas: Branca 1, Amarela 3, Laranja 5, Verde 8, Azul 12, Roxa 16, Marrom 21, Preta 27.
 - 11 medalhas com progresso visível (`src/domain/achievements.ts`).
