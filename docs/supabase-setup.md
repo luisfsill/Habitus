@@ -125,7 +125,7 @@ Sem este passo, no iPhone e no navegador os lembretes só chegam com o Habitus a
    node scripts/vapid-keys.mjs
    ```
 
-2. **Chave pública no app.** Em `.env.local` e na **Vercel → Settings → Environment Variables**, crie `EXPO_PUBLIC_VAPID_PUBLIC_KEY` com o valor de `VAPID_PUBLIC_KEY`. Na Vercel, faça um Redeploy.
+2. **Chave pública no app.** Em `.env.local` e na **Vercel → Settings → Environment Variables**, crie `EXPO_PUBLIC_VAPID_PUBLIC_KEY` com o valor de `VAPID_PUBLIC_KEY`. Na Vercel, faça um Redeploy. Só a chave pública vai aqui: a `VAPID_PRIVATE_KEY` nunca entra no `.env.local` nem no app (só é lida pela Edge Function no passo 3).
 3. **Segredos da função.** Em **Edge Functions → Secrets**, crie:
    - `VAPID_PUBLIC_KEY`: a chave pública;
    - `VAPID_PRIVATE_KEY`: a chave privada;
