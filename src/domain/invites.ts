@@ -33,10 +33,6 @@ export function normalizeInviteCode(text: string): string {
   return text.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, INVITE_CODE_LENGTH);
 }
 
-export function inviteLink(code: string, origin = SITE_URL): string {
-  return `${origin}/auth?modo=criar&convite=${code}`;
-}
-
 /** 30 → "30 dias", 180 → "6 meses", 365 → "1 ano", null → "acesso ilimitado". */
 export function licenseLabel(days: number | null): string {
   if (days === null) return "acesso ilimitado";
@@ -49,22 +45,22 @@ function brDate(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
-/** The ready-to-paste message (WhatsApp, e-mail) the admin sends with the link. */
+/** The ready-to-paste message (WhatsApp, e-mail): the site link, then the code to redeem in the app once the account exists. */
 export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt">, origin = SITE_URL): string {
   const gift = invite.days === null ? "acesso *ilimitado* e gratuito" : `*${licenseLabel(invite.days)}* de licença gratuita`;
   return [
-    "✨ *Você foi convidado(a) para o Habitus!* ✨",
+    "✨ *Você ganhou um presente no Habitus!* ✨",
     "",
-    `🎁 Seu convite dá ${gift} para usar o app.`,
+    `🎁 Seu código de presente dá ${gift} para usar o app.`,
     "",
     "🌿 O Habitus é o seu app de lembretes virtual: ele te avisa na hora certa do que importa no seu dia.",
     "",
-    "👉 Baixe o app e crie sua conta por este link:",
-    inviteLink(invite.code, origin),
+    "*Como resgatar:*",
+    `1️⃣ Abra ${origin}, instale o app e crie sua conta.`,
+    "2️⃣ No app, toque na sua foto no canto de cima e depois em *Gift Code*.",
+    `3️⃣ Digite o código *${invite.code}* e toque em *Resgatar código*.`,
     "",
-    `🔑 Seu código: *${invite.code}*`,
-    "📲 Já com a conta criada, toque na sua foto no canto de cima e em *Gift Code* para resgatar o código.",
-    `⏳ Vale até ${brDate(invite.expiresAt)}, para uma única conta.`,
+    `⏳ O código vale até ${brDate(invite.expiresAt)}, para uma única conta.`,
     "",
     "Te espero lá! 💧",
   ].join("\n");

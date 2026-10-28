@@ -1,4 +1,4 @@
-import { type Invite, inviteLink, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite, giftMessage } from "../invites";
+import { type Invite, inviteMessage, inviteStatus, licenseLabel, normalizeInviteCode, parseInvite, giftMessage } from "../invites";
 
 const now = new Date("2026-10-27T12:00:00Z");
 const row = { code: "AB12CD34EF", days: 180, created_at: "2026-10-27T12:00:00Z", expires_at: "2026-11-03T12:00:00Z", used_at: null };
@@ -15,17 +15,14 @@ describe("invites", () => {
     expect(licenseLabel(45)).toBe("45 dias");
   });
 
-  it("builds a sign-up link that carries the code", () => {
-    expect(inviteLink("AB12CD34EF")).toBe("https://habitushub.vercel.app/auth?modo=criar&convite=AB12CD34EF");
-  });
-
-  it("writes the message with license, link, code and deadline", () => {
+  it("writes the message with license, site link, redeem steps, code and deadline", () => {
     const text = inviteMessage(invite);
     expect(text).toContain("*6 meses* de licença gratuita");
-    expect(text).toContain("https://habitushub.vercel.app/auth?modo=criar&convite=AB12CD34EF");
+    expect(text).toContain("Abra https://habitushub.vercel.app, instale");
+    expect(text).not.toContain("convite=");
     expect(text).toContain("*AB12CD34EF*");
     expect(text).toContain("*Gift Code*");
-    expect(text).toContain("Vale até 03/11/2026");
+    expect(text).toContain("vale até 03/11/2026");
     expect(inviteMessage({ ...invite, days: null })).toContain("acesso *ilimitado* e gratuito");
   });
 
