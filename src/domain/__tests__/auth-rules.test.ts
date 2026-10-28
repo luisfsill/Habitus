@@ -1,4 +1,4 @@
-import { authErrorMessage, isValidEmail, normalizeCode, passwordChecks, passwordStrength } from "../auth-rules";
+import { authErrorMessage, isValidEmail, passwordChecks, passwordStrength } from "../auth-rules";
 
 describe("isValidEmail", () => {
   it("accepts a normal address with spaces around it", () => {
@@ -25,19 +25,6 @@ describe("passwordStrength", () => {
     expect(passwordStrength("abc")).toBe(1);
     expect(passwordStrength("abc12345")).toBe(3);
     expect(passwordStrength("Abcdef12!xyz")).toBe(4);
-  });
-});
-
-describe("normalizeCode", () => {
-  it("keeps six digits and drops spaces or dashes", () => {
-    expect(normalizeCode("123 456")).toBe("123456");
-    expect(normalizeCode("12-34-56")).toBe("123456");
-  });
-
-  it("returns null when it is not six digits", () => {
-    expect(normalizeCode("12345")).toBeNull();
-    expect(normalizeCode("1234567")).toBeNull();
-    expect(normalizeCode("12a456")).toBeNull();
   });
 });
 

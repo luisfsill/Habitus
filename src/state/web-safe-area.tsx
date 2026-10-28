@@ -33,7 +33,12 @@ function measure(): EdgeInsets {
 export function WebSafeAreaInsets({ children }: { children: ReactNode }) {
   const [insets, setInsets] = useState(ZERO);
   useEffect(() => {
-    const update = () => setInsets(measure());
+    // Same insets keep the same object: a new one would re-render the whole app on every resize.
+    const update = () =>
+      setInsets((prev) => {
+        const next = measure();
+        return next.top === prev.top && next.right === prev.right && next.bottom === prev.bottom && next.left === prev.left ? prev : next;
+      });
     // After the first layout, so hydration renders the same markup as the static export.
     const frame = requestAnimationFrame(update);
     window.addEventListener("resize", update);

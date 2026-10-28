@@ -37,6 +37,8 @@ export interface LiquidNavbarProps {
 
 // How far a finger moves before a press stops being a tap and starts stirring the water.
 const DRAG_PX = 10;
+/** Frame gap for the idle water, in ms (about 30 fps). */
+const AMBIENT_MS = 32;
 
 interface Press {
   id: number;
@@ -79,11 +81,16 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
     if (s.raf) return;
     s.last = performance.now();
     const tick = (now: number) => {
+      const busy = s.moving || s.rips.length > 0 || s.sats.length > 0 || s.mouse.s > 0.01;
+      // Idle drift at about 30 frames a second, like the backdrop: 120/144 Hz screens would draw it 4-5x for nothing.
+      if (!busy && now - s.last < AMBIENT_MS) {
+        s.raf = s.visible && !s.reduce ? requestAnimationFrame(tick) : 0;
+        return;
+      }
       const dt = Math.min((now - s.last) / 1000, 1 / 30);
       s.last = now;
       stepWater(s, dt, now);
       drawWater(s, dropRef.current);
-      const busy = s.moving || s.rips.length > 0 || s.sats.length > 0 || s.mouse.s > 0.01;
       // Ambient water keeps moving while visible; with reduced motion it only animates on change.
       s.raf = s.visible && (!s.reduce || busy) ? requestAnimationFrame(tick) : 0;
     };
@@ -130,6 +137,9 @@ export function LiquidNavbar({ items, active, onChange, tone = "light", compact,
       document.removeEventListener("visibilitychange", shown);
       cancelAnimationFrame(s.raf);
       s.raf = 0;
+      // Free the context now instead of at garbage collection: browsers cap how many stay alive.
+      s.glc?.gl.getExtension("WEBGL_lose_context")?.loseContext();
+      s.glc = null;
     };
   }, [loop]);
 

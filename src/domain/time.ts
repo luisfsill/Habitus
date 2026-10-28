@@ -5,7 +5,6 @@ export type Minutes = number;
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export const ALL_WEEKDAYS: readonly Weekday[] = [0, 1, 2, 3, 4, 5, 6];
-export const MINUTES_PER_DAY = 24 * 60;
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -58,11 +57,6 @@ export function atMinutes(day: Date, minutes: Minutes): Date {
 /** Minutes since local midnight for an instant, with seconds precision. */
 export function minutesOfDay(date: Date): Minutes {
   return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
-}
-
-/** Converts minutes to a "HH:MM" string, clamped to a valid day. */
-export function toTimeString(minutes: Minutes): string {
-  return formatTime(Math.min(Math.max(minutes, 0), MINUTES_PER_DAY - 1));
 }
 
 /** "1 h 05 min" above an hour, "12:05" (min:s) below it. */

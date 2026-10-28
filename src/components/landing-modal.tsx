@@ -77,15 +77,18 @@ interface DesktopProps {
 export function DesktopLanding({ onLegal }: DesktopProps) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [open, setOpen] = useState(false);
+  // The frame is a whole second copy of the app (water shader included): load it only once someone asks for it.
+  const [loaded, setLoaded] = useState(false);
   const show = (next: "signin" | "signup") => {
     setMode(next);
+    setLoaded(true);
     setOpen(true);
   };
   return (
     <LandingPage onStart={() => show("signup")} onSignIn={() => show("signin")} onLegal={onLegal}>
-      {/* Always mounted: the sign-in screen loads with the page, so a click shows it at once. */}
+      {/* Kept mounted after the first open, so closing and reopening keeps what was typed. */}
       <LandingModal label="Entrar no Habitus" open={open} onClose={() => setOpen(false)}>
-        <LoginFrame mode={mode} />
+        {loaded && <LoginFrame mode={mode} />}
       </LandingModal>
     </LandingPage>
   );

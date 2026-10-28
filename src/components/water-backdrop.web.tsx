@@ -30,11 +30,12 @@ const FALLBACK = {
  * Ripples for the shader's six `uDrops` slots (x, y, start time, strength), reused round robin: a weak one where the
  * mouse moves, a strong one where it clicks. All zero (no ripples) when `on` is false.
  */
-function mouseRipples(start: number, on: boolean) {
+function mouseRipples(start: number, on: () => boolean) {
   const drops = new Float32Array(24);
   let slot = 0;
   let last = { x: -1e4, y: -1e4 };
   const touch = (x: number, y: number, strength: number) => {
+    if (!on()) return;
     drops.set([x, y, (performance.now() - start) / 1000, strength], slot * 4);
     slot = (slot + 1) % 6;
   };
@@ -44,10 +45,8 @@ function mouseRipples(start: number, on: boolean) {
     touch(e.clientX, e.clientY, 0.35);
   };
   const onDown = (e: PointerEvent) => touch(e.clientX, e.clientY, 1);
-  if (on) {
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerdown", onDown, { passive: true });
-  }
+  window.addEventListener("pointermove", onMove, { passive: true });
+  window.addEventListener("pointerdown", onDown, { passive: true });
   const stop = () => {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerdown", onDown);
@@ -61,6 +60,14 @@ function mouseRipples(start: number, on: boolean) {
  */
 export function WaterBackdrop({ scheme, ripples }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Read each frame, so a theme or page change does not build a new WebGL context (browsers cap how many live at once).
+  const live = useRef({ scheme, ripples });
+  // With "reduce motion" nothing redraws on its own, so a theme change paints its one still frame here.
+  const repaint = useRef<() => void>(undefined);
+  useEffect(() => {
+    live.current = { scheme, ripples };
+    repaint.current?.();
+  }, [scheme, ripples]);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -69,7 +76,7 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
     const { gl, u } = scene;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
-    const stir = mouseRipples(start, !!ripples && !reduce);
+    const stir = mouseRipples(start, () => !!live.current.ripples && !reduce);
     let raf = 0;
     let last = 0;
     const draw = (now: number) => {
@@ -85,9 +92,10 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
       gl.uniform2f(u.uRes, w, h);
       gl.uniform1f(u.uDpr, SCALE);
       gl.uniform1f(u.uT, reduce ? 20 : (now - start) / 1000);
+      const theme = live.current.scheme;
       gl.uniform2f(u.uC, w / 2, h / 2);
-      gl.uniform1f(u.uDark, scheme === "dark" ? 1 : 0);
-      gl.uniform3f(u.uBase, ...rgb(palettes[scheme].background));
+      gl.uniform1f(u.uDark, theme === "dark" ? 1 : 0);
+      gl.uniform3f(u.uBase, ...rgb(palettes[theme].background));
       gl.uniform4fv(u.uDrops, stir.drops);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
@@ -105,6 +113,7 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
       else raf = requestAnimationFrame(tick);
     };
     const redraw = () => reduce && draw(performance.now());
+    repaint.current = redraw;
     run();
     document.addEventListener("visibilitychange", run);
     window.addEventListener("resize", redraw);
@@ -113,8 +122,9 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
       cancelAnimationFrame(raf);
       document.removeEventListener("visibilitychange", run);
       window.removeEventListener("resize", redraw);
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [scheme, ripples]);
+  }, []);
 
   return (
     <div

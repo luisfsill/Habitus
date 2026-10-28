@@ -23,12 +23,6 @@ export function passwordStrength(password: string): 0 | 1 | 2 | 3 | 4 {
   return Math.min(4, met + bonus) as 0 | 1 | 2 | 3 | 4;
 }
 
-/** The 6-digit e-mail code, ignoring spaces and dashes; null if it is not 6 digits. */
-export function normalizeCode(text: string): string | null {
-  const code = text.replace(/[\s-]/g, "");
-  return /^\d{6}$/.test(code) ? code : null;
-}
-
 export const OFFLINE = "Sem conexão. Verifique sua internet e tente de novo.";
 
 const AUTH_ERRORS: Record<string, string> = {
