@@ -42,7 +42,7 @@ export const TERMS: LegalDocument = {
     {
       title: "4. Amigos e @usuário",
       paragraphs: [
-        "Para usar o Habitus você escolhe um @ único. Não use um @ que se passe pela equipe do Habitus ou por outra pessoa. A equipe pode trocar um @ impróprio ou enganoso.",
+        "Para usar o Habitus você escolhe um @ único. Não use um @ que se passe pela equipe do Habitus ou por outra pessoa. A equipe pode pedir a troca de um @ impróprio ou enganoso e suspender o acesso de quem não trocar.",
         "Pedidos de amizade são pessoais: não envie pedidos em excesso nem para quem não quer receber. Você pode desfazer uma amizade ou bloquear alguém quando quiser.",
       ],
     },
@@ -103,7 +103,7 @@ export const PRIVACY: LegalDocument = {
     {
       title: "4. Onde ficam",
       paragraphs: [
-        "No seu aparelho e no Supabase, o serviço que hospeda as contas do Habitus. O acesso é protegido: cada conta só enxerga os próprios dados. Os servidores podem ficar fora do Brasil.",
+        "No seu aparelho e no Supabase, o serviço que hospeda as contas do Habitus. O acesso é protegido: cada conta só enxerga os próprios dados, exceto o que a seção 5 descreve. Os servidores podem ficar fora do Brasil.",
         "Os lembretes são agendados no próprio aparelho.",
       ],
     },
