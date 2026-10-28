@@ -6,7 +6,8 @@ import { space, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 
 interface Props {
-  title: string;
+  /** Left out when the screen title already names the block (a settings page with one section). */
+  title?: string;
   /** Right side of the title row, e.g. month arrows. */
   accessory?: ReactNode;
   children: ReactNode;
@@ -18,12 +19,14 @@ export function Section({ title, accessory, children }: Props) {
   const line = { borderColor: colors.separator };
   return (
     <View style={[styles.wrap, line]}>
-      <View style={styles.head}>
-        <AppText variant="headline" accessibilityRole="header">
-          {title}
-        </AppText>
-        {accessory}
-      </View>
+      {title !== undefined && (
+        <View style={styles.head}>
+          <AppText variant="headline" accessibilityRole="header">
+            {title}
+          </AppText>
+          {accessory}
+        </View>
+      )}
       <View>
         {Children.toArray(children).map((child, i) => (
           <View key={i} style={[styles.row, i > 0 && styles.divided, line]}>

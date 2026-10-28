@@ -74,7 +74,7 @@ function Days({ draft, change }: PageProps) {
 function Affirmations({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section title="Afirmações">
+    <Section>
       <AffirmationsEditor value={data.settings.affirmations} onChange={(affirmations) => void change({ affirmations })} />
       <AppText variant="footnote" color="secondaryLabel">Aparecem na dica 3, Metas em voz alta. Escreva no presente.</AppText>
     </Section>
@@ -91,7 +91,7 @@ function Notifications({ draft, change, setStatus }: PageProps) {
   };
 
   return (
-    <Section title="Notificações">
+    <Section>
       <View style={styles.row}>
         <AppText variant="body">Som</AppText>
         <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
@@ -105,7 +105,7 @@ function Water({ draft, change }: PageProps) {
   const { colors } = useTheme();
   const water = draft.water;
   return (
-    <Section title="Água">
+    <Section>
       <View style={styles.row}>
         <View style={styles.label}>
           <Icon ios="drop.fill" android="water_drop" color={colors.accent} />
@@ -145,7 +145,7 @@ function Water({ draft, change }: PageProps) {
 function Appearance({ change }: PageProps) {
   const { data } = useAppState();
   return (
-    <Section title="Aparência">
+    <Section>
       <ThemeTabs value={data.settings.theme} onChange={(theme) => void change({ theme })} />
       <AppText variant="footnote" color="secondaryLabel">Auto segue o modo claro ou escuro do aparelho.</AppText>
     </Section>
