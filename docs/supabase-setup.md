@@ -97,6 +97,20 @@ Rode **depois** de `social.sql` (e de novo sempre que `social.sql` mudar, porque
 
 Para conferir, cole [`supabase/tests/ranking.sql`](../supabase/tests/ranking.sql) em outra query e rode. Esperado: `ranking ok` (e `ranking_ingest ok`, se houver algum usuário) nas mensagens. O script não deixa linhas no banco.
 
+### Pagamentos
+
+Rode **depois** de `admin.sql` e `social.sql`: abra **SQL Editor → New query**, cole todo o conteúdo de [`supabase/payments.sql`](../supabase/payments.sql) e clique em **Run**. Pode rodar de novo.
+
+Cria:
+
+- `app_config`, com `payment_mode = manual` e `pagbank_env = sandbox`;
+- `payments`, o histórico de pedidos manuais e automáticos;
+- `billing_info`, o CPF de quem paga pelo Pix automático. Nenhuma função de amigos, ranking ou admin devolve o CPF.
+
+Também cria as funções da área **Admin > Pagamentos** e as que só as Edge Functions do PagBank chamam (`grant_payment` e as demais, só para `service_role`).
+
+Para conferir, cole [`supabase/tests/payments.sql`](../supabase/tests/payments.sql) em outra query e rode. Esperado: `payments ok` nas mensagens. Ele precisa de pelo menos uma conta com perfil e não deixa linhas no banco.
+
 ## 8. Publicar a função `admin-users`
 
 Criar usuários, trocar e-mail e gerar senha pelo painel usam uma pequena função que roda no Supabase.
