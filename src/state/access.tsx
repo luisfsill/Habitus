@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 
 import { hasAccess as profileHasAccess, type Profile } from "@/domain/access";
 import { log } from "@/services/log";
+import { setMySearchable, setMyUsername } from "@/services/social";
 import { fetchMyProfile, updateMyName } from "@/services/profile";
 import { loadProfileCache, saveProfileCache } from "@/services/storage";
 
@@ -17,6 +18,8 @@ interface AccessValue {
   /** Re-reads the profile; returns it, or null when it could not be read. */
   refresh: () => Promise<Profile | null>;
   setName: (name: string) => Promise<void>;
+  setUsername: (username: string) => Promise<void>;
+  setSearchable: (on: boolean) => Promise<void>;
 }
 
 const Context = createContext<AccessValue | null>(null);
@@ -83,6 +86,14 @@ export function AccessProvider({ userId, children }: { userId: string | null; ch
       refresh,
       async setName(name) {
         await updateMyName(name);
+        await refresh();
+      },
+      async setUsername(username) {
+        await setMyUsername(username);
+        await refresh();
+      },
+      async setSearchable(on) {
+        await setMySearchable(on);
         await refresh();
       },
     }),

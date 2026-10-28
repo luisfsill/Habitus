@@ -86,6 +86,8 @@ function useGates() {
     signedIn,
     // Signed in with an active plan (or admin): the app itself.
     open: signedIn && access.hasAccess,
+    // Every account picks a @ before the app opens.
+    named: access.profile?.username != null,
     // Signed in but the plan is unknown (offline, never cached): ask to reconnect.
     offline: signedIn && access.ready && access.offline,
     ready: !signedIn || access.ready,
@@ -97,16 +99,17 @@ function useGates() {
  * Where a screen that just became off-limits goes. Without it, Expo Router picks the first
  * open route alphabetically, which is "legal": after confirming the code the user saw the terms.
  */
-function homeRoute(signedIn: boolean, open: boolean, onboarded: boolean) {
+function homeRoute(signedIn: boolean, open: boolean, onboarded: boolean, named: boolean) {
   if (!signedIn) return "/auth";
   if (!open) return "/renovar";
-  return onboarded ? "/" : "/onboarding";
+  if (!onboarded) return "/onboarding";
+  return named ? "/" : "/arroba";
 }
 
 /** The AuthShell screens (account and plan renewal) are the black night sky; install screen and legal pages are themed. */
 function nightSky(signedIn: boolean, entry: boolean, pathname: string): boolean {
   if (entry) return false;
-  return pathname.startsWith("/renovar") || (!signedIn && pathname.startsWith("/auth"));
+  return pathname.startsWith("/renovar") || pathname.startsWith("/arroba") || (!signedIn && pathname.startsWith("/auth"));
 }
 
 /** Web: one water shader behind the whole app. The tips bring their own scenes instead (one shader per screen). */
@@ -133,7 +136,7 @@ function OfflineGate({ onRetry }: { onRetry: () => Promise<unknown> }) {
 function RootStack() {
   const { ready: dataReady, data, reward, dismissReward, celebration, dismissCelebration } = useAppState();
   const gates = useGates();
-  const { signedIn, open } = gates;
+  const { signedIn, open, named } = gates;
   const ready = dataReady && gates.ready;
   const { colors, scheme } = useTheme();
   useNotificationRouting(ready && open && data.onboarded);
@@ -172,7 +175,7 @@ function RootStack() {
 
   if (!ready) return null;
 
-  const home = homeRoute(signedIn, open, data.onboarded);
+  const home = homeRoute(signedIn, open, data.onboarded, named);
 
   if (gates.offline) return <OfflineGate onRetry={gates.retry} />;
 
@@ -186,11 +189,14 @@ function RootStack() {
         <Stack.Protected guard={!signedIn} redirectTo={home}>
           <Stack.Screen name="auth" options={{ animation: "fade" }} />
         </Stack.Protected>
-        <Stack.Protected guard={open && data.onboarded} redirectTo={home}>
+        <Stack.Protected guard={home === "/"} redirectTo={home}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="trick/[id]" options={backToToday} />
           <Stack.Screen name="lembretes/index" options={backToToday} />
           <Stack.Screen name="lembretes/[id]" options={{ ...backToToday, headerBackTitle: "Lembretes" }} />
+        </Stack.Protected>
+        <Stack.Protected guard={home === "/arroba"} redirectTo={home}>
+          <Stack.Screen name="arroba" options={{ gestureEnabled: false, animation: "fade" }} />
         </Stack.Protected>
         <Stack.Protected guard={open && !data.onboarded} redirectTo={home}>
           <Stack.Screen name="onboarding" options={{ gestureEnabled: false, animation: "fade" }} />

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AffirmationsEditor } from "@/components/affirmations-editor";
@@ -10,11 +10,13 @@ import { Icon } from "@/components/icon";
 import { PermissionBanners } from "@/components/permission-banner";
 import { SchedulePreview } from "@/components/schedule-preview";
 import { Screen } from "@/components/screen";
+import { PrimaryButton } from "@/components/primary-button";
 import { Section } from "@/components/section";
 import { Stepper } from "@/components/stepper";
 import { ThemeTabs } from "@/components/theme-tabs";
 import { TimeField } from "@/components/time-field";
 import { ToggleSwitch } from "@/components/toggle-switch";
+import { UsernameField } from "@/components/username-field";
 import { WeekdayPicker } from "@/components/weekday-picker";
 import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
@@ -25,6 +27,7 @@ import { useAppState } from "@/state/app-state";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
 import { confirm, useSignOut } from "@/state/use-sign-out";
+import { useUsernameCheck } from "@/state/use-username-check";
 import { TabAccount } from "@/state/tab-account";
 import { HIT, useTheme } from "@/theme";
 
@@ -38,10 +41,31 @@ function bedtimeFooter({ minutes, nights, missed }: BedtimeEstimate): string {
   return `${learned}${early} Mudar a hora acima recomeça o aprendizado.`;
 }
 
+/** Inline editor for the @: saves only once the typed one is free. */
+function UsernameEdit({ current, onDone }: { current: string; onDone: (message: string) => void }) {
+  const { isAdmin, setUsername } = useAccess();
+  const { value, status, change } = useUsernameCheck(isAdmin, current);
+  const [saving, setSaving] = useState(false);
+  const save = () => {
+    setSaving(true);
+    setUsername(value)
+      .then(() => onDone("@ salvo."))
+      .catch((error: Error) => onDone(error.message))
+      .finally(() => setSaving(false));
+  };
+  return (
+    <View style={styles.edit}>
+      <UsernameField value={value} onChange={change} status={status} />
+      <PrimaryButton label="Salvar" onPress={save} disabled={status !== "available"} loading={saving} />
+    </View>
+  );
+}
+
 function AccountSection({ onReset }: { onReset: () => void }) {
   const { session, deleteAccount } = useAuth();
   const leave = useSignOut();
-  const { profile, setName } = useAccess();
+  const { profile, setName, setSearchable } = useAccess();
+  const [editing, setEditing] = useState(false);
   const { colors } = useTheme();
   const [name, setDraftName] = useState(profile?.name ?? "");
   const [message, setMessage] = useState<string | null>(null);
@@ -77,6 +101,32 @@ function AccountSection({ onReset }: { onReset: () => void }) {
             style={[styles.nameInput, { color: colors.label }]}
           />
         </View>
+        <Pressable onPress={() => setEditing((e) => !e)} accessibilityRole="button" accessibilityLabel="Editar @" style={styles.row}>
+          <AppText variant="body">@</AppText>
+          <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
+            {profile?.username ? `@${profile.username}` : "Escolher"}
+          </AppText>
+        </Pressable>
+        {editing && (
+          <UsernameEdit
+            current={profile?.username ?? ""}
+            onDone={(text) => {
+              setMessage(text);
+              if (text === "@ salvo.") setEditing(false);
+            }}
+          />
+        )}
+        <View style={styles.row}>
+          <AppText variant="body">Aparecer na busca</AppText>
+          <ToggleSwitch
+            value={profile?.searchable !== false}
+            onValueChange={(on) => void setSearchable(on).catch((error: Error) => setMessage(error.message))}
+            accessibilityLabel="Aparecer na busca"
+          />
+        </View>
+        <AppText variant="footnote" color="secondaryLabel">
+          Se desligar, ninguém acha você e você também não pode buscar ninguém.
+        </AppText>
         {session?.user.email && (
           <View style={styles.row}>
             <AppText variant="body">E-mail</AppText>
@@ -239,5 +289,6 @@ const styles = StyleSheet.create({
   label: { flexDirection: "row", alignItems: "center", gap: 10 },
   value: { flex: 1, textAlign: "right", marginLeft: 16 },
   status: { marginTop: 4 },
+  edit: { gap: 12, paddingBottom: 8 },
   nameInput: { flex: 1, textAlign: "right", fontSize: 17, minHeight: HIT, marginLeft: 16 },
 });
