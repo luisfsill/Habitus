@@ -98,7 +98,6 @@ Esse comando roda o ESLint rápido, o ESLint com tipos, o self-check das regras 
 1. Abra o app no aparelho (Expo Go ou development build), conclua o onboarding e **permita as notificações**.
 2. Vá em **Ajustes → Notificações**:
    - **Testar uma notificação agora**: dispara um lembrete da dica 2 em 3 segundos.
-   - **Ver notificações agendadas**: mostra quantas estão pendentes. Sem adiamentos nem testes, o número esperado é até 49 (7 por dia × 7 dias).
 3. Toque numa notificação de dica: o app abre direto na tela daquela dica.
 4. Use as ações **Feito** e **Adiar 10 min**. No Android elas rodam sem abrir o app, inclusive com o app encerrado. No iOS elas abrem o app para registrar a ação.
 

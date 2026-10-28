@@ -31,7 +31,6 @@ import {
   addWebReminders,
   cancelWebReminder,
   requestWebPermission,
-  webPendingCount,
   webPermissionState,
 } from "./web-reminders";
 
@@ -256,9 +255,4 @@ export async function sendTestNotification(trickIndex: TrickIndex = 1): Promise<
   const now = new Date();
   const [, ...tricks] = planTestRun(now, 0, 3);
   await schedule(tricks[trickIndex]);
-}
-
-export async function pendingCount(): Promise<number> {
-  if (!supported) return webPendingCount();
-  return (await Notifications.getAllScheduledNotificationsAsync()).length;
 }

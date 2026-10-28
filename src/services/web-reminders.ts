@@ -57,5 +57,3 @@ export function cancelWebReminder(predicate: (id: string) => boolean): void {
     timers.delete(id);
   }
 }
-
-export const webPendingCount = (): number => timers.size;

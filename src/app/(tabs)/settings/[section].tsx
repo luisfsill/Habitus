@@ -19,7 +19,7 @@ import type { Settings } from "@/domain/app-data";
 import { type BedtimeEstimate, estimateBedtime } from "@/domain/bedtime";
 import { ALL_WEEKDAYS, type Weekday } from "@/domain/time";
 import { formatEvery, WATER_EVERY, WATER_GOAL } from "@/domain/water";
-import { pendingCount, sendTestNotification } from "@/services/notifications";
+import { sendTestNotification } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
 import { HIT, useTheme } from "@/theme";
 
@@ -97,11 +97,6 @@ function Notifications({ draft, change, setStatus }: PageProps) {
         <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
       </View>
       <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
-      <ActionRow
-        label="Ver notificações agendadas"
-        icon={{ ios: "list.bullet", android: "list" }}
-        onPress={() => void pendingCount().then((n) => setStatus(`${n} notificações agendadas.`))}
-      />
     </Section>
   );
 }
