@@ -59,3 +59,6 @@ skills-lock.json
 
 # brainstorm mockups and plan workspaces
 .superpowers/
+
+# Supabase CLI (login/deploy local state)
+supabase/.temp/
