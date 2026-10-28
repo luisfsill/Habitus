@@ -1,117 +1,63 @@
-import { StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 
 import { AppText } from "@/components/app-text";
-import { Icon } from "@/components/icon";
+import { BadgeList } from "@/components/badge-list";
+import { GlobalRankList } from "@/components/global-rank-list";
 import { LevelCard } from "@/components/level-card";
+import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
-import { StatColumns } from "@/components/stat-columns";
-import type { BadgeState } from "@/domain/achievements";
-import { BELTS, nextBelt, XP_RULES } from "@/domain/gamification";
+import { SegmentedTabs } from "@/components/segmented-tabs";
 import { useAppState } from "@/state/app-state";
 import { TabAccount } from "@/state/tab-account";
-import { radius, space, useTheme } from "@/theme";
+import { useGlobalRanking } from "@/state/use-global-ranking";
 
-function Badge({ badge }: { badge: BadgeState }) {
-  const { colors } = useTheme();
-  const { def, unlocked, progress } = badge;
-  return (
-    <View
-      style={styles.badge}
-      accessible
-      accessibilityLabel={`${def.title}: ${def.description} ${unlocked ? "Conquistada." : `Progresso ${progress} de ${def.target}.`}`}>
-      <View style={[styles.medal, { backgroundColor: unlocked ? colors.accent : colors.fill }]}>
-        <Icon ios={def.symbol.ios} android={def.symbol.android} size={28} color={unlocked ? colors.onAccent : colors.secondaryLabel} />
-      </View>
-      <AppText variant="footnote" align="center" style={styles.badgeTitle}>
-        {def.title}
-      </AppText>
-      <AppText variant="caption" color="secondaryLabel" align="center">
-        {unlocked ? "Conquistada" : `${progress}/${def.target}`}
-      </AppText>
-    </View>
-  );
-}
-
-const RULES = [
-  `+${XP_RULES.trick} XP por dica concluída`,
-  `+${XP_RULES.perfectDay} XP por dia perfeito (todas as dicas)`,
-  `+${XP_RULES.streakStep} XP extra por dia de sequência, até +${XP_RULES.streakStep * XP_RULES.streakCap}`,
-  `+${XP_RULES.perfectWeek} XP por semana perfeita (todos os dias ativos)`,
-  `+${XP_RULES.waterGoal} XP por dia com a meta de água batida (se você usar a água)`,
-];
+const TABS = [
+  { value: "ranking", label: "Ranking" },
+  { value: "minhas", label: "Minhas" },
+] as const;
 
 export default function AchievementsScreen() {
+  const router = useRouter();
   const { progress } = useAppState();
-  const { colors } = useTheme();
-  const { stats, level, badges } = progress;
-  const upcoming = nextBelt(level.level);
+  const { ranking, loading, error, reload, requesting, request } = useGlobalRanking();
+  const [tab, setTab] = useState<(typeof TABS)[number]["value"]>("ranking");
+  const { badges } = progress;
   const unlocked = badges.filter((b) => b.unlocked).length;
 
   return (
-    <Screen title="Conquistas" subtitle={`${stats.xp} XP no total`} accessory={<TabAccount />}>
+    <Screen title="Conquistas" accessory={<TabAccount />}>
       <LevelCard progress={progress} />
-
-      <StatColumns
-        columns={2}
-        stats={[
-          { value: String(stats.currentStreak), label: "dias seguidos", color: "warm" },
-          { value: String(stats.bestStreak), label: "melhor sequência" },
-          { value: String(stats.perfectDays), label: "dias perfeitos", color: "successText" },
-          { value: String(stats.perfectWeeks), label: "semanas perfeitas", color: "accentText" },
-        ]}
-      />
-
-      <Section
-        title="Patentes">
-        <View style={styles.belts}>
-          {BELTS.map((belt) => {
-            const reached = level.level >= belt.minLevel;
-            const current = progress.belt.name === belt.name;
-            return (
-              <View
-                key={belt.name}
-                accessible
-                accessibilityLabel={`${belt.name}, nível ${belt.minLevel}. ${current ? "Atual." : reached ? "Conquistada." : "Bloqueada."}`}
-                style={[
-                  styles.belt,
-                  { backgroundColor: belt.color, opacity: reached ? 1 : 0.35, borderColor: colors.separator },
-                  current && { borderColor: colors.accent, borderWidth: 3 },
-                ]}>
-                <AppText variant="caption" style={{ color: belt.ink }} maxFontSizeMultiplier={1.2}>
-                  {belt.minLevel}
-                </AppText>
-              </View>
-            );
-          })}
-        </View>
-          <AppText variant="footnote" color="secondaryLabel">{upcoming ? `Próxima: ${upcoming.name}, no nível ${upcoming.minLevel}.` : "Você chegou à faixa preta!"}</AppText>
-      </Section>
-
-      <Section title={`Medalhas · ${unlocked}/${badges.length}`}>
-        <View style={styles.grid}>
-          {badges.map((b) => (
-            <Badge key={b.def.id} badge={b} />
-          ))}
-        </View>
-      </Section>
-
-      <Section title="Como ganhar XP">
-        {RULES.map((rule) => (
-          <AppText key={rule} variant="subheadline">
-            {rule}
-          </AppText>
-        ))}
-      </Section>
+      <SegmentedTabs options={TABS} value={tab} onChange={setTab} />
+      {tab === "ranking" ? (
+        <Section title="Top 10 da semana">
+          {error ? (
+            <>
+              <AppText variant="subheadline" color="danger">
+                {error}
+              </AppText>
+              <PrimaryButton label="Tentar de novo" variant="tinted" onPress={() => void reload()} />
+            </>
+          ) : null}
+          {ranking ? (
+            <GlobalRankList
+              ranking={ranking}
+              onOpen={(id) => router.push(`/amigos/${id}`)}
+              onAdd={(id) => void request(id)}
+              requesting={requesting}
+            />
+          ) : loading ? (
+            <AppText variant="subheadline" color="secondaryLabel">
+              Carregando…
+            </AppText>
+          ) : null}
+        </Section>
+      ) : (
+        <Section title={`Medalhas · ${unlocked}/${badges.length}`}>
+          <BadgeList badges={badges} />
+        </Section>
+      )}
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  belts: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, justifyContent: "space-between" },
-  belt: { width: 32, height: 32, borderRadius: radius.pill, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  grid: { flexDirection: "row", flexWrap: "wrap", rowGap: space.lg },
-  badge: { width: "33.33%", alignItems: "center", gap: 4, paddingHorizontal: 2 },
-  medal: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center" },
-  badgeTitle: { fontWeight: "600" },
-});
