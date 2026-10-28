@@ -1,6 +1,6 @@
 // Habitus: testes de isPaidOrder e qrTextOf. Rode com: deno test supabase/functions/_shared/pagbank_test.ts
 import { assertEquals } from "jsr:@std/assert@1";
-import { isPaidOrder, qrTextOf, saoPauloTime } from "./pagbank.ts";
+import { buyerEmail, isPaidOrder, qrTextOf, saoPauloTime } from "./pagbank.ts";
 
 const expected = { orderId: "ORDE_1", referenceId: "pay-1", cents: 1990 };
 const order = (status: string, value: number, referenceId = "pay-1") => ({
@@ -44,4 +44,10 @@ Deno.test("qrTextOf reads the current and the deprecated shapes", () => {
 Deno.test("saoPauloTime writes the -03:00 offset", () => {
   assertEquals(saoPauloTime(new Date("2026-10-28T15:30:00.123Z")), "2026-10-28T12:30:00-03:00");
   assertEquals(saoPauloTime(new Date("2026-10-29T01:00:00Z")), "2026-10-28T22:00:00-03:00");
+});
+
+Deno.test("buyerEmail adds +teste only outside production", () => {
+  assertEquals(buyerEmail("ana@x.com", "sandbox"), "ana+teste@x.com");
+  assertEquals(buyerEmail("ana@x.com", "production"), "ana@x.com");
+  assertEquals(buyerEmail("sem-arroba", "sandbox"), "sem-arroba");
 });

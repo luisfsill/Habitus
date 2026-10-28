@@ -49,6 +49,17 @@ async function reasons(res: Response): Promise<string> {
   return text ? `: ${text.slice(0, 300)}` : "";
 }
 
+/**
+ * No sandbox, quem testa costuma ser o próprio dono, e o PagBank recusa comprador com o e-mail do vendedor
+ * (40002 "buyer email must not be equals to merchant email"). Lá o e-mail ganha um "+teste" antes do @.
+ * Em produção vai o e-mail da conta como está.
+ */
+export function buyerEmail(email: string, env: string): string {
+  if (env === "production") return email;
+  const at = email.lastIndexOf("@");
+  return at > 0 ? `${email.slice(0, at)}+teste${email.slice(at)}` : email;
+}
+
 /** Horário de São Paulo com offset, como nos exemplos do PagBank (2026-10-28T12:30:00-03:00). Sem horário de verão desde 2019. */
 export function saoPauloTime(date: Date): string {
   return new Date(date.getTime() - 3 * 3_600_000).toISOString().slice(0, 19) + "-03:00";

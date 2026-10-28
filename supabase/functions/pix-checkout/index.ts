@@ -3,7 +3,7 @@
 // Respostas: { mode: "manual" | "needs_cpf" | "fallback" } ou { mode: "automatic", paymentId, qrText, expiresAt }.
 // Nunca devolve a resposta do PagBank nem o CPF.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { createPixOrder, saoPauloTime } from "../_shared/pagbank.ts";
+import { buyerEmail, createPixOrder, saoPauloTime } from "../_shared/pagbank.ts";
 
 const QR_MINUTES = 30;
 const MAX_PER_HOUR = 5;
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     const { orderId, qrText } = await createPixOrder({
       env: row.env,
       referenceId: pid,
-      customer: { name: profile.name || profile.email, email: profile.email, taxId },
+      customer: { name: profile.name || profile.email, email: buyerEmail(profile.email, row.env), taxId },
       item: { name: `Habitus ${plan.name}`, cents: row.amount_cents },
       expiresAt: saoPauloTime(expires),
       notificationUrl: `${url}/functions/v1/pagbank-webhook`,
