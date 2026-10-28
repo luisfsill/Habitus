@@ -91,7 +91,8 @@ As fronteiras são verificadas por `import-x/no-restricted-paths` e `quality/no-
 - Telas: `/arroba` ("Escolha seu @", obrigatória para contas sem @), aba Amigos (`(tabs)/amigos`: ranking da semana, pedidos, amigos, `buscar` e o perfil `[id]`) e, em Ajustes > Conta, o @ editável e "Aparecer na busca".
 - Ajustes (`(tabs)/settings`) é uma lista única no estilo do Instagram, com Conta primeiro; cada item abre a própria tela: `[section]` (horario com hora de dormir, dias, afirmacoes, notificacoes, agua, aparencia), `conta` e `perfil` (nome e @).
 - Avisos de pedido e aceite entram em `push_queue` com ids `social:<tipo>:<id>`. Esses ids só saem da fila pela `push-send`: `unqueuePush` (cancelamento de lembretes) nunca os apaga (`isSocialPushId`).
-- shortcut: o XP da semana é calculado no aparelho e publicado em `public_stats`, então pode ser inflado pela API. Aceitável para um ranking só entre amigos; recalcular no servidor se o ranking virar global.
+- shortcut: o XP da semana é calculado no aparelho e publicado em `public_stats`, então pode ser inflado pela API. Aceitável só para o ranking entre amigos; o ranking global não usa esse valor.
+- Registro do ranking (`supabase/ranking.sql`, depois de `social.sql`): como o XP do aparelho pode ser forjado, o servidor guarda a própria cópia (`ranking_tricks`, `ranking_water`, `ranking_settings`), preenchida por um trigger em `user_data` (o app já sincroniza ali, sem chamada nova; marcar dica offline continua valendo). Só entram dias de hoje (UTC) - 2 a hoje + 1, com horário do servidor; dicas nunca são apagadas, e a meta de água fica congelada no primeiro registro do dia. Um `resetAt` maior limpa o registro. `global_ranking(today)` calcula o XP da semana a partir dessa cópia com `week_xp_of`, que espelha `weekXp` (`src/domain/ranking.ts`); os dois rodam os mesmos vetores. O trigger nunca falha a gravação de `user_data`.
 
 ## Dados
 

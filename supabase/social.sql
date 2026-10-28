@@ -14,7 +14,7 @@ create unique index if not exists profiles_username_key on public.profiles (lowe
 
 -- Estatísticas públicas -------------------------------------------------------
 -- Uma linha por conta, gravada pelo próprio app a cada sincronização.
--- shortcut: o XP vem do aparelho e pode ser inflado pela API; ok para ranking só entre amigos. Se virar global, recalcular no servidor a partir de user_data.
+-- shortcut: o XP vem do aparelho e pode ser inflado pela API; vale só no ranking entre amigos. O ranking global recalcula no servidor (ranking.sql) e ignora week_xp.
 
 create table if not exists public.public_stats (
   user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,

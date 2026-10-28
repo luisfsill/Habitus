@@ -42,3 +42,53 @@ begin
   end loop;
   raise notice 'ranking ok';
 end $$;
+
+-- Casos de ranking_ingest (a regra do trigger). Usa o primeiro usuário de auth.users e não deixa linhas:
+-- tudo roda num sub-bloco que termina em exceção proposital, que desfaz as gravações. Falha de assert continua visível.
+do $$
+declare
+  uid uuid;
+  d date := (now() at time zone 'utc')::date;
+  n int;
+  g smallint;
+begin
+  select id into uid from auth.users limit 1;
+  if uid is null then
+    raise notice 'ranking_ingest: sem usuário em auth.users, casos pulados';
+    return;
+  end if;
+  begin
+    delete from public.ranking_tricks where user_id = uid;
+    delete from public.ranking_water where user_id = uid;
+
+    perform public.ranking_ingest(uid, jsonb_build_object(
+      'completions', jsonb_build_object((d - 10)::text, jsonb_build_array(0, 1), d::text, '[0,0,9,"x"]'::jsonb),
+      'water', jsonb_build_object(d::text, jsonb_build_object('cups', 3)),
+      'settings', '{"water":{"goal":5}}'::jsonb
+    ));
+    select count(*) into n from public.ranking_tricks where user_id = uid and day = d - 10;
+    if n <> 0 then raise exception 'dica fora da janela foi gravada (%)', n; end if;
+    select count(*) into n from public.ranking_tricks where user_id = uid and day = d and trick = 0;
+    if n <> 1 then raise exception 'esperava 1 linha para [0,0,9,"x"], obteve %', n; end if;
+    select count(*) into n from public.ranking_tricks where user_id = uid;
+    if n <> 1 then raise exception 'esperava 1 linha no total, obteve %', n; end if;
+    n := public.week_xp(uid, d - extract(dow from d)::int);
+    if n <> 10 then raise exception 'week_xp esperava 10, obteve %', n; end if;
+
+    perform public.ranking_ingest(uid, jsonb_build_object(
+      'water', jsonb_build_object(d::text, jsonb_build_object('cups', 4)),
+      'settings', '{"water":{"goal":1}}'::jsonb
+    ));
+    select goal into g from public.ranking_water where user_id = uid and day = d;
+    if g is distinct from 5 then raise exception 'meta deveria seguir 5, obteve %', g; end if;
+    select cups into g from public.ranking_water where user_id = uid and day = d;
+    if g is distinct from 4 then raise exception 'cups deveria ser 4, obteve %', g; end if;
+
+    perform public.ranking_ingest(uid, '{}'::jsonb);
+
+    raise exception 'rollback-sentinel';
+  exception when others then
+    if sqlerrm <> 'rollback-sentinel' then raise; end if;
+  end;
+  raise notice 'ranking_ingest ok';
+end $$;

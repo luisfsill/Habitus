@@ -91,6 +91,12 @@ Isso liga a extensão `unaccent` (busca sem acento), acrescenta `username` e `se
 
 O roteiro para conferir está no fim desta página, em "Conferir os amigos".
 
+### Ranking global
+
+Rode **depois** de `social.sql`: abra **SQL Editor → New query**, cole todo o conteúdo de [`supabase/ranking.sql`](../supabase/ranking.sql) e clique em **Run**. Pode rodar de novo. Cria o registro do servidor (`ranking_tricks`, `ranking_water`, `ranking_settings`), o trigger em `user_data`, copia o que já existe e cria `global_ranking`, que calcula o XP da semana no servidor.
+
+Para conferir, cole [`supabase/tests/ranking.sql`](../supabase/tests/ranking.sql) em outra query e rode. Esperado: `ranking ok` (e `ranking_ingest ok`, se houver algum usuário) nas mensagens. O script não deixa linhas no banco.
+
 ## 8. Publicar a função `admin-users`
 
 Criar usuários, trocar e-mail e gerar senha pelo painel usam uma pequena função que roda no Supabase.
