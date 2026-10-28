@@ -12,21 +12,46 @@ export const INVITE_OPTIONS: readonly { days: number | null; label: string }[] =
   { days: null, label: "Ilimitado" },
 ];
 
-export interface Invite {
-  code: string;
-  /** null = unlimited. */
-  days: number | null;
-  createdAt: string;
-  /** Until when the code can be used to sign up. */
-  expiresAt: string;
-  usedAt: string | null;
-  /** The account created with it (`used_by`); null when unused or the account was deleted. */
-  usedBy: string | null;
+/** One account that redeemed a code (`invite_redemptions`). */
+export interface Redemption {
+  /** null when the account was deleted. */
+  userId: string | null;
+  usedAt: string;
   /** Name and e-mail of that account, filled in by the admin list. */
   user?: { name: string; email: string };
 }
 
+export interface Invite {
+  code: string;
+  /** null = unlimited. */
+  days: number | null;
+  /** How many accounts can redeem it. */
+  maxUses: number;
+  createdAt: string;
+  /** Until when the code can be redeemed. */
+  expiresAt: string;
+  redemptions: Redemption[];
+}
+
 export type InviteStatus = "pending" | "used" | "expired";
+
+/** "12" → 12; empty, zero or anything but digits → null. For the admin's licenses and custom days fields. */
+export function positiveInt(text: string): number | null {
+  if (!/^\d+$/.test(text.trim())) return null;
+  const n = Number(text.trim());
+  return n > 0 ? n : null;
+}
+
+/** One line of the admin history: the code still open (or expired unused), or one account that redeemed it. */
+export type InviteEntry = { invite: Invite; redemption?: Redemption };
+
+/** Each redemption gets its own line, so a shared code repeats once per person; newest first. */
+export function inviteEntries(invite: Invite, now: Date): InviteEntry[] {
+  const status = inviteStatus(invite, now);
+  const open = status === "pending" || (status === "expired" && invite.redemptions.length === 0);
+  const used = [...invite.redemptions].sort((a, b) => b.usedAt.localeCompare(a.usedAt)).map((redemption) => ({ invite, redemption }));
+  return open ? [{ invite }, ...used] : used;
+}
 
 /** " abcd-1234 " → "ABCD1234": what people type or paste becomes the stored code. */
 export function normalizeInviteCode(text: string): string {
@@ -46,7 +71,7 @@ function brDate(iso: string): string {
 }
 
 /** The ready-to-paste message (WhatsApp, e-mail): the site link, then the code to redeem in the app once the account exists. */
-export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt">, origin = SITE_URL): string {
+export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt" | "maxUses">, origin = SITE_URL): string {
   const gift = invite.days === null ? "acesso *ilimitado* e gratuito" : `*${licenseLabel(invite.days)}* de licença gratuita`;
   return [
     "✨ *Você ganhou um presente no Habitus!* ✨",
@@ -60,7 +85,7 @@ export function inviteMessage(invite: Pick<Invite, "code" | "days" | "expiresAt"
     "2️⃣ No app, toque na sua foto no canto de cima e depois em *Gift Code*.",
     `3️⃣ Digite o código *${invite.code}* e toque em *Resgatar código*.`,
     "",
-    `⏳ O código vale até ${brDate(invite.expiresAt)}, para uma única conta.`,
+    `⏳ O código vale até ${brDate(invite.expiresAt)}${invite.maxUses === 1 ? ", para uma única conta" : ""}.`,
     "",
     "Te espero lá! 💧",
   ].join("\n");
@@ -71,18 +96,20 @@ export function giftMessage(days: number | null): string {
   return days === null ? "Seu acesso agora é ilimitado." : `+${licenseLabel(days)} somados ao seu plano.`;
 }
 
+/** "used" once every license is taken. */
 export function inviteStatus(invite: Invite, now: Date): InviteStatus {
-  if (invite.usedAt !== null) return "used";
+  if (invite.redemptions.length >= invite.maxUses) return "used";
   return Date.parse(invite.expiresAt) > now.getTime() ? "pending" : "expired";
 }
 
-/** An `invites` row from Supabase, or null when it is not one. */
+/** An `invites` row from Supabase (with its `invite_redemptions`), or null when it is not one. */
 export function parseInvite(row: unknown): Invite | null {
   if (typeof row !== "object" || row === null) return null;
-  const { code, days, created_at, expires_at, used_at, used_by } = row as Record<string, unknown>;
+  const { code, days, max_uses, created_at, expires_at, invite_redemptions } = row as Record<string, unknown>;
   if (typeof code !== "string" || typeof created_at !== "string" || typeof expires_at !== "string") return null;
   if (days !== null && (typeof days !== "number" || days < 1)) return null;
-  return { code, days, createdAt: created_at, expiresAt: expires_at, usedAt: typeof used_at === "string" ? used_at : null,
-    usedBy: typeof used_by === "string" ? used_by : null,
-  };
+  const redemptions = (Array.isArray(invite_redemptions) ? (invite_redemptions as Record<string, unknown>[]) : [])
+    .filter((r) => typeof r.used_at === "string")
+    .map((r) => ({ userId: typeof r.user_id === "string" ? r.user_id : null, usedAt: r.used_at as string }));
+  return { code, days, maxUses: typeof max_uses === "number" && max_uses > 0 ? max_uses : 1, createdAt: created_at, expiresAt: expires_at, redemptions };
 }

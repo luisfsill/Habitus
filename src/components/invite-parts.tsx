@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { type Invite, inviteStatus, type InviteStatus, licenseLabel } from "@/domain/invites";
+import { type InviteEntry, inviteStatus, type InviteStatus, licenseLabel } from "@/domain/invites";
 import { radius, space, useTheme } from "@/theme";
 
 import { formatDate } from "./admin-user-row";
@@ -31,11 +31,15 @@ function RoundButton({ label, icon, danger, onPress }: { label: string; icon: { 
   );
 }
 
-/** One invite: code, license and status on the left, message and delete buttons on the right. */
-export function InviteRow({ invite, now, onOpen, onDelete }: { invite: Invite; now: Date; onOpen: () => void; onDelete: () => void }) {
+/** One history line: code, license and status on the left, message and delete buttons on the right. */
+export function InviteRow({ entry, now, onOpen, onDelete }: { entry: InviteEntry; now: Date; onOpen: () => void; onDelete: () => void }) {
   const { colors } = useTheme();
-  const status = inviteStatus(invite, now);
-  const when = status === "used" ? `em ${formatDate(invite.usedAt)}` : status === "pending" ? `até ${formatDate(invite.expiresAt)}` : "";
+  const { invite, redemption } = entry;
+  const status = redemption ? "used" : inviteStatus(invite, now);
+  const left = invite.maxUses - invite.redemptions.length;
+  const spots = invite.maxUses > 1 && status === "pending" ? ` · ${left} de ${invite.maxUses} vagas` : "";
+  const when = redemption ? `em ${formatDate(redemption.usedAt)}` : status === "pending" ? `até ${formatDate(invite.expiresAt)}${spots}` : "";
+  const user = redemption?.user;
   return (
     <View style={styles.row}>
       <View style={styles.flex}>
@@ -52,9 +56,9 @@ export function InviteRow({ invite, now, onOpen, onDelete }: { invite: Invite; n
             {STATUS[status].label} {when}
           </AppText>
         </View>
-        {invite.user && (
+        {user && (
           <AppText variant="footnote" color="secondaryLabel" selectable numberOfLines={2}>
-            {[invite.user.name, invite.user.email].filter(Boolean).join(" · ")}
+            {[user.name, user.email].filter(Boolean).join(" · ")}
           </AppText>
         )}
       </View>

@@ -66,9 +66,9 @@ export async function resetPassword(id: string): Promise<string> {
   return (await invoke<{ password: string }>({ action: "reset_password", id })).password;
 }
 
-/** A new single-use invite; `days` null gives unlimited access. */
-export async function createInvite(days: number | null): Promise<string> {
-  const result = await requireSupabase().rpc("admin_create_invite", { invite_days: days });
+/** A new invite for up to `uses` accounts; `days` null gives unlimited access. */
+export async function createInvite(days: number | null, uses: number): Promise<string> {
+  const result = await requireSupabase().rpc("admin_create_invite", { invite_days: days, invite_uses: uses });
   if (result.error) throw serviceError(result.error);
   return result.data as unknown as string;
 }
@@ -79,17 +79,25 @@ export function deleteInvite(code: string): Promise<void> {
 }
 
 export async function listInvites(): Promise<Invite[]> {
-  const { data, error } = await requireSupabase().from("invites").select("*").order("created_at", { ascending: false }).limit(30);
+  const { data, error } = await requireSupabase()
+    .from("invites")
+    .select("*, invite_redemptions(user_id, used_at)")
+    .order("created_at", { ascending: false })
+    .limit(30);
   if (error) throw serviceError(error);
   const invites = (data as unknown[]).map(parseInvite).filter((i): i is Invite => i !== null);
-  const ids = invites.flatMap((i) => (i.usedBy ? [i.usedBy] : []));
+  const ids = [...new Set(invites.flatMap((i) => i.redemptions.flatMap((r) => (r.userId ? [r.userId] : []))))];
   if (ids.length === 0) return invites;
-  // Who accepted each invite: admins read every profile.
+  // Who redeemed each invite: admins read every profile.
+  // shortcut: one `in` filter in the URL, fine for a few hundred redemptions; page it if codes get thousands of uses.
   const people = await requireSupabase().from("profiles").select("id, name, email").in("id", ids);
   if (people.error) throw serviceError(people.error);
   const byId = new Map((people.data as { id: string; name: string | null; email: string | null }[]).map((p) => [p.id, p]));
-  return invites.map((i) => {
-    const p = i.usedBy ? byId.get(i.usedBy) : undefined;
-    return p ? { ...i, user: { name: p.name ?? "", email: p.email ?? "" } } : i;
-  });
+  return invites.map((i) => ({
+    ...i,
+    redemptions: i.redemptions.map((r) => {
+      const p = r.userId ? byId.get(r.userId) : undefined;
+      return p ? { ...r, user: { name: p.name ?? "", email: p.email ?? "" } } : r;
+    }),
+  }));
 }

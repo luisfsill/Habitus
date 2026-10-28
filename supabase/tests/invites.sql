@@ -1,4 +1,4 @@
--- Casos de redeem_invite (admin.sql). Rode DEPOIS de admin.sql, no SQL Editor do Supabase. Esperado: notice 'invites ok'.
+-- Casos de redeem_invite e check_invite (admin.sql). Rode DEPOIS de admin.sql, no SQL Editor do Supabase. Esperado: notice 'invites ok'.
 -- Usa o primeiro usuário com perfil e não deixa linhas: tudo roda num sub-bloco que termina em exceção proposital.
 do $$
 declare
@@ -15,23 +15,37 @@ begin
     -- auth.uid() passa a ser esse usuário, como se a chamada viesse do app.
     perform set_config('request.jwt.claims', jsonb_build_object('sub', uid, 'role', 'authenticated')::text, true);
     update public.profiles set plan = 'trial', unlimited = false, access_until = now() + interval '5 days' where id = uid;
-    insert into public.invites (code, days, expires_at) values
-      ('TESTEAAAA1', 30, now() + interval '7 days'),
-      ('TESTEAAAA2', 30, now() - interval '1 second'),
-      ('TESTEAAAA3', null, now() + interval '7 days');
+    insert into public.invites (code, days, max_uses, expires_at) values
+      ('TESTEAAAA1', 30, 2, now() + interval '7 days'),
+      ('TESTEAAAA2', 30, 1, now() - interval '1 second'),
+      ('TESTEAAAA3', null, 1, now() + interval '7 days'),
+      ('TESTEAAAA4', 30, 1, now() + interval '7 days');
+    -- TESTEAAAA4 já lotado por outra conta (excluída depois: user_id null)
+    insert into public.invite_redemptions (code, user_id) values ('TESTEAAAA4', null);
 
-    -- validade que corre: soma; aceita minúsculas e traço; marca quem usou
+    -- validade que corre: soma; aceita minúsculas e traço; registra quem usou
     result := public.redeem_invite('teste-aaaa1');
     if result <> '{"days": 30}'::jsonb then raise exception 'redeem_invite devolveu %', result; end if;
     select access_until into until from public.profiles where id = uid;
     if until <> now() + interval '5 days' + 30 * interval '24 hours' then raise exception 'resgate deveria somar à validade (%)', until; end if;
     if (select plan from public.profiles where id = uid) <> 'paid' then raise exception 'plan deveria ser paid'; end if;
-    if (select used_by from public.invites where code = 'TESTEAAAA1') is distinct from uid then raise exception 'used_by não marcado'; end if;
+    if not exists (select 1 from public.invite_redemptions where code = 'TESTEAAAA1' and user_id = uid) then raise exception 'resgate não registrado'; end if;
 
-    -- usado ou vencido não vale
+    -- a mesma conta não resgata duas vezes; o código segue valendo para a segunda vaga, até lotar
     begin
       perform public.redeem_invite('TESTEAAAA1');
-      raise exception 'resgatou código já usado';
+      raise exception 'resgatou o mesmo código duas vezes';
+    exception when others then
+      if sqlerrm <> 'Você já resgatou este código.' then raise; end if;
+    end;
+    if public.check_invite('TESTEAAAA1') is null then raise exception 'código com vaga deveria valer no cadastro'; end if;
+    insert into public.invite_redemptions (code, user_id) values ('TESTEAAAA1', null);
+    if public.check_invite('TESTEAAAA1') is not null then raise exception 'código lotado não deveria valer no cadastro'; end if;
+
+    -- lotado ou vencido não vale
+    begin
+      perform public.redeem_invite('TESTEAAAA4');
+      raise exception 'resgatou código lotado';
     exception when others then
       if sqlerrm <> 'Código inválido, já usado ou vencido.' then raise; end if;
     end;
@@ -50,6 +64,8 @@ begin
 
     -- anon não resgata
     if has_function_privilege('anon', 'public.redeem_invite(text)', 'execute') then raise exception 'anon não deveria executar redeem_invite'; end if;
+    -- claim_invite recebe a conta como parâmetro: o app não pode chamar
+    if has_function_privilege('authenticated', 'public.claim_invite(text, uuid)', 'execute') then raise exception 'authenticated não deveria executar claim_invite'; end if;
 
     raise exception 'rollback-sentinel';
   exception when others then

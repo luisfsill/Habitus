@@ -74,7 +74,7 @@ A senha de app é só sua: ela fica no painel do Supabase e nunca entra no códi
 1. Abra **SQL Editor → New query**.
 2. Cole todo o conteúdo de [`supabase/admin.sql`](../supabase/admin.sql) e clique em **Run**.
 
-Isso cria os perfis (nome, cargo, validade do acesso), os planos com os preços iniciais (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90) e as funções do painel. Contas que já existiam ganham 7 dias de teste a partir de agora. Também cria os convites (`invites`): sem rodar a versão atual do arquivo, o botão **Gerar convite** do painel falha, e sem a versão com `redeem_invite` o **Resgatar código** do app falha. Para conferir, rode `supabase/tests/invites.sql` (esperado: `invites ok`).
+Isso cria os perfis (nome, cargo, validade do acesso), os planos com os preços iniciais (Mensal R$ 9,90, Trimestral R$ 24,90, Anual R$ 79,90) e as funções do painel. Contas que já existiam ganham 7 dias de teste a partir de agora. Também cria os convites (`invites`): sem rodar a versão atual do arquivo, o botão **Gerar convite** do painel falha, sem a versão com `redeem_invite` o **Resgatar código** do app falha, e sem a versão com `invite_redemptions` o convite para várias pessoas falha (rodar de novo migra os convites antigos). Para conferir, rode `supabase/tests/invites.sql` (esperado: `invites ok`).
 
 Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele reaplica a regra de que só quem tem acesso ativo sincroniza.
 

@@ -38,37 +38,77 @@ create policy "read own profile or admin" on public.profiles
 -- Sem políticas de insert/update/delete: só as funções abaixo mudam perfis.
 
 -- Convites ------------------------------------------------------------------
--- Código de uso único que o admin gera; quem cria a conta com ele já entra com a licença.
+-- Código que o admin gera para até max_uses contas; cada conta resgata uma vez e ganha a licença.
 
 create table if not exists public.invites (
   code text primary key,
   days int check (days is null or days > 0), -- null = ilimitado
   created_at timestamptz not null default now(),
-  expires_at timestamptz not null,
-  used_by uuid references auth.users (id) on delete set null,
-  used_at timestamptz
+  expires_at timestamptz not null
 );
 
+alter table public.invites add column if not exists max_uses int not null default 1 check (max_uses > 0);
+
+-- Um registro por conta que resgatou; user_id fica null se a conta for excluída (a vaga continua gasta).
+create table if not exists public.invite_redemptions (
+  code text not null references public.invites (code) on delete cascade,
+  user_id uuid references auth.users (id) on delete set null,
+  used_at timestamptz not null default now(),
+  unique (code, user_id)
+);
+
+-- Antes os convites eram de uso único, com quem usou na própria linha: isso passa para invite_redemptions.
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'invites' and column_name = 'used_at') then
+    insert into public.invite_redemptions (code, user_id, used_at)
+    select code, used_by, used_at from public.invites where used_at is not null;
+    alter table public.invites drop column used_by, drop column used_at;
+  end if;
+end;
+$$;
+
 alter table public.invites enable row level security;
+alter table public.invite_redemptions enable row level security;
 
 drop policy if exists "admin reads invites" on public.invites;
 create policy "admin reads invites" on public.invites for select to authenticated using ((select public.is_admin()));
+drop policy if exists "admin reads invite redemptions" on public.invite_redemptions;
+create policy "admin reads invite redemptions" on public.invite_redemptions for select to authenticated using ((select public.is_admin()));
+
+-- Gasta uma vaga do convite para a conta: {"days": n | null}, ou null se o código não existe, venceu, lotou ou
+-- essa conta já o resgatou. O "for update" faz resgates simultâneos esperarem a vez, sem passar do limite.
+-- Recebe a conta como parâmetro, então só as funções abaixo chamam; o app não executa.
+create or replace function public.claim_invite(invite_code text, uid uuid)
+returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  c text := upper(regexp_replace(coalesce(invite_code, ''), '[^A-Za-z0-9]', '', 'g'));
+  invite_days int;
+  invite_max int;
+begin
+  select days, max_uses into invite_days, invite_max from public.invites where code = c and expires_at > now() for update;
+  if not found
+    or exists (select 1 from public.invite_redemptions where code = c and user_id = uid)
+    or (select count(*) from public.invite_redemptions where code = c) >= invite_max then
+    return null;
+  end if;
+  insert into public.invite_redemptions (code, user_id) values (c, uid);
+  return jsonb_build_object('days', invite_days);
+end;
+$$;
+
+revoke execute on function public.claim_invite(text, uuid) from public, anon, authenticated;
 
 -- Conta nova: perfil com 7 dias de teste grátis, ou com a licença do convite válido que veio no cadastro.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
 declare
-  invite_code text := upper(regexp_replace(coalesce(new.raw_user_meta_data ->> 'invite', ''), '[^A-Za-z0-9]', '', 'g'));
-  invite_days int;
-  invited boolean := false;
+  claimed jsonb := public.claim_invite(new.raw_user_meta_data ->> 'invite', new.id);
+  invite_days int := (claimed ->> 'days')::int;
+  invited boolean := claimed is not null;
 begin
-  if invite_code <> '' then
-    update public.invites set used_by = new.id, used_at = now()
-    where code = invite_code and used_at is null and expires_at > now()
-    returning days into invite_days;
-    invited := found;
-  end if;
   insert into public.profiles (id, name, email, plan, unlimited, access_until)
   values (
     new.id,
@@ -199,14 +239,15 @@ begin
 end;
 $$;
 
--- Convite novo, válido por 7 dias e de uso único; invite_days null = ilimitado.
-create or replace function public.admin_create_invite(invite_days int)
+-- Convite novo, válido por 7 dias para até invite_uses contas; invite_days null = ilimitado.
+drop function if exists public.admin_create_invite(int);
+create or replace function public.admin_create_invite(invite_days int, invite_uses int)
 returns text language plpgsql security definer set search_path = ''
 as $$
 declare new_code text := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
 begin
   perform public.require_admin();
-  insert into public.invites (code, days, expires_at) values (new_code, invite_days, now() + interval '7 days');
+  insert into public.invites (code, days, max_uses, expires_at) values (new_code, invite_days, invite_uses, now() + interval '7 days');
   return new_code;
 end;
 $$;
@@ -225,29 +266,36 @@ $$;
 create or replace function public.check_invite(invite_code text)
 returns jsonb language sql stable security definer set search_path = ''
 as $$
-  select jsonb_build_object('days', days) from public.invites
-  where code = upper(regexp_replace(invite_code, '[^A-Za-z0-9]', '', 'g')) and used_at is null and expires_at > now();
+  select jsonb_build_object('days', i.days) from public.invites i
+  where i.code = upper(regexp_replace(invite_code, '[^A-Za-z0-9]', '', 'g')) and i.expires_at > now()
+    and (select count(*) from public.invite_redemptions r where r.code = i.code) < i.max_uses;
 $$;
 
--- Resgate do código já com a conta criada (tela de planos ou Ajustes > Conta): marca o convite como usado por
+-- Resgate do código já com a conta criada (tela de planos ou Ajustes > Conta): gasta uma vaga do convite em nome de
 -- quem resgatou e soma os dias à validade, como um pagamento (de agora se ela já venceu); null = ilimitado.
--- O "used_at is null" no update faz dois resgates ao mesmo tempo valerem uma vez só. Devolve {"days": n | null}.
+-- Devolve {"days": n | null}.
 create or replace function public.redeem_invite(invite_code text)
 returns jsonb language plpgsql security definer set search_path = ''
 as $$
 declare
   uid uuid := auth.uid();
+  claimed jsonb;
   invite_days int;
 begin
   if uid is null then
     raise exception 'Entre na sua conta para resgatar o código.' using errcode = '42501';
   end if;
-  update public.invites set used_by = uid, used_at = now()
-  where code = upper(regexp_replace(coalesce(invite_code, ''), '[^A-Za-z0-9]', '', 'g')) and used_at is null and expires_at > now()
-  returning days into invite_days;
-  if not found then
+  claimed := public.claim_invite(invite_code, uid);
+  if claimed is null then
+    if exists (
+      select 1 from public.invite_redemptions
+      where code = upper(regexp_replace(coalesce(invite_code, ''), '[^A-Za-z0-9]', '', 'g')) and user_id = uid
+    ) then
+      raise exception 'Você já resgatou este código.' using errcode = '22023';
+    end if;
     raise exception 'Código inválido, já usado ou vencido.' using errcode = '22023';
   end if;
+  invite_days := (claimed ->> 'days')::int;
   update public.profiles
   set plan = 'paid',
       unlimited = unlimited or invite_days is null,
@@ -274,7 +322,7 @@ begin
     'is_admin()', 'has_access()', 'require_admin()',
     'admin_set_access(uuid, timestamptz, boolean, text)', 'admin_set_role(uuid, text)',
     'admin_update_name(uuid, text)', 'admin_delete_user(uuid)',
-    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int)', 'admin_delete_invite(text)',
+    'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int, int)', 'admin_delete_invite(text)',
     'redeem_invite(text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
