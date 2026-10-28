@@ -1,5 +1,5 @@
 /** Version of the Termos de uso and Política de privacidade the user accepts at sign-up. */
-export const TERMS_VERSION = "2026-10-27";
+export const TERMS_VERSION = "2026-10-28";
 
 export const MIN_PASSWORD_LENGTH = 8;
 

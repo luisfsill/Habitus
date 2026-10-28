@@ -112,6 +112,10 @@ export const PRIVACY: LegalDocument = {
       paragraphs: [
         "No seu aparelho e no Supabase, o serviço que hospeda as contas do Habitus. O acesso é protegido: cada conta só enxerga os próprios dados, exceto o que a seção 5 descreve. Os servidores podem ficar fora do Brasil.",
         "Os lembretes são agendados no próprio aparelho.",
+        "Câmera, microfone e sensores de movimento só são usados quando você pede, e nada é gravado nem guardado pelo Habitus.",
+        "No Sorria, a câmera frontal percebe o sorriso no próprio aparelho; nenhuma imagem sai dele. Para isso o app baixa a biblioteca de reconhecimento de rosto (MediaPipe, do Google, pelo jsDelivr) e o modelo dela, do Google.",
+        "Na Postura de poder, o sensor de movimento do celular só confere se você está parado, no próprio aparelho. Na fogueira do Foco total, o microfone mede a força do sopro, também no aparelho.",
+        "No Antes de dormir e nas Metas em voz alta, ao tocar em Falar, o próprio navegador transforma sua fala em texto pelo serviço de reconhecimento dele (do Google no Chrome e no Edge, da Apple no Safari), só para conferir as palavras ditas.",
       ],
     },
     {

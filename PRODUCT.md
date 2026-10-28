@@ -6,9 +6,9 @@ Pessoas que querem criar o hábito de pequenas práticas mentais ao longo do dia
 
 ## As 6 dicas
 
-1. **Sorria** — sorrir por alguns segundos, mesmo sem vontade.
-2. **Postura de poder (2 min)** — em pé, firme, peito aberto, respirando fundo. Timer de 120 s.
-3. **Metas em voz alta** — dizer as metas no presente, diante do espelho. Afirmações editáveis.
+1. **Sorria** — sorrir por alguns segundos, mesmo sem vontade. A câmera percebe o sorriso (ou segura-se o sol) e o sol nasce; cada dia planta uma flor na campina.
+2. **Postura de poder (2 min)** — em pé, firme, peito aberto, respirando fundo. Timer de 120 s com guia de respiração; parado, a bandeira sobe a montanha, e cada sessão soma 300 m rumo aos picos.
+3. **Metas em voz alta** — dizer as metas no presente, diante do espelho. Afirmações editáveis. Cada palavra dita acende e abre a névoa do lago; selos aos 7, 21 e 66 dias.
 4. **Foco total (2 min)** — olhar fixamente para a fogueira e, no fim, soprar para apagar. Timer de 120 s.
 5. **Gratidão antecipada** — agradecer pelo que ainda não chegou. A frase vira uma estrela no céu de gratidão da pessoa (365 por ano, uma constelação a cada 7 estrelas, uma por semana).
 

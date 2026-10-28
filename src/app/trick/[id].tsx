@@ -1,29 +1,31 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { useContext, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
 
-import { AppText } from "@/components/app-text";
 import { Bonfire } from "@/components/bonfire";
-import { CircularTimer } from "@/components/circular-timer";
 import { FireFocus, type FirePhase } from "@/components/fire-focus";
 import { FireIntro } from "@/components/fire-intro";
+import { GoalsTrick } from "@/components/goals-trick";
 import { MoonTrick } from "@/components/moon-trick";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { SkyTrick } from "@/components/sky-trick";
-import { VideoBackdrop } from "@/components/video-backdrop";
-import { Icon } from "@/components/icon";
+import { SmileTrick } from "@/components/smile-trick";
+import { SummitTrick } from "@/components/summit-trick";
 import { trickDayKey } from "@/domain/bedtime";
-import { closesConstellation, skyOf } from "@/domain/sky";
-import { dayKey } from "@/domain/time";
+import { flowersOf, gardenLine } from "@/domain/garden";
+import { declaredDays, goalsLine } from "@/domain/goals";
 import { beforeTonight, litFraction, type Moon, MOON_NIGHTS, moonLine, moonOf, nextNight } from "@/domain/moon";
-import { BEDTIME_TRICK, isTrickIndex, type Trick, TRICKS } from "@/domain/tricks";
-import { canListen } from "@/services/fire-sensors";
+import { closesConstellation, skyOf } from "@/domain/sky";
+import { altitudeOf, METERS_PER_SESSION, peakAt, summitLine } from "@/domain/summit";
+import { dayKey } from "@/domain/time";
+import { BEDTIME_TRICK, isTrickIndex, type Trick, type TrickIndex, TRICKS } from "@/domain/tricks";
 import { playAmbient, playMoonLit, playStarBorn } from "@/services/sound";
 import { useAppState } from "@/state/app-state";
 import { useFire } from "@/state/use-fire";
-import { useVoice } from "@/state/use-voice";
-import { radius, space, ThemePreferenceContext, useTheme } from "@/theme";
+import { useShake } from "@/state/use-shake";
+import { useSmile } from "@/state/use-smile";
+import { useWords } from "@/state/use-words";
+import { ThemePreferenceContext } from "@/theme";
 
 /** Foco total: the tip with the interactive bonfire. */
 const FIRE = 3;
@@ -31,66 +33,97 @@ const FIRE_VIDEO = require("../../../assets/videos/fogueira.mp4") as number;
 const FIRE_ORANGE = "#FF8A2A";
 const FIRE_SECONDS = TRICKS[FIRE].durationSeconds ?? 120;
 
-// Background videos of the tips that have a live scene so far (Pexels, see docs/design.md).
-const SCENES: Partial<Record<number, number>> = {
-  0: require("../../../assets/videos/sorria.mp4") as number,
-  1: require("../../../assets/videos/postura.mp4") as number,
-  2: require("../../../assets/videos/metas.mp4") as number,
-};
-
-function Affirmations() {
-  const { data } = useAppState();
-  return (
-    <View>
-      <AppText variant="footnote" color="secondaryLabel" style={styles.label}>
-        SUAS AFIRMAÇÕES
-      </AppText>
-      {data.settings.affirmations.map((line, i) => (
-        <AppText key={`${i}-${line}`} variant="title3" style={styles.affirmation}>
-          “{line}”
-        </AppText>
-      ))}
-      <View style={styles.inlineButton}>
-        <PrimaryButton label="Editar afirmações" variant="plain" onPress={() => router.navigate("/settings/afirmacoes")} />
-      </View>
-    </View>
-  );
-}
-
-function Practice({ trick }: { trick: Trick }) {
-  if (trick.kind === "timer" && trick.durationSeconds) {
-    return (
-      <View>
-        <CircularTimer seconds={trick.durationSeconds} compact />
-      </View>
-    );
-  }
-  if (trick.kind === "affirmations") return <Affirmations />;
-  return null;
-}
-
-/** "A ideia por trás". Over a video the grey text gets lost: white with a soft shadow instead. */
-function Why({ text, overVideo }: { text: string; overVideo: boolean }) {
-  const color = overVideo ? "label" : "secondaryLabel";
-  return (
-    <View>
-      <AppText variant="footnote" color={color} style={[styles.label, overVideo && styles.overVideo]}>
-        A IDEIA POR TRÁS
-      </AppText>
-      <AppText variant="subheadline" color={color} style={overVideo && styles.overVideo}>
-        {text}
-      </AppText>
-    </View>
-  );
-}
-
-/** What plays behind the page: a tip's video, or nothing. Any backdrop means the dark theme. */
-function backdropFor(index: number) {
-  const scene = SCENES[index];
-  return scene === undefined ? null : <VideoBackdrop source={scene} />;
-}
-
 const MOONLIGHT = "#E6E9F5";
+
+/** Freezes a count when the screen opens: finishing today must not move the starting point under the animation. */
+function useAtOpen<T>(make: () => T): T {
+  const [value] = useState(make);
+  return value;
+}
+
+/** Metas em voz alta: each affirmation said lifts the lake's fog (goals-trick.tsx, domain/goals.ts). */
+function GoalsScene({ trick, done }: { trick: Trick; done: boolean }) {
+  const { data, completeTrick } = useAppState();
+  const { days, doneAtOpen } = useAtOpen(() => ({ days: declaredDays(data.completions), doneAtOpen: done }));
+  const words = useWords();
+  return (
+    <GoalsTrick
+      subtitle={`Dica ${trick.index + 1} de ${TRICKS.length}`}
+      title={trick.title}
+      affirmations={data.settings.affirmations}
+      lineBefore={goalsLine(days, false)}
+      lineAfter={goalsLine(doneAtOpen ? days : days + 1, !doneAtOpen)}
+      done={doneAtOpen}
+      canSpeak={words.canSpeak}
+      listening={words.listening}
+      onListen={words.listen}
+      heard={words.heard}
+      onAffirmation={() => playStarBorn(false)}
+      onLit={() => {
+        words.stop();
+        void completeTrick(trick.index);
+      }}
+      onClose={leave}
+    />
+  );
+}
+
+/** Postura de poder: two minutes standing firm climb the person's mountains (summit-trick.tsx, domain/summit.ts). */
+function SummitScene({ trick, done }: { trick: Trick; done: boolean }) {
+  const { data, completeTrick } = useAppState();
+  const { altitude, doneAtOpen } = useAtOpen(() => ({ altitude: altitudeOf(data.completions), doneAtOpen: done }));
+  const motion = useShake();
+  const after = doneAtOpen ? altitude : altitude + METERS_PER_SESSION;
+  return (
+    <SummitTrick
+      subtitle={`Dica ${trick.index + 1} de ${TRICKS.length}`}
+      title={trick.title}
+      instruction={trick.instruction}
+      why={trick.why}
+      seconds={trick.durationSeconds ?? 120}
+      lineBefore={summitLine(altitude, altitude)}
+      lineAfter={summitLine(doneAtOpen ? after : altitude, after)}
+      done={doneAtOpen}
+      shake={motion.shake}
+      onStart={motion.start}
+      onDone={() => {
+        playStarBorn(peakAt(after) !== peakAt(altitude));
+        void completeTrick(trick.index);
+      }}
+      onClose={leave}
+    />
+  );
+}
+
+/** Sorria: the smile raises the sun and plants a flower (smile-trick.tsx, domain/garden.ts). */
+function SmileScene({ trick, done }: { trick: Trick; done: boolean }) {
+  const { data, completeTrick } = useAppState();
+  const { flowers, doneAtOpen } = useAtOpen(() => ({ flowers: flowersOf(data.completions), doneAtOpen: done }));
+  const camera = useSmile();
+  // Already smiled today: the meadow counts today's flower in `flowers`.
+  const before = doneAtOpen ? flowers - 1 : flowers;
+  return (
+    <SmileTrick
+      subtitle={`Dica ${trick.index + 1} de ${TRICKS.length}`}
+      title={trick.title}
+      instruction={trick.instruction}
+      why={trick.why}
+      flowers={Math.max(before, 0)}
+      lineBefore={gardenLine(before, false)}
+      lineAfter={gardenLine(before + 1, !doneAtOpen)}
+      done={doneAtOpen}
+      canSee={camera.canSee}
+      watching={camera.watching}
+      score={camera.score}
+      onWatch={camera.start}
+      onLit={() => {
+        camera.stop();
+        void completeTrick(trick.index);
+      }}
+      onClose={leave}
+    />
+  );
+}
 
 /** Moon state for the screen: lit part, its line and whether it is full. */
 function moonView(moon: Moon) {
@@ -100,10 +133,8 @@ function moonView(moon: Moon) {
 /** Antes de dormir: the phrase fills tonight's phase of the person's moon (moon-trick.tsx, domain/moon.ts). */
 function BedtimeTrick({ trick, done }: { trick: Trick; done: boolean }) {
   const { data, completeTrick } = useAppState();
-  // Frozen when the screen opens: finishing tonight must not move the starting point under the animation.
-  const [{ moon, doneAtOpen }] = useState(() => ({ moon: moonOf(data.completions), doneAtOpen: done }));
-  const [listening, setListening] = useState(false);
-  const voice = useVoice(listening);
+  const { moon, doneAtOpen } = useAtOpen(() => ({ moon: moonOf(data.completions), doneAtOpen: done }));
+  const words = useWords();
   const after = doneAtOpen ? moon : nextNight(moon);
   return (
     <ThemePreferenceContext.Provider value="dark">
@@ -115,11 +146,12 @@ function BedtimeTrick({ trick, done }: { trick: Trick; done: boolean }) {
         before={moonView(doneAtOpen ? moon : beforeTonight(moon))}
         after={moonView(after)}
         done={doneAtOpen}
-        canSpeak={canListen()}
-        listening={listening}
-        onListen={() => setListening(true)}
-        voice={voice}
+        canSpeak={words.canSpeak}
+        listening={words.listening}
+        onListen={words.listen}
+        heard={words.heard}
         onLit={() => {
+          words.stop();
           playMoonLit(after.phase === MOON_NIGHTS);
           void completeTrick(BEDTIME_TRICK);
         }}
@@ -127,6 +159,11 @@ function BedtimeTrick({ trick, done }: { trick: Trick; done: boolean }) {
       />
     </ThemePreferenceContext.Provider>
   );
+}
+
+/** The tip is done today. In development never: every scene can be replayed, and finishing again adds nothing (withCompletion skips a repeat). */
+function doneToday(completions: Readonly<Record<string, readonly number[]>>, index: TrickIndex): boolean {
+  return !__DEV__ && (completions[trickDayKey(index, new Date())] ?? []).includes(index);
 }
 
 /** Back to where the user came from; a trick opened by URL or notification has no history. */
@@ -177,8 +214,6 @@ function useTrickFlow(index: number, gratitude: string) {
 export default function TrickScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, setGratitude } = useAppState();
-  const { colors } = useTheme();
-  const preference = useContext(ThemePreferenceContext);
   const index = Number(id);
   const [gratitude, setGratitudeText] = useState(data.gratitude[dayKey(new Date())] ?? "");
   const { finish, isFire, fire, firePhase, setFirePhase, attempts } = useTrickFlow(index, gratitude);
@@ -192,7 +227,7 @@ export default function TrickScreen() {
   }
 
   const trick = TRICKS[index];
-  const done = (data.completions[trickDayKey(index, new Date())] ?? []).includes(index);
+  const done = doneToday(data.completions, index);
 
   if (index === BEDTIME_TRICK) return <BedtimeTrick trick={trick} done={done} />;
   // Foco total: the intro over the still fire, then nothing but the fire and a small timer.
@@ -243,45 +278,7 @@ export default function TrickScreen() {
       </ThemePreferenceContext.Provider>
     );
   }
-  // Tips with a live scene: a video behind the page, always in the dark theme so the text reads over it.
-  const backdrop = backdropFor(index);
-  const dark = backdrop !== null;
-  return (
-    <ThemePreferenceContext.Provider value={dark ? "dark" : preference}>
-    <Screen
-      underHeader
-      dense
-      backdrop={backdrop}
-      subtitle={`Dica ${index + 1} de ${TRICKS.length}`}
-      title={trick.title}
-      footer={
-        <PrimaryButton
-          label={done ? "Concluída hoje ✓" : "Concluir"}
-          disabled={done}
-          accessibilityHint="Marca esta dica como feita hoje"
-          onPress={() => void finish()}
-        />
-      }>
-      {!dark && (
-        <View style={[styles.hero, { backgroundColor: colors.accentSoft }]}>
-          <Icon ios={trick.symbol.ios} android={trick.symbol.android} size={32} color={colors.accent} />
-        </View>
-      )}
-      <AppText variant="title3" style={styles.instruction}>
-        {trick.instruction}
-      </AppText>
-      <Practice trick={trick} />
-      {trick.why && <Why text={trick.why} overVideo={dark} />}
-    </Screen>
-    </ThemePreferenceContext.Provider>
-  );
+  if (index === 2) return <ThemePreferenceContext.Provider value="dark"><GoalsScene trick={trick} done={done} /></ThemePreferenceContext.Provider>;
+  if (index === 1) return <ThemePreferenceContext.Provider value="dark"><SummitScene trick={trick} done={done} /></ThemePreferenceContext.Provider>;
+  return <ThemePreferenceContext.Provider value="dark"><SmileScene trick={trick} done={done} /></ThemePreferenceContext.Provider>;
 }
-
-const styles = StyleSheet.create({
-  overVideo: { textShadowColor: "rgba(0,0,0,0.75)", textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } },
-  hero: { width: 64, height: 64, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
-  instruction: { fontWeight: "400", lineHeight: 26 },
-  label: { fontWeight: "600", letterSpacing: 0.5, marginBottom: space.xs },
-  affirmation: { marginVertical: space.xs },
-  inlineButton: { marginTop: space.sm, alignItems: "flex-start" },
-});

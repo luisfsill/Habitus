@@ -1,4 +1,22 @@
-import { beforeTonight, initialSpeech, litWords, MOON_NIGHTS, moonLine, moonOf, nextNight, speechStep, VOICE_HANG_MS, wordTimeline } from "../moon";
+import {
+  beforeTonight,
+  HOLD_LONG_MS,
+  HOLD_SHORT_MS,
+  holdRate,
+  holdStep,
+  holdWordMs,
+  initialSpeech,
+  litWords,
+  MOON_NIGHTS,
+  moonLine,
+  moonOf,
+  msForWords,
+  nextNight,
+  normalizeWord,
+  sameWord,
+  spokenWords,
+  wordTimeline,
+} from "../moon";
 import { BEDTIME_TRICK, TRICKS } from "../tricks";
 
 /** `n` nights with the bedtime tip, plus a day with only other tips. */
@@ -67,36 +85,60 @@ describe("wordTimeline", () => {
   });
 });
 
-describe("speechStep", () => {
-  /** Feeds `level` every 33 ms for `ms`, from `state` on. */
-  function feed(level: number, ms: number, holding = false, state = initialSpeech) {
-    let s = state;
-    const start = state.at === null ? 0 : state.at + 33;
-    for (let t = start; t <= start + ms; t += 33) s = speechStep(s, t, level, holding);
-    return s;
-  }
+describe("spokenWords", () => {
+  const timeline = wordTimeline(TRICKS[BEDTIME_TRICK].phrase ?? "");
 
-  it("adds up time while there is voice", () => {
-    expect(feed(0.3, 1000).ms).toBeGreaterThan(950);
+  it("lights the words said in order, ignoring case, accents and punctuation", () => {
+    expect(spokenWords(timeline, "")).toBe(0);
+    expect(spokenWords(timeline, "deus universo")).toBe(2);
+    expect(spokenWords(timeline, "Deus Universo Vida me surpreenda positivamente amanha")).toBe(timeline.length);
   });
 
-  it("does not count room noise", () => {
-    expect(feed(0.02, 1000).ms).toBe(0);
+  it("does not advance on a wrong word, and goes on once the right one comes", () => {
+    expect(spokenWords(timeline, "deus universo azul verde vermelho")).toBe(2);
+    expect(spokenWords(timeline, "deus universo azul vida")).toBe(3);
   });
 
-  it("counts holding the moon without voice", () => {
-    expect(feed(0, 1000, true).ms).toBeGreaterThan(950);
+  it("takes a hyphenated word said in two", () => {
+    const sou = wordTimeline("Sou bem-sucedido.");
+    expect(spokenWords(sou, "sou bem sucedido")).toBe(2);
+    expect(spokenWords(sou, "sou bem-sucedido")).toBe(2);
   });
 
-  it("bridges short gaps between syllables but pauses on silence, never going back", () => {
-    const spoken = feed(0.3, 500);
-    const gap = feed(0, 1500, false, spoken);
-    expect(gap.ms).toBeGreaterThan(spoken.ms);
-    expect(gap.ms).toBeLessThanOrEqual(spoken.ms + VOICE_HANG_MS + 33);
+  it("does not light a later word said out of order", () => {
+    expect(spokenWords(timeline, "vida deus")).toBe(1);
   });
 
-  it("adds at most one step after a long pause between steps", () => {
-    const s = speechStep(speechStep(initialSpeech, 0, 0.5, false), 10_000, 0.5, false);
-    expect(s.ms).toBe(100);
+  it("allows a small slip on long words only", () => {
+    expect(sameWord("surpreende", "surpreenda")).toBe(true);
+    expect(sameWord("positivament", "positivamente")).toBe(true);
+    expect(sameWord("eu", "me")).toBe(false);
+    expect(sameWord("adeus", "Deus,")).toBe(false);
+    expect(normalizeWord("Amanhã.”")).toBe("amanha");
+  });
+
+  it("msForWords lights exactly that many words", () => {
+    for (const n of [0, 1, 4, timeline.length]) expect(litWords(timeline, msForWords(timeline, n))).toBe(n);
+  });
+});
+
+describe("holdStep", () => {
+  it("lights short words in HOLD_SHORT_MS and longer ones in HOLD_LONG_MS while held", () => {
+    const timeline = wordTimeline(TRICKS[BEDTIME_TRICK].phrase ?? "");
+    let s = initialSpeech;
+    const litAt: number[] = [];
+    for (let t = 0; litWords(timeline, s.ms) < timeline.length && t < 60_000; t += 33) {
+      s = holdStep(s, t, holdRate(timeline, s.ms));
+      if (litWords(timeline, s.ms) > litAt.length) litAt.push(t);
+    }
+    const gaps = litAt.map((t, i) => t - (i ? litAt[i - 1] : 0));
+    gaps.forEach((gap, i) => expect(Math.abs(gap - holdWordMs(timeline[i].word))).toBeLessThan(120));
+    expect(timeline.filter((w) => holdWordMs(w.word) === HOLD_SHORT_MS).map((w) => normalizeWord(w.word))).toEqual(["deus", "vida", "me"]);
+    expect(holdWordMs("positivamente")).toBe(HOLD_LONG_MS);
+  });
+
+  it("pauses when let go and adds at most one step after a long gap", () => {
+    expect(holdStep(holdStep(initialSpeech, 0, 0), 500, 0).ms).toBe(0);
+    expect(holdStep(holdStep(initialSpeech, 0, 1), 10_000, 1).ms).toBe(100);
   });
 });

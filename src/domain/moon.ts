@@ -1,7 +1,8 @@
 /**
  * The moon of Antes de dormir: every night the tip is done fills it one step, and 8 nights make a full moon. Then a
  * new cycle starts from a thin crescent. Like the gratitude sky it only grows: a skipped night just does not add.
- * The phrase lights up word by word while the person speaks (or holds the moon), at the pace of calm speech.
+ * The phrase lights up word by word: each word as the person says it (checked against the recognized text), or one
+ * every few seconds while they hold the moon.
  */
 
 import { BEDTIME_TRICK } from "./tricks";
@@ -73,30 +74,93 @@ export function litWords(timeline: readonly { endMs: number }[], ms: number): nu
   return timeline.filter((w) => w.endMs <= ms).length;
 }
 
-/** Microphone level (0…1) from which it counts as speaking. */
-export const VOICE_LEVEL = 0.08;
-/** A gap between syllables shorter than this still counts as speaking (ms). */
-export const VOICE_HANG_MS = 300;
+// Holding the moon lights one word at a time, slower than speech: time to read it and dwell on it. Short words
+// ("Deus", "vida", "me") take HOLD_SHORT_MS, longer ones HOLD_LONG_MS.
+export const HOLD_SHORT_MS = 1500;
+export const HOLD_LONG_MS = 2000;
+export const SHORT_WORD_LETTERS = 4;
+
+/** How long holding takes to light `word` (ms). */
+export function holdWordMs(word: string): number {
+  return normalizeWord(word).length <= SHORT_WORD_LETTERS ? HOLD_SHORT_MS : HOLD_LONG_MS;
+}
+
+/** How fast holding advances the speaking time at `ms`, so the word being lit takes {@link holdWordMs}. */
+export function holdRate(timeline: readonly { word: string; endMs: number }[], ms: number): number {
+  const i = Math.min(litWords(timeline, ms), timeline.length - 1);
+  if (i < 0) return 0;
+  return (timeline[i].endMs - (i ? timeline[i - 1].endMs : 0)) / holdWordMs(timeline[i].word);
+}
+
+/** A word as it is compared: lower case, no accents or punctuation ("Amanhã." → "amanha"). */
+export function normalizeWord(word: string): string {
+  return word.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/** Letters that may differ between the spoken and the expected word: the recognizer slips on long words. */
+function slack(word: string): number {
+  if (word.length >= 10) return 2;
+  return word.length >= 5 ? 1 : 0;
+}
+
+/** Edit distance between two short words; past `max` length difference it only says "too far". */
+function distance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/** The heard word is the expected one, allowing a small slip on long words. */
+export function sameWord(heard: string, expected: string): boolean {
+  const h = normalizeWord(heard);
+  const e = normalizeWord(expected);
+  return h.length > 0 && distance(h, e, slack(e)) <= slack(e);
+}
+
+/**
+ * How many words of the phrase were said, in order, in everything heard so far (`transcript`, the recognizer's
+ * text): each heard word lights the next one only if it is that word; any other word ("azul" instead of "vida")
+ * is skipped without lighting anything.
+ */
+export function spokenWords(timeline: readonly { word: string }[], transcript: string): number {
+  const heard = transcript.split(/\s+/);
+  let lit = 0;
+  for (let i = 0; i < heard.length && lit < timeline.length; i++) {
+    if (sameWord(heard[i], timeline[lit].word)) lit++;
+    // A hyphenated word ("bem-sucedido") may come back in two ("bem sucedido").
+    else if (i + 1 < heard.length && sameWord(heard[i] + heard[i + 1], timeline[lit].word)) {
+      lit++;
+      i++;
+    }
+  }
+  return lit;
+}
+
+/** Speaking time that lights exactly the first `words` words. */
+export function msForWords(timeline: readonly { endMs: number }[], words: number): number {
+  return words > 0 ? timeline[Math.min(words, timeline.length) - 1].endMs : 0;
+}
 
 export interface Speech {
-  /** Speaking (or holding) time so far, in ms. */
+  /** Speaking time lit so far, in ms (see wordTimeline): from holding the moon, or set by the spoken words. */
   ms: number;
-  /** Last moment with voice, or -Infinity. */
-  voiceAt: number;
   /** Previous step, or null before the first. */
   at: number | null;
 }
 
-export const initialSpeech: Speech = { ms: 0, voiceAt: -Infinity, at: null };
+export const initialSpeech: Speech = { ms: 0, at: null };
 
 /**
- * One step of the phrase lighting up, at time `now` (ms). Time adds up while there is voice (with a short hang over
- * the gaps between syllables) or the moon is held; silence only pauses it, it never goes back.
+ * One step of holding the moon, at time `now` (ms), at `hold`, the {@link holdRate} (0 when not held). Letting
+ * go only pauses it; it never goes back.
  */
-export function speechStep(state: Speech, now: number, level: number, holding: boolean): Speech {
-  const voiceAt = level >= VOICE_LEVEL ? now : state.voiceAt;
-  const active = holding || now - voiceAt <= VOICE_HANG_MS;
+export function holdStep(state: Speech, now: number, hold: number): Speech {
   // Steps arrive ~30 times a second; a long gap (a tab in the background) adds no more than one step's worth.
   const dt = state.at === null ? 0 : Math.min(now - state.at, 100);
-  return { ms: active ? state.ms + dt : state.ms, voiceAt, at: now };
+  return { ms: state.ms + dt * hold, at: now };
 }

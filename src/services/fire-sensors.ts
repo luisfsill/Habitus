@@ -1,7 +1,6 @@
 import { log } from "./log";
 
-// The Foco total fire listens for a blow on the microphone and follows the phone's tilt; Antes de dormir listens
-// for the voice saying its phrase. Web only for now:
+// The Foco total fire listens for a blow on the microphone and follows the phone's tilt. Web only for now:
 // on native both calls do nothing (the app build has the microphone turned off, see app.json).
 // The audio is only measured on the device, never recorded or sent.
 
@@ -19,25 +18,7 @@ function onFirstTap(fn: () => void): Stop {
 
 /** Calls `onLevel` about 30 times a second with how hard someone is blowing (0 still, 1 a strong blow). */
 export function listenForBlow(onLevel: (level: number) => void): Stop {
-  // A blow is loud, low rumble on the microphone: keep the lows and measure how loud they are.
-  return listenToMic("lowpass", 600, onLevel);
-}
-
-/**
- * Antes de dormir: calls `onLevel` about 30 times a second with how loud someone is speaking (0 silence, 1 loud).
- * Only the volume of the speech band, never what is said.
- */
-export function listenForVoice(onLevel: (level: number) => void): Stop {
-  return listenToMic("bandpass", 1000, onLevel);
-}
-
-/** The microphone can be listened to here (the web; the app build has it off). */
-export function canListen(): boolean {
-  return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof AudioContext !== "undefined";
-}
-
-function listenToMic(type: BiquadFilterType, frequency: number, onLevel: (level: number) => void): Stop {
-  if (!canListen()) return () => undefined;
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof AudioContext === "undefined") return () => undefined;
   let stopped = false;
   let cleanup: Stop = () => undefined;
   void navigator.mediaDevices
@@ -45,12 +26,13 @@ function listenToMic(type: BiquadFilterType, frequency: number, onLevel: (level:
     .then((stream) => {
       if (stopped) return stream.getTracks().forEach((t) => t.stop());
       const ctx = new AudioContext();
-      const filter = ctx.createBiquadFilter();
-      filter.type = type;
-      filter.frequency.value = frequency;
+      // A blow is loud, low rumble on the microphone: keep the lows and measure how loud they are.
+      const low = ctx.createBiquadFilter();
+      low.type = "lowpass";
+      low.frequency.value = 600;
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 1024;
-      ctx.createMediaStreamSource(stream).connect(filter).connect(analyser);
+      ctx.createMediaStreamSource(stream).connect(low).connect(analyser);
       const samples = new Float32Array(analyser.fftSize);
       // Right away when the browser allows it (the tap that started listening is recent), else on the next tap.
       void ctx.resume();
@@ -69,7 +51,7 @@ function listenToMic(type: BiquadFilterType, frequency: number, onLevel: (level:
         void ctx.close();
       };
     })
-    .catch((error: unknown) => log.warn("no microphone", error));
+    .catch((error: unknown) => log.warn("no microphone for the fire", error));
   return () => {
     stopped = true;
     cleanup();
@@ -94,4 +76,26 @@ export function listenForTilt(onTilt: (radians: number) => void): Stop {
     untap();
     window.removeEventListener("deviceorientation", handler);
   };
+}
+
+/**
+ * Postura de poder: calls `onShake` with how much the phone is moving (0 still, 1 shaken), from its accelerometer.
+ * Call it from a tap: iOS only asks for motion there. Without a motion sensor (a computer) nothing is reported.
+ */
+export function listenForShake(onShake: (shake: number) => void): Stop {
+  if (typeof window === "undefined" || typeof DeviceMotionEvent === "undefined") return () => undefined;
+  let last: { x: number; y: number; z: number } | null = null;
+  const handler = (event: DeviceMotionEvent) => {
+    // Without gravity when the browser gives it; else the change from the previous sample.
+    const a = event.acceleration;
+    if (a?.x != null && a.y != null && a.z != null) return onShake(Math.min(Math.hypot(a.x, a.y, a.z) / 4, 1));
+    const g = event.accelerationIncludingGravity;
+    if (g?.x == null || g.y == null || g.z == null) return;
+    if (last) onShake(Math.min(Math.hypot(g.x - last.x, g.y - last.y, g.z - last.z) / 4, 1));
+    last = { x: g.x, y: g.y, z: g.z };
+  };
+  window.addEventListener("devicemotion", handler);
+  const ask = (DeviceMotionEvent as unknown as MotionPermission).requestPermission;
+  if (ask) void ask().catch((error: unknown) => log.warn("no motion for the posture", error));
+  return () => window.removeEventListener("devicemotion", handler);
 }
