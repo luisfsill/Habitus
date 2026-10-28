@@ -1,9 +1,9 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
-import { HeaderButton } from "@/components/header-button";
 import { PrimaryButton } from "@/components/primary-button";
 import { ReminderForm } from "@/components/reminder-form";
 import { Screen } from "@/components/screen";
@@ -12,6 +12,7 @@ import { isOccurrenceDone, parseLocal, type Reminder, type ReminderDraft, toLoca
 import { useAppState } from "@/state/app-state";
 import { useNow } from "@/state/use-now";
 import { confirm } from "@/state/use-sign-out";
+import { space } from "@/theme";
 
 /** Back to where the user came from; a reminder opened by a notification has no history. */
 function leave() {
@@ -107,15 +108,21 @@ function Editor({ id, existing, opened }: { id?: string; existing?: Reminder; op
   };
 
   return (
-    <Screen underHeader title={id ? "Editar lembrete" : "Novo lembrete"}>
-      <Stack.Screen
-        options={{
-          headerLeft: () => <HeaderButton label="Cancelar" onPress={leave} />,
-          headerRight: () => (
-            <HeaderButton label="Salvar" strong disabled={!draft.title.trim() || saving} onPress={() => void save()} />
-          ),
-        }}
-      />
+    <Screen
+      underHeader
+      title={id ? "Editar lembrete" : "Novo lembrete"}
+      footer={
+        <View style={styles.actions}>
+          <View style={styles.grow}>
+            <PrimaryButton label="Cancelar" variant="tinted" onPress={leave} />
+          </View>
+          <View style={styles.grow}>
+            <PrimaryButton label="Salvar" glow disabled={!draft.title.trim()} loading={saving} onPress={() => void save()} />
+          </View>
+        </View>
+      }>
+      {/* The actions live in the footer; the header keeps only the title. */}
+      <Stack.Screen options={{ headerLeft: () => null, headerRight: () => null }} />
       {error && (
         <AppText variant="subheadline" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
           {error}
@@ -147,3 +154,8 @@ export default function ReminderScreen() {
   }
   return <Editor id={isNew ? undefined : id} existing={existing} opened={openedFrom(occ, lead)} />;
 }
+
+const styles = StyleSheet.create({
+  actions: { flexDirection: "row", gap: space.md },
+  grow: { flex: 1 },
+});
