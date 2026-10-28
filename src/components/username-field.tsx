@@ -11,16 +11,26 @@ interface Props {
   value: string;
   onChange: (text: string) => void;
   status: UsernameStatus;
+  /** Small label above the field, like TextField's. */
+  label?: string;
 }
 
 /** Text field with a fixed "@" on the left and the availability of the typed @ below. */
-export function UsernameField({ value, onChange, status }: Props) {
+export function UsernameField({ value, onChange, status, label }: Props) {
   const { colors } = useTheme();
   const ok = status === "available";
   const note = status === "idle" ? null : status === "checking" ? "Verificando..." : ok ? "Disponível." : status === "taken" ? "Esse @ já está em uso." : status;
+  const error = note && !ok && status !== "checking";
+  // Same glass as TextField, so both fields match side by side.
+  const glass = { backgroundColor: colors.glass, borderColor: error ? colors.danger : colors.glassEdge, boxShadow: `inset 0 1px 0 ${colors.glassRim}` };
   return (
-    <View>
-      <View style={[styles.box, { borderColor: note && !ok && status !== "checking" ? colors.danger : "rgba(125,211,252,0.18)" }]}>
+    <View style={styles.root}>
+      {label && (
+        <AppText variant="footnote" color="secondaryLabel">
+          {label}
+        </AppText>
+      )}
+      <View style={[styles.box, glass]}>
         <AppText variant="body" color="secondaryLabel">
           @
         </AppText>
@@ -46,16 +56,16 @@ export function UsernameField({ value, onChange, status }: Props) {
 }
 
 const styles = StyleSheet.create({
+  root: { gap: space.xs },
   box: {
-    minHeight: HIT + 8,
+    minHeight: HIT,
     flexDirection: "row",
     alignItems: "center",
     gap: space.xs,
-    paddingHorizontal: space.lg,
+    paddingHorizontal: space.md,
     borderRadius: radius.md,
-    borderWidth: 1.5,
-    backgroundColor: "rgba(120,190,255,0.07)",
+    borderWidth: 1,
   },
   input: { flex: 1, minHeight: HIT, outlineStyle: "none" } as object,
-  note: { marginTop: space.xs, marginLeft: space.xs },
+  note: { marginLeft: space.xs },
 });

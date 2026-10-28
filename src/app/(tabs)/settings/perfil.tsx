@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { PrimaryButton } from "@/components/primary-button";
@@ -8,6 +9,7 @@ import { TextField } from "@/components/text-field";
 import { UsernameField } from "@/components/username-field";
 import { useAccess } from "@/state/access";
 import { useUsernameCheck } from "@/state/use-username-check";
+import { space } from "@/theme";
 
 /** Something changed, the name is not empty, and an unchanged @ needs no check while a changed one must be free. */
 function canSaveProfile(name: string, nameChanged: boolean, usernameChanged: boolean, status: string): boolean {
@@ -44,8 +46,18 @@ export default function EditProfileScreen() {
 
   return (
     <Screen title="Editar perfil" underHeader>
-      <TextField label="Nome" value={name} onChangeText={(t) => setDraftName(t.slice(0, 80))} placeholder="Seu nome" autoCapitalize="words" maxLength={80} />
-      <UsernameField value={username.value} onChange={username.change} status={usernameChanged ? username.status : "idle"} />
+      <View style={styles.fields}>
+        <TextField
+          label="Nome"
+          value={name}
+          onChangeText={(t) => setDraftName(t.slice(0, 80))}
+          placeholder="Seu nome"
+          autoCapitalize="words"
+          maxLength={80}
+          style={styles.field}
+        />
+        <UsernameField label="Apelido" value={username.value} onChange={username.change} status={usernameChanged ? username.status : "idle"} />
+      </View>
       <PrimaryButton label="Salvar" onPress={() => void save()} disabled={!canSave} loading={saving} />
       {message && (
         <AppText variant="footnote" color="danger" accessibilityLiveRegion="polite">
@@ -55,3 +67,9 @@ export default function EditProfileScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  fields: { gap: space.md },
+  // TextField grows to fill a row by default; here the two fields stack at their natural height.
+  field: { flexGrow: 0, flexBasis: "auto" },
+});
