@@ -101,8 +101,8 @@ function AccountSection({ onReset }: { onReset: () => void }) {
             style={[styles.nameInput, { color: colors.label }]}
           />
         </View>
-        <Pressable onPress={() => setEditing((e) => !e)} accessibilityRole="button" accessibilityLabel="Editar @" style={styles.row}>
-          <AppText variant="body">@</AppText>
+        <Pressable onPress={() => setEditing((e) => !e)} accessibilityRole="button" accessibilityLabel="Editar apelido" style={styles.row}>
+          <AppText variant="body">Apelido</AppText>
           <AppText variant="body" color="secondaryLabel" numberOfLines={1} style={styles.value}>
             {profile?.username ? `@${profile.username}` : "Escolher"}
           </AppText>
