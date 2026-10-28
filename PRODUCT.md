@@ -10,7 +10,7 @@ Pessoas que querem criar o hábito de pequenas práticas mentais ao longo do dia
 2. **Postura de poder (2 min)** — em pé, firme, peito aberto, respirando fundo. Timer de 120 s.
 3. **Metas em voz alta** — dizer as metas no presente, diante do espelho. Afirmações editáveis.
 4. **Foco total (2 min)** — olhar fixamente para a fogueira e, no fim, soprar para apagar. Timer de 120 s.
-5. **Gratidão antecipada** — agradecer pelo que ainda não chegou. Frase curta opcional.
+5. **Gratidão antecipada** — agradecer pelo que ainda não chegou. A frase vira uma estrela no céu de gratidão da pessoa (365 por ano, uma constelação a cada 7 estrelas, uma por semana).
 
 6. **Antes de dormir** — já deitado, dizer: "Deus, universo, vida: me surpreenda positivamente amanhã." Chega na hora de dormir aprendida.
 
@@ -61,7 +61,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 
 1. Onboarding: apresentação → janela com prévia ao vivo → permissão (explicada antes do pedido do sistema; se negada, aviso com atalho para Ajustes).
 2. Hoje: anel de progresso 0/6–6/6, linha do tempo, próxima dica com contagem regressiva.
-3. Dica: instrução, timer (2 e 4), afirmações (3), campo de gratidão (5), frase da noite (6), "Concluir".
+3. Dica: instrução, timer (2 e 4), afirmações (3), céu de gratidão (5), frase da noite (6), "Concluir".
 4. Histórico: sequência de dias, calendário mensal, percentual da semana.
 5. Ajustes: horários, hora de dormir, dias, afirmações, som, testes de notificação, água (ligar, meta, intervalo), aparência (auto/claro/escuro), conta (Termos, Política, sair, excluir conta), reset.
 6. Conquistas: nível, faixa, estatísticas, medalhas e regras de XP.
