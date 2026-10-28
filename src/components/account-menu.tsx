@@ -1,5 +1,5 @@
 import { type ComponentRef, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { Easing, FadeInRight, FadeOutRight, interpolateColor, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
@@ -30,9 +30,11 @@ interface Props {
   compact?: boolean;
   /** 0…1, today's tips done: fills the ring around the avatar. Omitted, only the track shows. */
   progress?: number;
+  /** Profile photo link; null shows the person icon. */
+  photo?: string | null;
 }
 
-const RING = 40;
+const RING = 46;
 const RING_STROKE = 3;
 
 const SHINE_GLOW = "#9CC2FF";
@@ -45,7 +47,7 @@ const MENU_OUT = FadeOutRight.duration(220).easing(Easing.in(Easing.cubic));
  * Glass circle with a person icon, inside a ring that fills with today's progress.
  * Each tap (`flash` goes up) sends a streak of light across the glass and lights its rim.
  */
-function Avatar({ progress = 0, flash }: { progress?: number; flash: number }) {
+function Avatar({ progress = 0, flash, photo }: { progress?: number; flash: number; photo?: string | null }) {
   const { colors, scheme } = useTheme();
   const rim = scheme === "dark" ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.1)";
   const shine = useSharedValue(0);
@@ -81,7 +83,11 @@ function Avatar({ progress = 0, flash }: { progress?: number; flash: number }) {
         )}
       </Svg>
       <Animated.View style={[styles.avatar, glass, rimStyle]}>
-        <Icon ios="person.fill" android="person" size={18} color={colors.label} />
+        {photo ? (
+          <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : (
+          <Icon ios="person.fill" android="person" size={20} color={colors.label} />
+        )}
         <Animated.View pointerEvents="none" style={[styles.streak, streakStyle]} />
       </Animated.View>
     </View>
@@ -89,7 +95,7 @@ function Avatar({ progress = 0, flash }: { progress?: number; flash: number }) {
 }
 
 /** Account button (avatar, name, e-mail) that opens a menu of account actions. */
-export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress }: Props) {
+export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress, photo }: Props) {
   const { colors, scheme } = useTheme();
   const fill = backdrops[scheme];
   const [open, setOpen] = useState(false);
@@ -144,7 +150,7 @@ export function AccountMenu({ name, email, tag, menu, onTheme, compact, progress
         accessibilityLabel={`Conta de ${name}`}
         accessibilityState={{ expanded: open }}
         style={[styles.account, compact && styles.compact, fill]}>
-        <Avatar progress={progress} flash={flash} />
+        <Avatar progress={progress} flash={flash} photo={photo} />
         {!compact && (
           <>
             <View style={styles.who}>
@@ -207,7 +213,7 @@ const styles = StyleSheet.create({
   wrap: { zIndex: 10 },
   account: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 6, paddingLeft: 6, paddingRight: space.md, borderRadius: radius.md },
   ring: { width: RING, height: RING, alignItems: "center", justifyContent: "center" },
-  avatar: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   streak: { position: "absolute", top: -6, bottom: -6, width: 10, backgroundColor: "rgba(255,255,255,0.55)" },
   who: { maxWidth: 180 },
   compact: { paddingVertical: 4, paddingLeft: 4, paddingRight: 4, borderRadius: radius.pill },

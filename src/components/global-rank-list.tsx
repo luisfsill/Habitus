@@ -4,6 +4,7 @@ import type { GlobalRanking, GlobalRow } from "@/domain/ranking";
 import { HIT, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Avatar } from "./avatar";
 import { Icon } from "./icon";
 import { BeltChip } from "./person-row";
 
@@ -28,6 +29,7 @@ function Row({ row, mine, first, pinned, onOpen, onAdd, requesting }: Omit<Props
           {row.position}
         </AppText>
       )}
+      <Avatar url={row.avatarUrl} size={36} />
       <View style={styles.who}>
         <AppText variant="headline" color={mine ? "accentText" : "label"} numberOfLines={1}>
           {name}

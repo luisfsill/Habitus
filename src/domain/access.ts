@@ -16,6 +16,8 @@ export interface Profile {
   username: string | null | undefined;
   /** Whether strangers can find this account by search. */
   searchable: boolean;
+  /** Public link to the profile photo; null shows the person icon. */
+  avatarUrl: string | null;
 }
 
 export interface Plan {
@@ -97,10 +99,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+/** A profile photo link; anything but https (or missing, before the column exists) means no photo. */
+export const photoLink = (v: unknown): string | null => (typeof v === "string" && v.startsWith("https://") ? v : null);
+
 /** A `profiles` row from Supabase, or null when it is not one. */
 export function parseProfile(row: unknown): Profile | null {
   if (!isRecord(row)) return null;
-  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable } = row;
+  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable, avatar_url } = row;
   if (typeof id !== "string" || typeof email !== "string" || typeof created_at !== "string") return null;
   if (role !== "user" && role !== "admin") return null;
   if (plan !== "trial" && plan !== "paid") return null;
@@ -115,6 +120,7 @@ export function parseProfile(row: unknown): Profile | null {
     createdAt: created_at,
     username: typeof username === "string" ? username : username === null ? null : undefined,
     searchable: searchable !== false,
+    avatarUrl: photoLink(avatar_url),
   };
 }
 
@@ -141,6 +147,7 @@ export function parseCachedProfile(value: unknown): Profile | null {
     created_at: value.createdAt,
     username: value.username,
     searchable: value.searchable,
+    avatar_url: value.avatarUrl,
   });
 }
 

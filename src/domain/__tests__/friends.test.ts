@@ -41,7 +41,7 @@ describe("publicStats", () => {
 });
 
 const f = (over: Partial<Friend>): Friend => ({
-  id: "x", name: "X", username: "x", level: 1, isAdmin: false, active: true, weekStart: "2026-10-18", weekXp: 0, ...over,
+  id: "x", name: "X", username: "x", level: 1, isAdmin: false, active: true, weekStart: "2026-10-18", weekXp: 0, avatarUrl: null, ...over,
 });
 
 describe("rankWeek", () => {
@@ -67,7 +67,11 @@ describe("parsers", () => {
   const row = { id: "a", name: "Ana", username: "ana", level: 3, is_admin: false, relation: "none" };
 
   it("parses a public user", () => {
-    expect(parsePublicUser(row)).toEqual({ id: "a", name: "Ana", username: "ana", level: 3, isAdmin: false, relation: "none" });
+    expect(parsePublicUser(row)).toEqual({ id: "a", name: "Ana", username: "ana", level: 3, isAdmin: false, relation: "none", avatarUrl: null });
+    expect(parsePublicUser({ ...row, avatar_url: "https://x.supabase.co/storage/v1/object/public/avatars/a/f.jpg" })?.avatarUrl).toBe(
+      "https://x.supabase.co/storage/v1/object/public/avatars/a/f.jpg",
+    );
+    expect(parsePublicUser({ ...row, avatar_url: "javascript:alert(1)" })?.avatarUrl).toBeNull();
   });
 
   it("rejects malformed rows", () => {
@@ -79,7 +83,7 @@ describe("parsers", () => {
 
   it("parses a profile with hidden fields", () => {
     expect(parseUserProfile({ ...row, streak: null, badges: null, can_request: true })).toEqual({
-      id: "a", name: "Ana", username: "ana", level: 3, isAdmin: false, relation: "none", streak: null, badges: null, canRequest: true,
+      id: "a", name: "Ana", username: "ana", level: 3, isAdmin: false, relation: "none", avatarUrl: null, streak: null, badges: null, canRequest: true,
     });
     expect(parseUserProfile({ ...row, streak: 2, badges: ["x"], can_request: "y" })).toBeNull();
   });
@@ -93,7 +97,7 @@ describe("parsers", () => {
   it("drops invalid entries in an overview", () => {
     const friend = { id: "a", name: "Ana", username: "ana", level: 3, is_admin: true, active: true, week_start: "2026-10-18", week_xp: 40 };
     const out = parseFriendsOverview({ friends: [friend, { ...friend, week_xp: "1" }, null], incoming: [row, { ...row, level: "z" }], outgoing: 5 });
-    expect(out.friends).toEqual([{ id: "a", name: "Ana", username: "ana", level: 3, isAdmin: true, active: true, weekStart: "2026-10-18", weekXp: 40 }]);
+    expect(out.friends).toEqual([{ id: "a", name: "Ana", username: "ana", level: 3, isAdmin: true, active: true, weekStart: "2026-10-18", weekXp: 40, avatarUrl: null }]);
     expect(out.incoming.map((u) => u.id)).toEqual(["a"]);
     expect(out.outgoing).toEqual([]);
   });

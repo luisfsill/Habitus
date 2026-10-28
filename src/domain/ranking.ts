@@ -1,3 +1,4 @@
+import { photoLink } from "./access";
 import { isRow, num, RELATIONS, type Relation, str } from "./friends";
 import { perfectDayXp, XP_RULES } from "./gamification";
 import { addDays, dayKey, fromDayKey, type Weekday } from "./time";
@@ -62,15 +63,15 @@ export function weekXp(log: RankingLog, weekStart: string, lenientFrom: string):
   return w.anyActive && w.allDone ? w.xp + XP_RULES.perfectWeek : w.xp;
 }
 
-export interface GlobalRow { id: string; name: string; username: string; level: number; weekXp: number; position: number; relation: Relation }
+export interface GlobalRow { id: string; name: string; username: string; level: number; weekXp: number; position: number; relation: Relation; avatarUrl: string | null }
 export interface GlobalRanking { top: GlobalRow[]; me: GlobalRow | null }
 
 function parseGlobalRow(row: unknown): GlobalRow | null {
   if (!isRow(row)) return null;
-  const { id, name, username, level, week_xp, position, relation } = row;
+  const { id, name, username, level, week_xp, position, relation, avatar_url } = row;
   if (!str(id) || typeof name !== "string" || !str(username) || !num(level) || !num(week_xp) || !num(position)) return null;
   if (typeof relation !== "string" || !RELATIONS.includes(relation)) return null;
-  return { id, name, username, level, weekXp: week_xp, position, relation: relation as Relation };
+  return { id, name, username, level, weekXp: week_xp, position, relation: relation as Relation, avatarUrl: photoLink(avatar_url) };
 }
 
 /** Parses the `global_ranking` RPC answer; `top` is null when empty and bad rows are dropped. */

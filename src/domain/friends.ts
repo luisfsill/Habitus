@@ -1,3 +1,4 @@
+import { photoLink } from "./access";
 import { progressOf } from "./achievements";
 import type { AppData } from "./app-data";
 import { weekDays } from "./history";
@@ -5,9 +6,9 @@ import { addDays, dayKey } from "./time";
 
 export type Relation = "none" | "outgoing" | "incoming" | "friends";
 export interface PublicStats { xp: number; level: number; streak: number; badges: string[]; weekStart: string; weekXp: number }
-export interface PublicUser { id: string; name: string; username: string; level: number; isAdmin: boolean; relation: Relation }
+export interface PublicUser { id: string; name: string; username: string; level: number; isAdmin: boolean; relation: Relation; avatarUrl: string | null }
 export interface UserProfile extends PublicUser { streak: number | null; badges: string[] | null; canRequest: boolean }
-export interface Friend { id: string; name: string; username: string; level: number; isAdmin: boolean; active: boolean; weekStart: string | null; weekXp: number }
+export interface Friend { id: string; name: string; username: string; level: number; isAdmin: boolean; active: boolean; weekStart: string | null; weekXp: number; avatarUrl: string | null }
 export interface FriendsOverview { friends: Friend[]; incoming: PublicUser[]; outgoing: PublicUser[] }
 export interface RankRow { id: string; name: string; username: string; level: number; weekXp: number; me: boolean; position: number }
 
@@ -50,12 +51,13 @@ export const isRow = (v: unknown): v is Row => typeof v === "object" && v !== nu
 export const str = (v: unknown): v is string => typeof v === "string" && v.length > 0;
 export const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
+
 export function parsePublicUser(row: unknown): PublicUser | null {
   if (!isRow(row)) return null;
-  const { id, name, username, level, is_admin, relation } = row;
+  const { id, name, username, level, is_admin, relation, avatar_url } = row;
   if (!str(id) || typeof name !== "string" || !str(username) || !num(level) || typeof is_admin !== "boolean") return null;
   if (typeof relation !== "string" || !RELATIONS.includes(relation)) return null;
-  return { id, name, username, level, isAdmin: is_admin, relation: relation as Relation };
+  return { id, name, username, level, isAdmin: is_admin, relation: relation as Relation, avatarUrl: photoLink(avatar_url) };
 }
 
 export function parseUserProfile(row: unknown): UserProfile | null {
@@ -70,10 +72,10 @@ export function parseUserProfile(row: unknown): UserProfile | null {
 
 function parseFriend(row: unknown): Friend | null {
   if (!isRow(row)) return null;
-  const { id, name, username, level, is_admin, active, week_start, week_xp } = row;
+  const { id, name, username, level, is_admin, active, week_start, week_xp, avatar_url } = row;
   if (!str(id) || typeof name !== "string" || !str(username) || !num(level) || typeof is_admin !== "boolean") return null;
   if (typeof active !== "boolean" || !num(week_xp) || (week_start !== null && typeof week_start !== "string")) return null;
-  return { id, name, username, level, isAdmin: is_admin, active, weekStart: week_start, weekXp: week_xp };
+  return { id, name, username, level, isAdmin: is_admin, active, weekStart: week_start, weekXp: week_xp, avatarUrl: photoLink(avatar_url) };
 }
 
 function list<T>(v: unknown, parse: (r: unknown) => T | null): T[] {

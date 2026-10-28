@@ -85,7 +85,7 @@ Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele re
 Cria o @usuário, a busca, os pedidos de amizade e o ranking da semana. Rode **depois** de `admin.sql` (passo 6). O Web Push (passo 9) é opcional: os avisos de pedido e de amizade aceita só começam a chegar quando `push.sql` estiver instalado, e os pedidos aparecem na aba Amigos de qualquer forma.
 
 1. Abra **SQL Editor → New query**.
-2. Cole todo o conteúdo de [`supabase/social.sql`](../supabase/social.sql) e clique em **Run**.
+2. Cole todo o conteúdo de [`supabase/social.sql`](../supabase/social.sql) e clique em **Run**. Ele também cria a coluna `avatar_url`, o bucket público `avatars` do Storage (1 MB, só JPEG; cada conta grava e apaga só a própria pasta) e a função `set_my_avatar`.
 
 Isso liga a extensão `unaccent` (busca sem acento), acrescenta `username` e `searchable` aos perfis e cria `public_stats`, `friendships`, `blocks` e `friend_request_log`. Os perfis continuam sem leitura pública: uma conta só vê outra pelas funções do arquivo, que nunca devolvem e-mail, plano ou validade. Se aparecer erro dizendo que `extensions.unaccent` não existe, a extensão foi ligada antes em outro esquema: em **Database → Extensions**, desligue `unaccent` e rode o arquivo de novo.
 
@@ -93,7 +93,7 @@ O roteiro para conferir está no fim desta página, em "Conferir os amigos".
 
 ### Ranking global
 
-Rode **depois** de `social.sql`: abra **SQL Editor → New query**, cole todo o conteúdo de [`supabase/ranking.sql`](../supabase/ranking.sql) e clique em **Run**. Pode rodar de novo. Cria o registro do servidor (`ranking_tricks`, `ranking_water`, `ranking_settings`), o trigger em `user_data`, copia o que já existe e cria `global_ranking`, que calcula o XP da semana no servidor.
+Rode **depois** de `social.sql` (e de novo sempre que `social.sql` mudar, porque ele recria funções que o ranking usa): abra **SQL Editor → New query**, cole todo o conteúdo de [`supabase/ranking.sql`](../supabase/ranking.sql) e clique em **Run**. Pode rodar de novo. Cria o registro do servidor (`ranking_tricks`, `ranking_water`, `ranking_settings`), o trigger em `user_data`, copia o que já existe e cria `global_ranking`, que calcula o XP da semana no servidor.
 
 Para conferir, cole [`supabase/tests/ranking.sql`](../supabase/tests/ranking.sql) em outra query e rode. Esperado: `ranking ok` (e `ranking_ingest ok`, se houver algum usuário) nas mensagens. O script não deixa linhas no banco.
 

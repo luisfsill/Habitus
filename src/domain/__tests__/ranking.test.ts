@@ -44,7 +44,7 @@ describe("parseGlobalRanking", () => {
   const row = (o: Record<string, unknown> = {}) => ({ position: 1, id: "a", name: "Ana", username: "ana", level: 3, week_xp: 40, relation: "none", ...o });
 
   it("maps week_xp to weekXp", () => {
-    expect(parseGlobalRanking({ top: [row()], me: null }).top).toEqual([{ position: 1, id: "a", name: "Ana", username: "ana", level: 3, weekXp: 40, relation: "none" }]);
+    expect(parseGlobalRanking({ top: [row()], me: null }).top).toEqual([{ position: 1, id: "a", name: "Ana", username: "ana", level: 3, weekXp: 40, relation: "none", avatarUrl: null }]);
   });
   it("drops rows with a bad relation or no username", () => {
     const { username: _u, ...noUser } = row();

@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
+import { Avatar } from "@/components/avatar";
 import { BeltChip } from "@/components/person-row";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
@@ -125,6 +126,7 @@ export default function PersonScreen() {
 
   return (
     <Screen title={p.name} underHeader>
+      <Avatar url={p.avatarUrl} size={96} />
       <View style={styles.tags}>
         <AppText variant="subheadline" color="secondaryLabel">
           @{p.username}

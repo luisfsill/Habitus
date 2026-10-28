@@ -5,6 +5,7 @@ import { beltFor } from "@/domain/gamification";
 import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
+import { Avatar } from "./avatar";
 import { Icon } from "./icon";
 
 /** The belt of a level as a small colored pill ("Faixa Azul"). */
@@ -20,7 +21,7 @@ export function BeltChip({ level }: { level: number }) {
 }
 
 interface Props {
-  person: { name: string; username: string; level: number };
+  person: { name: string; username: string; level: number; avatarUrl?: string | null };
   onPress: () => void;
   /** Buttons under the row, e.g. Aceitar and Recusar. */
   children?: ReactNode;
@@ -37,6 +38,7 @@ export function PersonRow({ person, onPress, children }: Props) {
         accessibilityRole="link"
         accessibilityLabel={`${person.name}, @${person.username}, ${belt}. Abrir perfil`}
         style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
+        <Avatar url={person.avatarUrl ?? null} size={40} />
         <View style={styles.who}>
           <AppText variant="headline" numberOfLines={1}>
             {person.name}

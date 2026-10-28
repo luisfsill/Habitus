@@ -25,6 +25,7 @@ export function TabAccount() {
   return (
     <AccountMenu
       name={profile?.name || email}
+      photo={profile?.avatarUrl}
       email={email}
       compact={compact}
       progress={doneCount(data.completions, dayKey(new Date())) / TRICK_COUNT}

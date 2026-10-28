@@ -12,6 +12,27 @@ alter table public.profiles add column if not exists username text;
 alter table public.profiles add column if not exists searchable boolean not null default true;
 create unique index if not exists profiles_username_key on public.profiles (lower(username));
 
+-- Foto do perfil ----------------------------------------------------------------
+-- O arquivo fica no bucket público "avatars", em <id da conta>/<nome aleatório>.jpg: o link só é conhecido por quem
+-- recebe o perfil pelas funções abaixo. Cada conta só grava, lista e apaga a própria pasta.
+
+alter table public.profiles add column if not exists avatar_url text;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 1048576, array['image/jpeg'])
+on conflict (id) do update
+  set public = excluded.public, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "avatars own folder read" on storage.objects;
+create policy "avatars own folder read" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+drop policy if exists "avatars own folder insert" on storage.objects;
+create policy "avatars own folder insert" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+drop policy if exists "avatars own folder delete" on storage.objects;
+create policy "avatars own folder delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
 -- Estatísticas públicas -------------------------------------------------------
 -- Uma linha por conta, gravada pelo próprio app a cada sincronização.
 -- shortcut: o XP vem do aparelho e pode ser inflado pela API; vale só no ranking entre amigos. O ranking global recalcula no servidor (ranking.sql) e ignora week_xp.
@@ -168,7 +189,7 @@ returns jsonb language sql stable security definer set search_path = ''
 as $$
   select jsonb_build_object(
     'id', p.id, 'name', p.name, 'username', p.username, 'level', coalesce(s.level, 1),
-    'is_admin', p.role = 'admin', 'relation', public.relation_of(viewer, p.id)
+    'is_admin', p.role = 'admin', 'relation', public.relation_of(viewer, p.id), 'avatar_url', p.avatar_url
   )
   from public.profiles p left join public.public_stats s on s.user_id = p.id
   where p.id = target;
@@ -442,6 +463,19 @@ begin
 end;
 $$;
 
+-- Troca (ou, com null, tira) a foto do perfil. Só aceita um arquivo da própria pasta do bucket "avatars".
+create or replace function public.set_my_avatar(url text)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  perform public.require_access();
+  if url is not null and url !~ ('^https://[^/]+/storage/v1/object/public/avatars/' || auth.uid()::text || '/[A-Za-z0-9_-]+\.jpg$') then
+    raise exception 'Foto inválida.' using errcode = '22023';
+  end if;
+  update public.profiles set avatar_url = url where id = auth.uid();
+end;
+$$;
+
 -- Amigos (com o XP da semana guardado; o app zera semana antiga) e pedidos pendentes.
 create or replace function public.my_friends()
 returns jsonb language plpgsql stable security definer set search_path = ''
@@ -454,7 +488,7 @@ begin
       select jsonb_agg(jsonb_build_object(
         'id', p.id, 'name', p.name, 'username', p.username, 'level', coalesce(s.level, 1),
         'is_admin', p.role = 'admin', 'active', public.user_has_access(p.id),
-        'week_start', s.week_start, 'week_xp', coalesce(s.week_xp, 0)
+        'week_start', s.week_start, 'week_xp', coalesce(s.week_xp, 0), 'avatar_url', p.avatar_url
       ) order by p.name)
       from public.friendships f
       join public.profiles p on p.id = case when f.requester = me then f.addressee else f.requester end
@@ -489,7 +523,8 @@ begin
   foreach f in array array[
     'set_my_username(text)', 'username_available(text)', 'set_my_searchable(boolean)', 'search_users(text)',
     'get_user_profile(uuid)', 'send_friend_request(uuid)', 'respond_friend_request(uuid, boolean)',
-    'cancel_friend_request(uuid)', 'remove_friend(uuid)', 'block_user(uuid)', 'unblock_user(uuid)', 'my_friends()'
+    'cancel_friend_request(uuid)', 'remove_friend(uuid)', 'block_user(uuid)', 'unblock_user(uuid)', 'my_friends()',
+    'set_my_avatar(text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);

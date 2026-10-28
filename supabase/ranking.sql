@@ -341,16 +341,18 @@ begin
     coalesce((
       select jsonb_agg(jsonb_build_object(
         'position', r.pos, 'id', r.id, 'name', r.name, 'username', r.username,
-        'level', coalesce(s.level, 1), 'week_xp', r.week_xp, 'relation', public.relation_of(viewer, r.id)
+        'level', coalesce(s.level, 1), 'week_xp', r.week_xp, 'relation', public.relation_of(viewer, r.id),
+        'avatar_url', p.avatar_url
       ) order by r.pos, r.name)
       from (select * from ranked order by pos, name limit 10) r
+      join public.profiles p on p.id = r.id
       left join public.public_stats s on s.user_id = r.id
     ), '[]'::jsonb),
     case when my_xp > 0 and not exists (select 1 from public.profiles a where a.id = viewer and a.role = 'admin') then (
       select jsonb_build_object(
         'position', 1 + (select count(*) from cand where cand.week_xp > my_xp),
         'id', p.id, 'name', p.name, 'username', p.username,
-        'level', coalesce(s.level, 1), 'week_xp', my_xp, 'relation', 'none'
+        'level', coalesce(s.level, 1), 'week_xp', my_xp, 'relation', 'none', 'avatar_url', p.avatar_url
       )
       from public.profiles p left join public.public_stats s on s.user_id = p.id
       where p.id = viewer
