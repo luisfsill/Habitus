@@ -8,7 +8,6 @@ import { space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { CpfField } from "./cpf-field";
-import { Icon } from "./icon";
 import { PixQr } from "./pix-qr";
 import { PrimaryButton } from "./primary-button";
 
@@ -61,14 +60,6 @@ export function PixStep({ plan, qrText, secondsLeft, outcome, cpf, onChangeCpf, 
           </View>
         </>
       )}
-      {outcome === "paid" && (
-        <View style={styles.paid} accessibilityLiveRegion="polite">
-          <Icon ios="checkmark.circle.fill" android="check_circle" size={72} color={colors.success} />
-          <AppText variant="body" align="center">
-            Recebemos o seu Pix. O Habitus já está liberado. Obrigado!
-          </AppText>
-        </View>
-      )}
       {outcome === "expired" && <PrimaryButton label="Gerar outro Pix" onPress={onRetry} />}
     </View>
   );
@@ -99,5 +90,4 @@ const styles = StyleSheet.create({
   steps: { alignSelf: "stretch", gap: space.sm, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth },
   cpf: { flexDirection: "row", alignItems: "center", gap: space.sm },
   flex: { flex: 1 },
-  paid: { alignItems: "center", gap: space.md, paddingVertical: space.lg },
 });

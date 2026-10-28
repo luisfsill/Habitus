@@ -1,16 +1,18 @@
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Platform, Share, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { Icon } from "@/components/icon";
 import { PixQr } from "@/components/pix-qr";
+import { PixReceipt } from "@/components/pix-receipt";
 import { CpfStep, PixStep } from "@/components/pix-step";
 import { PlanCard } from "@/components/plan-card";
 import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { accessStatus, displayName, formatPrice, hasAccess as profileHasAccess, helpWhatsAppUrl, OWNER_PIX, type Plan, type Profile, renewWhatsAppUrl } from "@/domain/access";
+import { formatPaymentTime } from "@/domain/payments";
 import { pixPayload } from "@/domain/pix";
 import { fetchPlans } from "@/services/profile";
 import { useAccess } from "@/state/access";
@@ -186,13 +188,50 @@ function PayBody({ plan, flow }: { plan: Plan; flow: ReturnType<typeof usePixChe
   return <PayWithPix plan={plan} order={flow.order} code={pixPayload({ ...OWNER_PIX, amountCents: plan.priceCents, txid: flow.order })} notice={flow.notice} />;
 }
 
-/** Pix confirmed by the server: refresh the profile once; the screen says so and "Ir para o app" leaves. */
-function useRefreshWhenPaid(outcome: string, refresh: () => Promise<unknown>): boolean {
-  const paid = outcome === "paid";
+/** Pix confirmed by the server: refresh the profile once and swap the page for the receipt. */
+function usePaidReceipt(flow: ReturnType<typeof usePixCheckout>, plan: Plan | undefined, refresh: () => Promise<unknown>, hasAccess: boolean) {
+  const paid = flow.outcome === "paid";
   useEffect(() => {
     if (paid) void refresh();
   }, [paid, refresh]);
-  return paid;
+  // Paid some other way while this screen was the only route (manual Pix released by the admin): go to the app,
+  // there is nothing to go back to. After an automatic Pix the receipt stays until "Voltar ao Habitus".
+  useEffect(() => {
+    if (hasAccess && !router.canGoBack() && !paid) router.replace("/");
+  }, [hasAccess, paid]);
+  return paid && plan && flow.auto ? <PaidScreen plan={plan} paymentId={flow.auto.paymentId} /> : null;
+}
+
+/** After an automatic Pix: the receipt, "Recibo" to share it and "Voltar ao Habitus". */
+function PaidScreen({ plan, paymentId }: { plan: Plan; paymentId: string }) {
+  const { profile } = useAccess();
+  const [paidAt] = useState(() => new Date().toISOString());
+  const until = profile?.accessUntil && !profile.unlimited && profile.role !== "admin" ? new Date(profile.accessUntil) : null;
+  const validUntil = until ? `${until.getDate()} de ${MONTHS[until.getMonth()]}` : null;
+  const orderCode = paymentId.slice(0, 8).toUpperCase();
+  const receipt = [
+    "Habitus · recibo",
+    `Plano ${plan.name} (${plan.days} dias)${validUntil ? `, até ${validUntil}` : ""}`,
+    `Pago com Pix · ${formatPrice(plan.priceCents)}`,
+    `Data: ${formatPaymentTime(paidAt)}`,
+    `Pedido: ${orderCode}`,
+  ].join("\n");
+  const share = () => void Share.share({ message: receipt }).catch(() => Clipboard.setStringAsync(receipt));
+  const footer = (
+    <View style={styles.receiptActions}>
+      <View style={styles.flex}>
+        <PrimaryButton label="Recibo" variant="tinted" icon={{ ios: "square.and.arrow.up", android: "description" }} onPress={share} />
+      </View>
+      <View style={styles.wide}>
+        <PrimaryButton label="Voltar ao Habitus" onPress={() => router.replace("/")} glow />
+      </View>
+    </View>
+  );
+  return (
+    <Screen footer={footer}>
+      <PixReceipt planName={plan.name} days={plan.days} validUntil={validUntil} price={formatPrice(plan.priceCents)} paidAt={formatPaymentTime(paidAt)} orderCode={orderCode} />
+    </Screen>
+  );
 }
 
 /** Plans and renewal by Pix. With access it sits on top of the app; once access ends it is the only screen. */
@@ -217,11 +256,6 @@ function RenewScreen() {
       .catch((error: Error) => setMessage(error.message));
   }, []);
 
-  // Paid while this screen was the only route: go to the app (nothing to go back to). After an automatic Pix the
-  // confirmation stays on screen until "Ir para o app".
-  useEffect(() => {
-    if (hasAccess && !router.canGoBack() && pixFlow.outcome !== "paid") router.replace("/");
-  }, [hasAccess, pixFlow.outcome]);
 
   const plan = plans.find((p) => p.id === selected);
   const title = hasAccess ? "Planos" : profile?.plan === "trial" ? "Seu teste grátis acabou" : "Seu plano acabou";
@@ -231,7 +265,7 @@ function RenewScreen() {
     void Linking.openURL(renewWhatsAppUrl(displayName(profile), profile.email, plan, pixFlow.order));
   };
 
-  const paid = useRefreshWhenPaid(pixFlow.outcome, refresh);
+  const receipt = usePaidReceipt(pixFlow, plan, refresh, hasAccess);
 
   const recheck = async () => {
     setChecking(true);
@@ -251,9 +285,8 @@ function RenewScreen() {
       }),
     );
 
-  const footer = paid ? (
-    <PrimaryButton label="Ir para o app" icon={{ ios: "checkmark.circle.fill", android: "check_circle" }} onPress={() => router.replace("/")} glow />
-  ) : (
+  if (receipt) return receipt;
+  const footer = (
     <RenewFooter
       plan={plan}
       step={step}
@@ -300,6 +333,8 @@ export default function RenewRoute() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  wide: { flex: 2 },
+  receiptActions: { flexDirection: "row", gap: space.sm },
   generating: { alignItems: "center", gap: space.sm, paddingVertical: space.xxl },
   status: { flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: space.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
   list: { gap: space.sm },
