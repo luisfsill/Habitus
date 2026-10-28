@@ -34,8 +34,10 @@ interface Props {
   photo?: string | null;
 }
 
-const RING = 46;
-const RING_STROKE = 3;
+// Big enough to make out the profile photo; the photo sits inside the ring of today's progress.
+const RING = 64;
+const RING_STROKE = 4;
+const PHOTO = RING - 2 * RING_STROKE - 4;
 
 const SHINE_GLOW = "#9CC2FF";
 
@@ -57,7 +59,7 @@ function Avatar({ progress = 0, flash, photo }: { progress?: number; flash: numb
   const rimStyle = useAnimatedStyle(() => ({ borderColor: interpolateColor(shine.get(), [0, 0.4, 1], [rim, SHINE_GLOW, rim]) }));
   const streakStyle = useAnimatedStyle(() => ({
     opacity: shine.get() > 0 && shine.get() < 1 ? 1 : 0,
-    transform: [{ translateX: -28 + shine.get() * 56 }, { skewX: "-20deg" }],
+    transform: [{ translateX: -PHOTO + shine.get() * PHOTO * 2 }, { skewX: "-20deg" }],
   }));
   const r = (RING - RING_STROKE) / 2;
   const length = 2 * Math.PI * r;
@@ -86,7 +88,7 @@ function Avatar({ progress = 0, flash, photo }: { progress?: number; flash: numb
         {photo ? (
           <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         ) : (
-          <Icon ios="person.fill" android="person" size={20} color={colors.label} />
+          <Icon ios="person.fill" android="person" size={Math.round(PHOTO * 0.5)} color={colors.label} />
         )}
         <Animated.View pointerEvents="none" style={[styles.streak, streakStyle]} />
       </Animated.View>
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
   wrap: { zIndex: 10 },
   account: { flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 6, paddingLeft: 6, paddingRight: space.md, borderRadius: radius.md },
   ring: { width: RING, height: RING, alignItems: "center", justifyContent: "center" },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  avatar: { width: PHOTO, height: PHOTO, borderRadius: PHOTO / 2, borderWidth: 1, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   streak: { position: "absolute", top: -6, bottom: -6, width: 10, backgroundColor: "rgba(255,255,255,0.55)" },
   who: { maxWidth: 180 },
   compact: { paddingVertical: 4, paddingLeft: 4, paddingRight: 4, borderRadius: radius.pill },
@@ -221,7 +223,7 @@ const styles = StyleSheet.create({
   menu: {
     position: "absolute",
     right: 0,
-    top: 54,
+    top: RING + 14,
     // Hugs its widest row (usually the e-mail) instead of a fixed width; the floor keeps "Renovar plano" on one line.
     minWidth: 250,
     maxWidth: 280,

@@ -8,7 +8,6 @@ import { PermissionBanners } from "@/components/permission-banner";
 import { Screen } from "@/components/screen";
 import { openSystemSettings } from "@/services/notifications";
 import { useAppState } from "@/state/app-state";
-import { TabAccount } from "@/state/tab-account";
 
 // One plain list, like Instagram's settings: each row opens its own screen.
 const ITEMS: readonly { label: string; icon: { ios: string; android: string }; href: Href }[] = [
@@ -24,7 +23,7 @@ const ITEMS: readonly { label: string; icon: { ios: string; android: string }; h
 export default function SettingsMenuScreen() {
   const { permission, exactAlarms, askExactAlarms } = useAppState();
   return (
-    <Screen title="Ajustes" accessory={<TabAccount />}>
+    <Screen title="Ajustes">
       <PermissionBanners
         permission={permission}
         exactAlarms={exactAlarms}
