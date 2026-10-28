@@ -24,7 +24,7 @@ O dono quer um segundo modo, **automático**. Nele, cada compra gera uma cobran�
 
 - Cartão, boleto e assinatura recorrente: cada compra é avulsa.
 - Estorno e reembolso pelo app. O dono faz isso pelo PagBank.
-- Histórico de pagamentos para o usuário. Para o admin, o pagamento aparece só como linha no banco por enquanto. Decisão do Claude.
+- Histórico de pagamentos para o usuário. O admin tem o histórico completo na área Pagamentos (abaixo).
 
 ## Anti-objetivos (se acontecer, falhou)
 
@@ -101,11 +101,7 @@ Segredos no Supabase: `PAGBANK_TOKEN_SANDBOX` e `PAGBANK_TOKEN_PRODUCTION`. O am
     - QR (`PixQr` com `qrText`), "Copiar Pix copia e cola" e "Aguardando pagamento…" com um contador até expirar.
     - A tela consulta `paymentStatus` a cada 5 s. Com `paid`: "Pagamento confirmado", `refresh()` e vai para Hoje. Com `expired` (passou o prazo): "O Pix expirou" e o botão "Gerar outro Pix".
     - O rodapé tem "Falar com a gente" (WhatsApp, mensagem genérica com o código do pedido) e "Trocar plano".
-- **Admin:**
-  - Item novo "Método de pagamento" no menu e na barra de seções (`AdminSection` ganha `payment`).
-  - A tela tem duas linhas de rádio, Manual e Automático, e uma linha "Ambiente do PagBank: Teste / Produção".
-  - No modo automático, um aviso explica que os tokens precisam estar nos segredos do Supabase.
-  - Salvar chama `admin_set_config`.
+- **Admin:** a área **Pagamentos** (pedido do dono), descrita na seção própria abaixo.
 
 ## Documentação
 
@@ -133,6 +129,52 @@ Segredos no Supabase: `PAGBANK_TOKEN_SANDBOX` e `PAGBANK_TOKEN_PRODUCTION`. O am
 - Texto exato dos estados e do aviso do Admin, dentro do tom do app.
 - Ordem das tarefas. Sugestão: SQL, depois as funções, depois o app, e o Admin por último.
 - Tempo de expiração do QR. Sugestão: 30 min.
+
+## Admin > Pagamentos (pedido do dono)
+
+Uma área própria, `/admin/payments`, com item "Pagamentos" no menu do Admin e na barra de seções (`AdminSection` ganha `payments`). De cima para baixo:
+
+1. **Método de pagamento:**
+   - duas opções grandes, **Manual** ("Pix com comprovante pelo WhatsApp") e **Automático** ("PagBank libera sozinho");
+   - abaixo, "Ambiente do PagBank: Teste / Produção";
+   - no automático, uma linha de aviso sobre os tokens nos segredos do Supabase;
+   - a troca salva na hora (`admin_set_config`).
+2. **Resumo do período**, com `StatColumns` e os mesmos filtros de período do gráfico:
+   - **Faturamento**: soma dos confirmados;
+   - **Confirmados** e **Pendentes**: quantidades;
+   - **Ticket médio**.
+3. **Gráfico de faturamento:**
+   - barras em `react-native-svg`, sem biblioteca nova;
+   - alternância **30 dias** (uma barra por dia) / **12 meses** (uma barra por mês);
+   - tocar numa barra mostra o valor e a data;
+   - só pagamentos confirmados de produção entram; os de teste nunca contam.
+4. **Histórico:**
+   - **Filtros:** Todos, Confirmados, Pendentes, Expirados/Falhos.
+   - **Cada linha:** foto/avatar e nome; plano; valor; data e hora (horário de Brasília); método (Manual/Automático); status em etiqueta colorida (Confirmado verde, Pendente amarelo, Expirado/Falhou/Cancelado cinza) e "Teste" quando veio do sandbox.
+   - **Tocar na linha abre o detalhe:**
+     - e-mail e @;
+     - código do pedido (`HAB...` ou `ORDE_...`);
+     - quando foi criado e quando foi confirmado;
+     - validade que a conta ganhou.
+   - **Ações num pendente manual:** "Confirmar pagamento" (soma os dias com `grant_payment`) e "Cancelar". Num automático pendente, só "Consultar no PagBank", que refaz a verificação do webhook.
+   - **Paginação:** 50 por vez, com "Carregar mais".
+
+**O manual também entra no histórico** (decisão do Claude, para o histórico ter "tudo"):
+- No modo manual, "Assinar" grava um `payments` com `method = 'manual'`, `status = 'pending'` e o código `HAB...` do QR estático, pela RPC `start_manual_payment(plan_id)`, que devolve o código.
+- O dono confirma pelo histórico. A liberação manual pela página do usuário continua existindo, mas não cria linha no histórico.
+
+**Banco:**
+- `payments` ganha:
+  - `method` (`manual` | `automatic`);
+  - `order_code` (o `HAB...`, único);
+  - `granted_until` (validade depois da liberação);
+  - `canceled` entre os status possíveis.
+- RPCs de admin (`require_admin`):
+  - `admin_payments(status text, before timestamptz, max int)`: devolve as linhas com nome, @, e-mail e avatar da conta;
+  - `admin_revenue(period text)`: devolve `[{ bucket, cents, count }]` dos confirmados de produção, por dia nos últimos 30 dias ou por mês nos últimos 12, no fuso de São Paulo;
+  - `admin_confirm_payment(id)`;
+  - `admin_cancel_payment(id)`.
+- O gráfico e o resumo vêm do servidor; o app só desenha.
 
 ## CPF (decisão do dono: pedir e guardar)
 
