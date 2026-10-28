@@ -11,7 +11,6 @@ import { Section } from "@/components/section";
 import { SegmentedTabs } from "@/components/segmented-tabs";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
-import { TabAccount } from "@/state/tab-account";
 import { useGlobalRanking } from "@/state/use-global-ranking";
 
 const TABS = [
@@ -29,7 +28,7 @@ export default function AchievementsScreen() {
   const unlocked = badges.filter((b) => b.unlocked).length;
 
   return (
-    <Screen title="Conquistas" accessory={<TabAccount />}>
+    <Screen title="Conquistas">
       <LevelCard progress={progress} />
       <SegmentedTabs options={TABS} value={tab} onChange={setTab} />
       {tab === "ranking" ? (

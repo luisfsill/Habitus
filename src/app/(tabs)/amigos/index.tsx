@@ -6,6 +6,7 @@ import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
 import { PersonRow } from "@/components/person-row";
 import { PrimaryButton } from "@/components/primary-button";
+import { ProfileCard } from "@/components/profile-card";
 import { RankList } from "@/components/rank-list";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
@@ -13,7 +14,7 @@ import { TextField } from "@/components/text-field";
 import type { PublicUser } from "@/domain/friends";
 import { respondFriendRequest } from "@/services/social";
 import { useAccess } from "@/state/access";
-import { TabAccount } from "@/state/tab-account";
+import { useAppState } from "@/state/app-state";
 import { useFriends, useUserSearch } from "@/state/use-friends";
 import { space } from "@/theme";
 
@@ -80,6 +81,7 @@ function Results({ search }: { search: ReturnType<typeof useUserSearch> }) {
 
 export default function FriendsScreen() {
   const { profile } = useAccess();
+  const { progress } = useAppState();
   // Hidden accounts cannot search either (the server refuses too).
   const hidden = profile?.searchable === false;
   const userSearch = useUserSearch(!hidden);
@@ -111,7 +113,10 @@ export default function FriendsScreen() {
   const friends = overview?.friends ?? [];
   const incoming = overview?.incoming ?? [];
   return (
-    <Screen title="Amigos" accessory={<TabAccount />}>
+    <Screen title="Perfil">
+      {profile && (
+        <ProfileCard name={profile.name} username={profile.username ?? null} photo={profile.avatarUrl} progress={progress} onEdit={() => router.navigate("/settings/conta")} />
+      )}
       {searchField}
       {userSearch.query !== "" ? (
         <Results search={userSearch} />

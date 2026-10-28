@@ -21,8 +21,8 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: "trophy", selected: "trophy.fill" }} md="emoji_events" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="amigos">
-        <NativeTabs.Trigger.Label>Amigos</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="group" />
+        <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} md="account_circle" />
         <NativeTabs.Trigger.Badge hidden={requests === 0}>{String(requests)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="settings">

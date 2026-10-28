@@ -18,6 +18,7 @@ const ITEMS: readonly { label: string; icon: { ios: string; android: string }; h
   { label: "Água", icon: { ios: "drop", android: "water_drop" }, href: "/settings/agua" },
   { label: "Afirmações", icon: { ios: "quote.bubble", android: "format_quote" }, href: "/settings/afirmacoes" },
   { label: "Aparência", icon: { ios: "paintpalette", android: "palette" }, href: "/settings/aparencia" },
+  { label: "Termos e Privacidade", icon: { ios: "doc.text", android: "description" }, href: "/legal/terms" },
 ];
 
 export default function SettingsMenuScreen() {

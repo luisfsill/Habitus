@@ -38,7 +38,6 @@ export function TabAccount() {
           : isAdmin
             ? [{ label: "Área admin", icon: { ios: "shield", android: "admin_panel_settings" }, onPress: () => router.navigate("/admin") }]
             : []),
-        { label: "Termos e Privacidade", icon: { ios: "doc.text", android: "description" }, onPress: () => router.push("/legal/terms") },
         { label: "Sair", icon: { ios: "rectangle.portrait.and.arrow.right", android: "logout" }, destructive: true, onPress: () => void signOut() },
       ]}
     />
