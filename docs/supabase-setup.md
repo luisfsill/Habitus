@@ -161,6 +161,8 @@ Sem este passo, no iPhone e no navegador os lembretes só chegam com o Habitus a
 5. **Banco e agendador.** Abra [`supabase/push.sql`](../supabase/push.sql), troque `SEU_PROJECT_REF` pelo **Reference ID** do projeto (**Project Settings → General**), cole no **SQL Editor** e clique em **Run**. Se aparecer erro de permissão nas extensões, ligue `pg_cron` e `pg_net` em **Database → Extensions** e rode de novo.
 6. **No iPhone.** Abra o Habitus instalado, permita as notificações e use o app por alguns segundos. Em **Table Editor → push_subscriptions** deve aparecer uma linha, e em **push_queue** os próximos lembretes. Feche o app e espere o horário da próxima dica.
 
+Avisos de mensagem e de pedido de amizade não esperam o agendador: `push.sql` cria `kick_push()`, que chama `push-send` na hora (o endereço vem do próprio agendamento). Ao atualizar um banco que já tinha `push.sql`, rode `push.sql` de novo (com o `SEU_PROJECT_REF` trocado) e depois `social.sql`.
+
 Para conferir o agendador: **Integrations → Cron** (ou `select * from cron.job_run_details order by start_time desc limit 5;`) mostra uma execução por minuto. Os registros da função ficam em **Edge Functions → push-send → Logs**.
 
 ## 10. Virar administrador

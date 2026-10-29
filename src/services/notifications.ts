@@ -31,6 +31,7 @@ import {
   addWebReminders,
   cancelWebReminder,
   requestWebPermission,
+  showWebNotice,
   webPermissionState,
 } from "./web-reminders";
 
@@ -248,6 +249,12 @@ export async function scheduleReminderSnooze(
   const date = parseLocal(occurrence);
   if (!reminder || reminder.deletedAt !== null || !date) return;
   await schedule(reminderSnooze(reminder, date, lead, now));
+}
+
+/** A chat message while the app is open (the server push covers it closed); the same id replaces the server's notice. */
+export async function showMessageNotice(id: string, title: string, body: string, url: string): Promise<void> {
+  if (!supported) return showWebNotice(id, title, body, url);
+  await Notifications.scheduleNotificationAsync({ identifier: id, content: { title, body, data: { url } }, trigger: null });
 }
 
 /** One trick notification a few seconds from now. */

@@ -3,9 +3,10 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AppState, Platform } from "react-native";
 
-import { type Conversation, type Message, type MessageKind, mergeMessages, nudgeWaitMs, PAGE_SIZE, textProblem, unreadTotal } from "@/domain/chat";
+import { type Conversation, type Message, type MessageKind, mergeMessages, nudgeWaitMs, PAGE_SIZE, previewOf, textProblem, unreadTotal } from "@/domain/chat";
 import { joinTyping, listConversations, loadMessages, markRead, reportMessage, sendMessage, subscribeInbox } from "@/services/chat";
 import { log } from "@/services/log";
+import { showMessageNotice } from "@/services/notifications";
 import { useAccess } from "@/state/access";
 
 type InboxEvent = { type: "new"; message: Message } | { type: "reconnect" };
@@ -58,6 +59,13 @@ function applyMessage(me: string, m: Message) {
   publish(shared.map((c) => (c === current ? updated : c)).sort(byLast));
 }
 
+/** A friend's message while the app is open on another screen: a notification like the closed-app push (same id, so one). */
+function notifyIfAway(me: string, m: Message) {
+  if (m.sender === me || m.sender === openPeer || AppState.currentState !== "active") return;
+  const name = shared?.find((c) => c.peer.id === m.sender)?.peer.name.split(" ")[0] || "Nova mensagem";
+  showMessageNotice(`social:msg:${m.sender}`, name, previewOf(m, me), `/conversas/${m.sender}`).catch((e: unknown) => log.warn("could not show message notice", e));
+}
+
 function setRead(peer: string, change: Partial<Conversation>) {
   if (shared?.some((c) => c.peer.id === peer)) publish(shared.map((c) => (c.peer.id === peer ? { ...c, ...change } : c)));
 }
@@ -74,6 +82,7 @@ function retainInbox(me: string): () => void {
         if (m.kind === "nudge" && m.sender !== me && Platform.OS !== "web" && AppState.currentState === "active") {
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
         }
+        notifyIfAway(me, m);
         emit({ type: "new", message: m });
       },
       read: (peer, readAt) => setRead(peer, { peerReadAt: readAt }),

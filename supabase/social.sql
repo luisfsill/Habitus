@@ -222,6 +222,10 @@ begin
   from public.profiles p where p.id = auth.uid()
   on conflict (user_id, id) do update
     set send_at = excluded.send_at, title = excluded.title, body = excluded.body, url = excluded.url;
+  -- Envia agora em vez de esperar o minuto do agendamento (push.sql de antes não tem kick_push).
+  if to_regprocedure('public.kick_push()') is not null then
+    perform public.kick_push();
+  end if;
 end;
 $$;
 

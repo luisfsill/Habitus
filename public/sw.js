@@ -51,6 +51,8 @@ self.addEventListener("push", (event) => {
       body: data.body || "",
       icon: "/icon-192.png",
       tag: data.tag,
+      // The same tag replaces the last notice (one per friend); without renotify a second message would arrive silently.
+      renotify: !!data.tag,
       data: { url: data.url || "/" },
     }),
   );

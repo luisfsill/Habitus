@@ -39,7 +39,12 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
           ? `${tab.label}, ${unread} ${unread === 1 ? "não lida" : "não lidas"}`
           : tab.label,
     fx: tab.fx,
-    icon: <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />,
+    icon: (
+      <View>
+        <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />
+        {((tab.key === "conversas" && unread > 0) || (tab.key === "amigos" && incoming > 0)) && <View style={[styles.dot, { backgroundColor: colors.danger }]} />}
+      </View>
+    ),
   }));
   return (
     <View pointerEvents="box-none" style={[styles.wrap, pinned]}>
@@ -76,4 +81,6 @@ const styles = StyleSheet.create({
   // The triggers only register the tabs; the floating bar is the visible one.
   hidden: { display: "none" },
   wrap: { left: 0, right: 0, bottom: 0, alignItems: "center", paddingHorizontal: EDGE, paddingBottom: EDGE },
+  // Unread messages or friend requests: a red dot on the icon's top right, gone once seen.
+  dot: { position: "absolute", top: -2, right: -4, width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: "#FFFFFF" },
 });

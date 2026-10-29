@@ -22,13 +22,19 @@ export async function requestWebPermission(): Promise<PermissionState> {
 }
 
 async function show(item: PlannedNotification): Promise<void> {
+  await showWebNotice(item.id, item.title, item.body, reminderUrl(item));
+}
+
+/** A notification now; the same `tag` replaces an earlier one (e.g. the server's push for the same message). */
+export async function showWebNotice(tag: string, title: string, body: string, url: string): Promise<void> {
   if (webPermissionState() !== "granted") return;
-  const options = { body: item.body, icon: "/icon-192.png", tag: item.id, data: { url: reminderUrl(item) } };
+  // renotify: a new message from the same friend (same tag) sounds again instead of replacing silently.
+  const options = { body, icon: "/icon-192.png", tag, renotify: true, data: { url } };
   try {
     // Android Chrome only allows notifications from a service worker.
     const registration = await navigator.serviceWorker?.getRegistration();
-    if (registration) await registration.showNotification(item.title, options);
-    else new Notification(item.title, options);
+    if (registration) await registration.showNotification(title, options);
+    else new Notification(title, options);
   } catch (error) {
     log.error("could not show web notification", error);
   }

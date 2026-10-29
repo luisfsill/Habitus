@@ -16,7 +16,7 @@ interface Props {
   onPress: () => void;
 }
 
-/** A conversation in the list: photo, name, last message, when, and a dot with the unread count. */
+/** A conversation in the list: photo, name, last message, when, and a red dot with the unread count until it is opened. */
 export function ConversationRow({ name, avatarUrl, preview, time, unread, onPress }: Props) {
   const { colors } = useTheme();
   const unreadLabel = unread === 0 ? "" : unread === 1 ? ". 1 não lida" : `. ${unread} não lidas`;
@@ -43,8 +43,8 @@ export function ConversationRow({ name, avatarUrl, preview, time, unread, onPres
             {preview}
           </AppText>
           {unread > 0 && (
-            <View style={[styles.dot, { backgroundColor: colors.accent }]}>
-              <AppText variant="caption" style={[styles.count, { color: colors.onAccent }]} maxFontSizeMultiplier={1.4}>
+            <View style={[styles.dot, { backgroundColor: colors.danger }]}>
+              <AppText variant="caption" style={styles.count} maxFontSizeMultiplier={1.4}>
                 {unread > 99 ? "99+" : String(unread)}
               </AppText>
             </View>
@@ -61,5 +61,5 @@ const styles = StyleSheet.create({
   top: { flexDirection: "row", alignItems: "center", gap: space.sm },
   grow: { flex: 1 },
   dot: { minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
-  count: { fontWeight: "700" },
+  count: { fontWeight: "700", color: "#FFFFFF" },
 });

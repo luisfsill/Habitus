@@ -44,8 +44,27 @@ select cron.schedule(
   'habitus-push',
   '* * * * *',
   $$ select net.http_post(
-       url := 'https://SEU_PROJECT_REF.supabase.co/functions/v1/push-send',
+       url := 'https://ybsakqsjtylrupbkbwxl.supabase.co/functions/v1/push-send',
        headers := '{"Content-Type": "application/json"}'::jsonb,
        body := '{}'::jsonb
      ) $$
 );
+
+-- Avisos de mensagem e de amizade não esperam o próximo minuto: chamam push-send na hora.
+-- O endereço vem do próprio agendamento acima, para não repetir o SEU_PROJECT_REF. Sem ele, não faz nada.
+create or replace function public.kick_push()
+returns void language plpgsql security definer set search_path = ''
+as $$
+declare target text;
+begin
+  select substring(command from 'https://[^'']+/functions/v1/push-send') into target
+  from cron.job where jobname = 'habitus-push';
+  if target is null then
+    return;
+  end if;
+  -- pg_net só envia depois do commit, então push-send já encontra o aviso na fila.
+  perform net.http_post(url := target, headers := '{"Content-Type": "application/json"}'::jsonb, body := '{}'::jsonb);
+end;
+$$;
+
+revoke execute on function public.kick_push() from public, anon, authenticated;
