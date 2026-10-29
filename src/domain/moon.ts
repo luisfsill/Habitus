@@ -125,18 +125,23 @@ export function sameWord(heard: string, expected: string): boolean {
 /**
  * How many words of the phrase were said, in order, in everything heard so far (`transcript`, the recognizer's
  * text): each heard word lights the next one only if it is that word; any other word ("azul" instead of "vida")
- * is skipped without lighting anything.
+ * is skipped without lighting anything. One word the recognizer missed (a short word said softly, "sou" heard as
+ * "só") does not block the rest: the word after it, once heard, lights both.
  */
 export function spokenWords(timeline: readonly { word: string }[], transcript: string): number {
-  const heard = transcript.split(/\s+/);
+  const heard = transcript.split(/\s+/).filter(Boolean);
+  // Heard words used up if heard[i] is `expected`: 1, 2 for a hyphenated word said in two ("bem sucedido"), or 0.
+  const match = (i: number, expected: string) => {
+    if (sameWord(heard[i], expected)) return 1;
+    return i + 1 < heard.length && sameWord(heard[i] + heard[i + 1], expected) ? 2 : 0;
+  };
   let lit = 0;
   for (let i = 0; i < heard.length && lit < timeline.length; i++) {
-    if (sameWord(heard[i], timeline[lit].word)) lit++;
-    // A hyphenated word ("bem-sucedido") may come back in two ("bem sucedido").
-    else if (i + 1 < heard.length && sameWord(heard[i] + heard[i + 1], timeline[lit].word)) {
-      lit++;
-      i++;
-    }
+    const used = match(i, timeline[lit].word);
+    const skipped = used || lit + 1 >= timeline.length ? 0 : match(i, timeline[lit + 1].word);
+    if (used) lit += 1;
+    else if (skipped) lit += 2;
+    i += Math.max(used, skipped, 1) - 1;
   }
   return lit;
 }

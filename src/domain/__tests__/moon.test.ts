@@ -105,6 +105,13 @@ describe("spokenWords", () => {
     expect(spokenWords(sou, "sou bem-sucedido")).toBe(2);
   });
 
+  it("goes past one word the recognizer missed, not two", () => {
+    const goals = wordTimeline("Sou bem-sucedido. Sou saudável. Sou abundante.");
+    expect(spokenWords(goals, "só bem sucedido só saudável sol abundante")).toBe(goals.length);
+    expect(spokenWords(timeline, "deus vida")).toBe(3);
+    expect(spokenWords(timeline, "deus me")).toBe(1);
+  });
+
   it("does not light a later word said out of order", () => {
     expect(spokenWords(timeline, "vida deus")).toBe(1);
   });
