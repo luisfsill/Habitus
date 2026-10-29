@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { HIT, radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { Avatar } from "./avatar";
+import type { Presence } from "@/domain/chat";
+
+import { Avatar, PresenceAvatar } from "./avatar";
 
 interface Props {
   name: string;
@@ -13,11 +15,13 @@ interface Props {
   /** "14:05", "Ontem", "12/10"; left out with no message. */
   time?: string;
   unread: number;
+  /** Green, yellow or red ring on the photo (MSN-like); left out for no ring. */
+  presence?: Presence;
   onPress: () => void;
 }
 
 /** A conversation in the list: photo, name, last message, when, and a red dot with the unread count until it is opened. */
-export function ConversationRow({ name, avatarUrl, preview, time, unread, onPress }: Props) {
+export function ConversationRow({ name, avatarUrl, preview, time, unread, presence, onPress }: Props) {
   const { colors } = useTheme();
   const unreadLabel = unread === 0 ? "" : unread === 1 ? ". 1 não lida" : `. ${unread} não lidas`;
   return (
@@ -26,7 +30,7 @@ export function ConversationRow({ name, avatarUrl, preview, time, unread, onPres
       accessibilityRole="link"
       accessibilityLabel={`${name}. ${preview}${time ? `. ${time}` : ""}${unreadLabel}. Abrir conversa`}
       style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}>
-      <Avatar url={avatarUrl} size={44} />
+      {presence ? <PresenceAvatar url={avatarUrl} size={48} presence={presence} /> : <Avatar url={avatarUrl} size={44} />}
       <View style={styles.text}>
         <View style={styles.top}>
           <AppText variant="headline" numberOfLines={1} style={styles.grow}>

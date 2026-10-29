@@ -60,7 +60,7 @@ export async function reportMessage(id: string): Promise<void> {
 const removals = new Map<string, Promise<unknown>>();
 
 /** Opens `make()` after handing the user's JWT to Realtime, so RLS and channel policies see this account. */
-function openChannel(topic: string, make: () => RealtimeChannel): () => void {
+export function openChannel(topic: string, make: () => RealtimeChannel): () => void {
   const supabase = requireSupabase();
   let channel: RealtimeChannel | null = null;
   let closed = false;

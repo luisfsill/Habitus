@@ -14,20 +14,22 @@ interface Props {
 
 const GLASS = "🥛";
 
-/** Today's water: cups against the goal, a thin bar and one-tap −1 / +1. */
+/** Today's water in one line: cups against the goal, one-tap −1 / +1, and a thin bar under it. */
 export function WaterRow({ cups, goal, onAdd, onRemove }: Props) {
   const { colors } = useTheme();
   const done = cups >= goal;
   return (
     <View style={styles.wrap}>
       <View style={styles.row}>
-        <Icon ios="drop.fill" android="water_drop" size={22} color={done ? colors.success : colors.accent} />
+        <Icon ios="drop.fill" android="water_drop" size={18} color={done ? colors.success : colors.accent} />
         <View style={styles.text} accessible accessibilityLabel={`Água: ${cups} de ${goal} copos${done ? ", meta batida" : ""}`}>
-          <AppText variant="headline">
-            {cups} de {goal} copos
-          </AppText>
-          <AppText variant="footnote" color={done ? "successText" : "secondaryLabel"}>
-            {done ? "Meta de hoje batida!" : `Faltam ${goal - cups} para a meta`}
+          <AppText variant="subheadline" numberOfLines={1}>
+            <AppText variant="subheadline" style={styles.addText}>
+              {cups}/{goal} copos
+            </AppText>
+            <AppText variant="subheadline" color={done ? "successText" : "secondaryLabel"}>
+              {done ? " · meta batida!" : ` · faltam ${goal - cups}`}
+            </AppText>
           </AppText>
         </View>
         <Pressable
@@ -59,12 +61,12 @@ export function WaterRow({ cups, goal, onAdd, onRemove }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.sm },
+  wrap: { gap: space.xs },
   row: { flexDirection: "row", alignItems: "center", gap: space.md, minHeight: HIT },
-  text: { flex: 1, gap: 2 },
-  add: { height: 36, paddingHorizontal: space.md, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
+  text: { flex: 1 },
+  add: { height: 32, paddingHorizontal: space.md, borderRadius: radius.pill, alignItems: "center", justifyContent: "center" },
   addText: { fontWeight: "700" },
   onAccent: { color: "#FFFFFF" },
-  track: { height: 4, borderRadius: radius.pill, overflow: "hidden" },
+  track: { height: 3, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
 });

@@ -15,9 +15,9 @@ import { useAppState } from "@/state/app-state";
 import { useGlobalRanking } from "@/state/use-global-ranking";
 
 const TABS = [
-  { value: "historico", label: "Histórico" },
   { value: "ranking", label: "Ranking" },
   { value: "medalhas", label: "Medalhas" },
+  { value: "historico", label: "Histórico" },
 ] as const;
 
 type TabValue = (typeof TABS)[number]["value"];
@@ -28,7 +28,7 @@ export default function AchievementsScreen() {
   const { ranking, loading, error, reload, requesting, request } = useGlobalRanking();
   const { isAdmin } = useAccess();
   const { tab: param } = useLocalSearchParams<{ tab?: string }>();
-  const [tab, setTab] = useState<TabValue>(TABS.find((t) => t.value === param)?.value ?? "historico");
+  const [tab, setTab] = useState<TabValue>(TABS.find((t) => t.value === param)?.value ?? "ranking");
   const { badges } = progress;
   const unlocked = badges.filter((b) => b.unlocked).length;
 
@@ -51,7 +51,7 @@ export default function AchievementsScreen() {
           {ranking ? (
             <GlobalRankList
               ranking={ranking}
-              onOpen={(id) => router.push(`/amigos/${id}`)}
+              onOpen={(id) => router.push(`/profile/${id}`)}
               onAdd={(id) => void request(id)}
               requesting={requesting}
               excluded={isAdmin}

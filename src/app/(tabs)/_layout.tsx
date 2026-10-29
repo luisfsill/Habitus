@@ -2,11 +2,13 @@ import { NativeTabs } from "expo-router/native-tabs";
 
 import { useUnreadCount } from "@/state/use-chat";
 import { useIncomingCount } from "@/state/use-friends";
+import { useOnlineSharing } from "@/state/use-online";
 import { useTheme } from "@/theme";
 
 export default function TabsLayout() {
   const { colors } = useTheme();
   const requests = useIncomingCount();
+  useOnlineSharing();
   const unread = useUnreadCount();
   return (
     <NativeTabs tintColor={colors.accent} labelStyle={{ selected: { color: colors.accent } }}>
@@ -28,7 +30,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} md="chat" />
         <NativeTabs.Trigger.Badge hidden={unread === 0}>{String(unread)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="amigos">
+      <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} md="account_circle" />
         <NativeTabs.Trigger.Badge hidden={requests === 0}>{String(requests)}</NativeTabs.Trigger.Badge>

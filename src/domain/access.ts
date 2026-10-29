@@ -1,4 +1,6 @@
 export type Role = "user" | "admin";
+/** The chat status the person picked (MSN-like); "invisible" shows as offline to friends. */
+export type ChatStatus = "online" | "away" | "invisible";
 export type PlanKind = "trial" | "paid";
 
 export interface Profile {
@@ -20,6 +22,7 @@ export interface Profile {
   avatarUrl: string | null;
   /** The app is open to everyone for now (admin switch); only read with the viewer's own profile. */
   freeAccess: boolean;
+  chatStatus: ChatStatus;
 }
 
 export interface Plan {
@@ -122,7 +125,7 @@ export const photoLink = (v: unknown): string | null =>
 /** A `profiles` row from Supabase, or null when it is not one. */
 export function parseProfile(row: unknown): Profile | null {
   if (!isRecord(row)) return null;
-  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable, avatar_url, free_access } = row;
+  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable, avatar_url, free_access, chat_status } = row;
   if (typeof id !== "string" || typeof email !== "string" || typeof created_at !== "string") return null;
   if (role !== "user" && role !== "admin") return null;
   if (plan !== "trial" && plan !== "paid") return null;
@@ -139,6 +142,7 @@ export function parseProfile(row: unknown): Profile | null {
     searchable: searchable !== false,
     avatarUrl: photoLink(avatar_url),
     freeAccess: free_access === true,
+    chatStatus: chat_status === "away" || chat_status === "invisible" ? chat_status : "online",
   };
 }
 
@@ -167,6 +171,7 @@ export function parseCachedProfile(value: unknown): Profile | null {
     searchable: value.searchable,
     avatar_url: value.avatarUrl,
     free_access: value.freeAccess,
+    chat_status: value.chatStatus,
   });
 }
 

@@ -13,8 +13,8 @@ export function setEffectSounds(on: boolean): void {
   effectsOn = on;
 }
 
-function play(source: number): void {
-  if (!effectsOn) return;
+function play(source: number): AudioPlayer | null {
+  if (!effectsOn) return null;
   try {
     let player = players.get(source);
     if (!player) {
@@ -22,9 +22,40 @@ function play(source: number): void {
       players.set(source, player);
     }
     void player.seekTo(0).then(() => player.play());
+    return player;
   } catch (error) {
     log.warn("could not play a sound", error);
+    return null;
   }
+}
+
+// Recordings from Mixkit (free license) and Freesound (CC0), one per animated sticker (src/domain/stickers.ts).
+const STICKER_SOUNDS: Record<string, number> = {
+  lingua: require("../../assets/sounds/stickers/lingua.mp3") as number,
+  festa: require("../../assets/sounds/stickers/festa.mp3") as number,
+  apaixonado: require("../../assets/sounds/stickers/apaixonado.mp3") as number,
+  beijo: require("../../assets/sounds/stickers/beijo.mp3") as number,
+  chorando: require("../../assets/sounds/stickers/chorando.mp3") as number,
+  coco: require("../../assets/sounds/stickers/coco.mp3") as number,
+  fantasma: require("../../assets/sounds/stickers/fantasma.mp3") as number,
+  dormindo: require("../../assets/sounds/stickers/dormindo.mp3") as number,
+  palmas: require("../../assets/sounds/stickers/palmas.mp3") as number,
+  tchau: require("../../assets/sounds/stickers/tchau.mp3") as number,
+  explosao: require("../../assets/sounds/stickers/explosao.mp3") as number,
+  gota: require("../../assets/sounds/stickers/gota.mp3") as number,
+};
+let sticker: { player: AudioPlayer; cut: ReturnType<typeof setTimeout> } | null = null;
+
+/** Conversas: an animated sticker's sound while it dances, cut after `ms` (some recordings run longer). */
+export function playSticker(id: string, ms: number): void {
+  if (sticker) {
+    clearTimeout(sticker.cut);
+    sticker.player.pause();
+    sticker = null;
+  }
+  const source = STICKER_SOUNDS[id];
+  const player = source === undefined ? null : play(source);
+  if (player) sticker = { player, cut: setTimeout(() => player.pause(), ms) };
 }
 
 /** The "gluk" of a water drop, played on each cup of water. Silent if audio is unavailable. */
@@ -32,9 +63,14 @@ export function playDrop(): void {
   play(require("../../assets/sounds/drop.mp3") as number);
 }
 
-/** Conversas: the buzzing boing of "chamar atenção" (made by scripts/build-nudge-sound.mjs). */
+/** Conversas: the shake of "chamar atenção" (recording sent by the owner, trimmed and leveled with ffmpeg). */
 export function playNudge(): void {
-  play(require("../../assets/sounds/nudge.wav") as number);
+  play(require("../../assets/sounds/nudge.mp3") as number);
+}
+
+/** Conversas: a friend's message while the app is open on another screen (recording sent by the owner). */
+export function playMessage(): void {
+  play(require("../../assets/sounds/message.mp3") as number);
 }
 
 /**

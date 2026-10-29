@@ -209,7 +209,7 @@ $$;
 -- plpgsql só resolve push_queue ao executar: sem push.sql (Web Push opcional), não avisa e não falha.
 -- A versão antiga, sem url, sai antes: com as duas, uma chamada de 3 argumentos ficaria ambígua.
 drop function if exists public.queue_social_push(uuid, text, text);
-create or replace function public.queue_social_push(target uuid, kind text, message text, url text default '/amigos')
+create or replace function public.queue_social_push(target uuid, kind text, message text, url text default '/profile')
 returns void language plpgsql security definer set search_path = ''
 as $$
 begin

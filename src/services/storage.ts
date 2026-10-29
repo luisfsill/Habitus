@@ -106,3 +106,50 @@ export function takeLoginCurtain(): boolean {
     return false;
   }
 }
+
+const STICKER_SEEN_KEY = "habitus:sticker-seen:v1";
+const FEED_SEEN_KEY = "habitus:feed-seen:v1";
+
+async function seenMap(key: string): Promise<Record<string, string>> {
+  const raw = await AsyncStorage.getItem(key);
+  const value: unknown = raw ? JSON.parse(raw) : null;
+  return value && typeof value === "object" ? (value as Record<string, string>) : {};
+}
+
+/** Conversas: when the last animated sticker danced in the chat with `peer`, or null if none has yet. */
+export async function loadStickerSeen(peer: string): Promise<string | null> {
+  try {
+    const seen = (await seenMap(STICKER_SEEN_KEY))[peer];
+    return typeof seen === "string" ? seen : null;
+  } catch (error) {
+    log.warn("could not read danced stickers", error);
+    return null;
+  }
+}
+
+export async function saveStickerSeen(peer: string, at: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STICKER_SEEN_KEY, JSON.stringify({ ...(await seenMap(STICKER_SEEN_KEY)), [peer]: at }));
+  } catch (error) {
+    log.warn("could not save danced stickers", error);
+  }
+}
+
+/** Feed: when `me` last opened the Feed tab (the newest post's time then), or null if never. */
+export async function loadFeedSeen(me: string): Promise<string | null> {
+  try {
+    const seen = (await seenMap(FEED_SEEN_KEY))[me];
+    return typeof seen === "string" ? seen : null;
+  } catch (error) {
+    log.warn("could not read feed seen", error);
+    return null;
+  }
+}
+
+export async function saveFeedSeen(me: string, at: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(FEED_SEEN_KEY, JSON.stringify({ ...(await seenMap(FEED_SEEN_KEY)), [me]: at }));
+  } catch (error) {
+    log.warn("could not save feed seen", error);
+  }
+}

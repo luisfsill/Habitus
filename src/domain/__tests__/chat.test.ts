@@ -1,5 +1,7 @@
 import {
   MAX_TEXT,
+  filterFriends,
+  presenceOf,
   groupByDay,
   mergeMessages,
   nudgeWaitMs,
@@ -11,7 +13,7 @@ import {
   unreadTotal,
   type Message,
 } from "../chat";
-import { STICKERS, stickerLabel } from "../stickers";
+import { RETIRED_STICKERS, STICKERS, stickerLabel } from "../stickers";
 
 const ME = "me";
 const OTHER = "ot";
@@ -136,14 +138,41 @@ describe("unreadTotal", () => {
 });
 
 describe("stickers", () => {
-  it("ids únicos e válidos, 24", () => {
-    const ids = STICKERS.map((s) => s.id);
-    expect(ids).toHaveLength(24);
+  it("12 animadas; ids únicos (com as antigas) e válidos para o servidor", () => {
+    const ids = [...STICKERS, ...RETIRED_STICKERS].map((s) => s.id);
+    expect(STICKERS).toHaveLength(12);
     expect(new Set(ids).size).toBe(ids.length);
-    ids.forEach((id) => expect(id).toMatch(/^[a-z0-9-]+$/));
+    ids.forEach((id) => expect(id).toMatch(/^[a-z0-9-]{1,32}$/));
   });
   it("rótulo", () => {
     expect(stickerLabel("x-desconhecida")).toBe("Figurinha");
     expect(stickerLabel(STICKERS[0].id)).toBe(STICKERS[0].label);
+  });
+});
+
+describe("filterFriends", () => {
+  const friends = [
+    { name: "João Silva", username: "joao" },
+    { name: "Ana", username: "aninha_22" },
+  ];
+  it("lists everyone with an empty search", () => {
+    expect(filterFriends(friends, "  ")).toEqual(friends);
+  });
+  it("finds by name without accents or case, and by @", () => {
+    expect(filterFriends(friends, "JOAO").map((f) => f.username)).toEqual(["joao"]);
+    expect(filterFriends(friends, "@anin").map((f) => f.username)).toEqual(["aninha_22"]);
+    expect(filterFriends(friends, "zé")).toEqual([]);
+  });
+});
+
+describe("presenceOf", () => {
+  it("is offline with nothing tracked", () => {
+    expect(presenceOf(undefined)).toBe("offline");
+    expect(presenceOf([])).toBe("offline");
+  });
+  it("is away, or online when any device is available", () => {
+    expect(presenceOf([{ status: "away" }])).toBe("away");
+    expect(presenceOf([{ status: "away" }, { status: "online" }])).toBe("online");
+    expect(presenceOf([{ status: "x" }])).toBe("offline");
   });
 });

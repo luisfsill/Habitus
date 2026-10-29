@@ -100,9 +100,15 @@ O roteiro para conferir está no fim desta página, em "Conferir os amigos".
 1. Abra **SQL Editor → New query**.
 2. Cole todo o conteúdo de [`supabase/chat.sql`](../supabase/chat.sql) e clique em **Run**. Pode rodar de novo.
 
-Isso cria `messages` (texto até 2000 caracteres, figurinha ou "chamar atenção"), `chat_reads` (o "visto" e as não lidas) e `message_reports` (denúncias, sem tela no app: consulte em **Table Editor → message_reports**). Só amigos trocam mensagens, cada conta lê só as próprias conversas, e um bloqueio esconde a conversa dos dois sem apagar nada. O arquivo também põe `messages` e `chat_reads` na publicação `supabase_realtime` (mensagens ao vivo) e cria as políticas em `realtime.messages` que liberam o canal privado de "digitando…" só para os dois amigos. Com o Web Push (passo 9) instalado, cada mensagem gera um aviso que abre a conversa. Quem está com a conversa aberta não recebe aviso. Ao atualizar, rode `chat.sql` **antes** de publicar o app novo: ele passa a chamar `send_message` com o parâmetro `msg_quiet`.
+Isso cria `messages` (texto até 2000 caracteres, figurinha ou "chamar atenção"), `chat_reads` (o "visto" e as não lidas) e `message_reports` (denúncias, sem tela no app: consulte em **Table Editor → message_reports**). Só amigos trocam mensagens, cada conta lê só as próprias conversas, e um bloqueio esconde a conversa dos dois sem apagar nada. O arquivo também põe `messages` e `chat_reads` na publicação `supabase_realtime` (mensagens ao vivo) e cria as políticas em `realtime.messages` que liberam o canal privado de "digitando…" só para os dois amigos. Com o Web Push (passo 9) instalado, cada mensagem gera um aviso que abre a conversa. Quem está com a conversa aberta não recebe aviso. Ao atualizar, rode `chat.sql` **antes** de publicar o app novo: ele usa `send_message` com `msg_quiet`, a coluna `profiles.chat_status` e o canal `online:<id>` do status.
 
 Para conferir, cole [`supabase/tests/chat.sql`](../supabase/tests/chat.sql) em outra query e rode. Esperado: `chat ok` nas mensagens. O script cria contas de teste e desfaz tudo no fim, sem deixar linhas no banco.
+
+### Mural e depoimentos
+
+Rode **depois** de `social.sql`: abra **SQL Editor → New query**, cole todo o conteúdo de [`supabase/wall.sql`](../supabase/wall.sql) e clique em **Run**. Pode rodar de novo. **Rode antes de publicar a versão do app com o Feed:** sem ele, o Mural do perfil e o Feed da aba Perfil mostram erro.
+
+Isso cria `wall_posts` (texto até 1000 caracteres, foto ou os dois, sem política de leitura: só as funções leem), o bucket público `wall` do Storage (2 MB, só JPEG; cada conta grava e apaga só a própria pasta) e as funções `post_on_wall`, `delete_wall_post`, `edit_wall_post`, `wall_of` e `wall_feed`. Cada um publica no próprio mural; no mural de outra pessoa, só amigos, como depoimento. O mural é lido por quem pode abrir o perfil, e o feed mostra o que entrou no mural dos amigos e no próprio. Quem escreveu ou o dono do mural apaga; só quem escreveu edita o texto (a foto não muda) e a publicação passa a mostrar "editado". Limite de 20 publicações por hora por conta. Com o Web Push (passo 9) instalado, quem recebe um depoimento ganha um aviso. Ao atualizar, rode `wall.sql` de novo antes de publicar o app: a versão com foto troca `post_on_wall` e a regra do texto obrigatório.
 
 ### Ranking global
 

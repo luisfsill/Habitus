@@ -1,19 +1,6 @@
-import { Circle, Ellipse, G, Path, Rect, Text } from "react-native-svg";
+import { Circle, Ellipse, Path, Rect, Text } from "react-native-svg";
 
 import { Caption, Disc, Drop, Frame, Heart, INK, Line, outline, type StickerArt, TEAR, WHITE, YELLOW } from "./parts";
-
-/** An open palm with four fingers and a thumb, centered on (x, y). */
-function Hand({ x, y, turn, flip = false }: { x: number; y: number; turn: number; flip?: boolean }) {
-  return (
-    <G transform={`translate(${x} ${y}) rotate(${turn}) scale(${flip ? -1 : 1} 1)`}>
-      <Ellipse cx={-15} cy={4} rx={5} ry={10} fill={YELLOW} {...outline} strokeWidth={3} transform="rotate(-30 -15 4)" />
-      {[-11, -4, 3, 10].map((fx) => (
-        <Rect key={fx} x={fx - 3.5} y={fx === -11 || fx === 10 ? -22 : -27} width={7} height={26} rx={3.5} fill={YELLOW} {...outline} strokeWidth={3} />
-      ))}
-      <Rect x={-14} y={-6} width={28} height={28} rx={10} fill={YELLOW} {...outline} strokeWidth={3} />
-    </G>
-  );
-}
 
 // Gestures, symbols and the app's own reminders (captioned), drawn on a 100×100 grid.
 export const THINGS: Record<string, StickerArt> = {
@@ -23,14 +10,6 @@ export const THINGS: Record<string, StickerArt> = {
       <Rect x={20} y={48} width={16} height={36} rx={4} fill="#3D7BD9" {...outline} />
       <Path d="M36 48 L46 22 Q49 13 57 17 Q63 21 60 31 L57 46 H70 Q78 46 76 54 L72 80 Q71 84 66 84 H36 Z" fill={YELLOW} {...outline} />
       <Line d="M58 58 H75 M58 68 H73 M57 77 H70" width={3} />
-    </Frame>
-  ),
-  palmas: ({ size }) => (
-    <Frame size={size}>
-      <Disc fill="#FFE3C2" />
-      <Hand x={34} y={58} turn={-14} />
-      <Hand x={66} y={58} turn={14} flip />
-      <Line d="M24 30 L30 37 M50 16 V26 M76 30 L70 37" width={3.5} />
     </Frame>
   ),
   coracao: ({ size }) => (

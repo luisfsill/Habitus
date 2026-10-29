@@ -15,7 +15,7 @@ import { useAccess } from "@/state/access";
 import { useFriends, useUserSearch } from "@/state/use-friends";
 import { space } from "@/theme";
 
-const open = (id: string) => router.push(`/amigos/${id}`);
+const open = (id: string) => router.push(`/profile/${id}`);
 
 function Requests({ people, onAnswer, busy }: { people: PublicUser[]; onAnswer: (p: PublicUser, accept: boolean) => void; busy: string | null }) {
   return (

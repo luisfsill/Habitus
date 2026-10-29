@@ -1,6 +1,7 @@
 import { Image, StyleSheet, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 
+import type { Presence } from "@/domain/chat";
 import { useTheme } from "@/theme";
 
 import { AVATAR_PRESETS } from "./avatar-presets";
@@ -25,6 +26,23 @@ export function Avatar({ url, size }: { url: string | null; size: number }) {
       ) : (
         <Icon ios="person.fill" android="person" size={Math.round(size * 0.5)} color={colors.secondaryLabel} />
       )}
+    </View>
+  );
+}
+
+// MSN colours: available, away, offline.
+export const PRESENCE_COLORS: Record<Presence, string> = { online: "#22C55E", away: "#F5B400", offline: "#EF4444" };
+const PRESENCE_LABELS: Record<Presence, string> = { online: "Online", away: "Ausente", offline: "Offline" };
+
+/** The avatar inside a ring in the friend's presence colour (green, yellow or red), like MSN. */
+export function PresenceAvatar({ url, size, presence }: { url: string | null; size: number; presence: Presence }) {
+  const ring = Math.max(2, Math.round(size / 16));
+  return (
+    <View
+      accessible
+      accessibilityLabel={PRESENCE_LABELS[presence]}
+      style={{ padding: ring, borderRadius: size, borderWidth: ring, borderColor: PRESENCE_COLORS[presence] }}>
+      <Avatar url={url} size={size - ring * 4} />
     </View>
   );
 }

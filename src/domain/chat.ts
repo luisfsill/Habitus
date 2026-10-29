@@ -1,4 +1,4 @@
-import { photoLink } from "./access";
+import { normalizeSearch, photoLink } from "./access";
 import { isRow, num, str } from "./friends";
 import { MONTHS, addDays, dayKey } from "./time";
 
@@ -100,3 +100,19 @@ export function textProblem(text: string): string | null {
 }
 
 export const unreadTotal = (conversations: readonly Conversation[]): number => conversations.reduce((s, c) => s + c.unread, 0);
+
+/** The friends a typed name or @ points at (accents and case ignored); an empty search lists them all. */
+export function filterFriends<T extends { name: string; username: string }>(friends: readonly T[], query: string): T[] {
+  const q = normalizeSearch(query).replace(/^@/, "");
+  return friends.filter((f) => !q || normalizeSearch(f.name).includes(q) || f.username.toLowerCase().includes(q));
+}
+
+/** What a friend sees: green, yellow or red. */
+export type Presence = "online" | "away" | "offline";
+
+/** A friend's presence from what they track on their channel; nothing tracked (app closed, or invisible) is offline. */
+export function presenceOf(tracked: readonly { status?: unknown }[] | undefined): Presence {
+  if (!tracked || tracked.length === 0) return "offline";
+  // Several devices: any one available wins over away.
+  return tracked.some((t) => t.status === "online") ? "online" : tracked.some((t) => t.status === "away") ? "away" : "offline";
+}

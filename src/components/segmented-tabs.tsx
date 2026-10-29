@@ -13,7 +13,8 @@ const INSET = 2;
 const SLIDE = { duration: 220, easing: Easing.out(Easing.cubic) };
 
 interface Props<T extends string> {
-  options: readonly { value: T; label: string }[];
+  /** `dot` puts a small red dot after the label, e.g. for news behind that tab. */
+  options: readonly { value: T; label: string; dot?: boolean }[];
   value: T;
   onChange: (value: T) => void;
 }
@@ -48,7 +49,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
           <Pressable
             key={option.value}
             accessibilityRole="tab"
-            accessibilityLabel={option.label}
+            accessibilityLabel={option.dot ? `${option.label}, novidades` : option.label}
             accessibilityState={{ selected: on }}
             hitSlop={(HIT - HEIGHT) / 2}
             onPress={() => {
@@ -64,6 +65,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
               style={[styles.label, { color: on ? colors.onAccent : colors.secondaryLabel }]}>
               {option.label}
             </AppText>
+            {option.dot && <View style={[styles.dot, { backgroundColor: colors.danger }]} />}
           </Pressable>
         );
       })}
@@ -74,6 +76,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
 const styles = StyleSheet.create({
   track: { flexDirection: "row", height: HEIGHT, padding: INSET, borderRadius: radius.sm },
   pill: { position: "absolute", top: INSET, bottom: INSET, left: INSET, borderRadius: radius.sm - INSET },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center" },
+  tab: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
+  dot: { width: 8, height: 8, borderRadius: 4 },
   label: { fontWeight: "600" },
 });

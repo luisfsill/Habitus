@@ -126,6 +126,18 @@ begin
   if public.chat_topic_allowed('chat:' || greatest(a, b) || ':' || least(a, b)) then raise exception 'canal fora de ordem passou'; end if;
   if public.chat_topic_allowed('chat:' || least(a, c) || ':' || greatest(a, c)) then raise exception 'canal com não amigo passou'; end if;
   if public.chat_topic_allowed('chat:lixo') or public.chat_topic_allowed(null) then raise exception 'tópico inválido passou'; end if;
+  -- Online (MSN): A marca presença no próprio canal e ouve o de B (amigo), mas não marca no de B nem ouve o de C.
+  if not public.online_topic_allowed('online:' || a, true) then raise exception 'A deveria marcar presença no próprio canal'; end if;
+  if not public.online_topic_allowed('online:' || b, false) then raise exception 'A deveria ver se B está online'; end if;
+  if public.online_topic_allowed('online:' || b, true) then raise exception 'A marcou presença no canal de B'; end if;
+  if public.online_topic_allowed('online:' || c, false) then raise exception 'A viu o online de C sem amizade'; end if;
+  perform public.set_my_chat_status('away');
+  if (select chat_status from public.profiles where id = a) <> 'away' then raise exception 'set_my_chat_status não gravou'; end if;
+  begin
+    perform public.set_my_chat_status('ocupado');
+    raise exception 'aceitou estado inválido';
+  exception when insufficient_privilege then null;
+  end;
 
   -- my_conversations de A: B (com mensagens) primeiro, depois D (amigo sem mensagem); C não aparece.
   convs := public.my_conversations();

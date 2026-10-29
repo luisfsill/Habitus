@@ -17,7 +17,8 @@ interface Props {
   onLongPress?: () => void;
 }
 
-const STICKER = 120;
+// Small, like a big emoji: the animated ones dance big over the chat first (StickerDance).
+const STICKER = 56;
 
 const spoken = (m: Message) => (m.kind === "sticker" ? `Figurinha: ${stickerLabel(m.body)}` : m.body);
 

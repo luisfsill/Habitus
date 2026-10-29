@@ -7,6 +7,7 @@ import { type Conversation, type Message, type MessageKind, mergeMessages, nudge
 import { joinTyping, listConversations, loadMessages, markRead, reportMessage, sendMessage, subscribeInbox } from "@/services/chat";
 import { log } from "@/services/log";
 import { showMessageNotice } from "@/services/notifications";
+import { playMessage, playNudge } from "@/services/sound";
 import { useAccess } from "@/state/access";
 
 type InboxEvent = { type: "new"; message: Message } | { type: "reconnect" };
@@ -63,7 +64,10 @@ function applyMessage(me: string, m: Message) {
 function notifyIfAway(me: string, m: Message) {
   if (m.sender === me || m.sender === openPeer || AppState.currentState !== "active") return;
   const name = shared?.find((c) => c.peer.id === m.sender)?.peer.name.split(" ")[0] || "Nova mensagem";
-  showMessageNotice(`social:msg:${m.sender}`, name, previewOf(m, me), `/conversas/${m.sender}`).catch((e: unknown) => log.warn("could not show message notice", e));
+  // The app plays its own MSN-style sound, so the notice itself stays silent.
+  if (m.kind === "nudge") playNudge();
+  else playMessage();
+  showMessageNotice(`social:msg:${m.sender}`, name, previewOf(m, me), `/chat/${m.sender}`).catch((e: unknown) => log.warn("could not show message notice", e));
 }
 
 function setRead(peer: string, change: Partial<Conversation>) {

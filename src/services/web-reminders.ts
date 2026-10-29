@@ -26,10 +26,10 @@ async function show(item: PlannedNotification): Promise<void> {
 }
 
 /** A notification now; the same `tag` replaces an earlier one (e.g. the server's push for the same message). */
-export async function showWebNotice(tag: string, title: string, body: string, url: string): Promise<void> {
+export async function showWebNotice(tag: string, title: string, body: string, url: string, silent = false): Promise<void> {
   if (webPermissionState() !== "granted") return;
   // renotify: a new message from the same friend (same tag) sounds again instead of replacing silently.
-  const options = { body, icon: "/icon-192.png", tag, renotify: true, data: { url } };
+  const options = { body, icon: "/icon-192.png", tag, renotify: !silent, silent, data: { url } };
   try {
     // Android Chrome only allows notifications from a service worker.
     const registration = await navigator.serviceWorker?.getRegistration();

@@ -12,7 +12,7 @@ export interface Friend { id: string; name: string; username: string; level: num
 export interface FriendsOverview { friends: Friend[]; incoming: PublicUser[]; outgoing: PublicUser[] }
 export interface RankRow { id: string; name: string; username: string; level: number; weekXp: number; me: boolean; position: number }
 
-export const STAFF_BADGE = "Fundador";
+export const STAFF_BADGE = "Founder";
 
 export const RELATIONS: readonly string[] = ["none", "outgoing", "incoming", "friends"];
 

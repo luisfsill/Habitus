@@ -22,6 +22,8 @@ interface Props {
   glow?: boolean;
   /** Shown before the label. */
   icon?: { ios: string; android: string };
+  /** Small: a slim rounded rectangle for rows of actions (a profile); the touch area stays 44 high. */
+  size?: "regular" | "small";
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -71,7 +73,7 @@ function looks(variant: NonNullable<Props["variant"]>, colors: Palette, { destru
  * Pill of the "water glass" theme. Filled: clear water blue with a rim of light; tinted: frosted glass; plain: just
  * the label. Pressing sends a ripple out from the finger.
  */
-export function PrimaryButton({ label, onPress, variant = "filled", disabled, accessibilityHint, destructive, loading, shake, glow, icon }: Props) {
+export function PrimaryButton({ label, onPress, variant = "filled", disabled, accessibilityHint, destructive, loading, shake, glow, icon, size = "regular" }: Props) {
   const { colors } = useTheme();
   const scale = useSharedValue(1);
   const shift = useSharedValue(0);
@@ -86,6 +88,7 @@ export function PrimaryButton({ label, onPress, variant = "filled", disabled, ac
   }, [shake, shift]);
 
   const { pill, text } = looks(variant, colors, { destructive, glow });
+  const sized = SIZES[size];
 
   return (
     <AnimatedPressable
@@ -105,14 +108,15 @@ export function PrimaryButton({ label, onPress, variant = "filled", disabled, ac
         void Haptics.selectionAsync();
         onPress();
       }}
-      style={[styles.base, icon && styles.withIcon, pill, { opacity: disabled ? 0.45 : 1 }, animated]}>
+      hitSlop={sized.slop}
+      style={[styles.base, sized.box, icon && [styles.withIcon, sized.gap], pill, { opacity: disabled ? 0.45 : 1 }, animated]}>
       {ripple.node}
       {loading ? (
         <ActivityIndicator color={text} />
       ) : (
         <>
-          {icon && <Icon ios={icon.ios} android={icon.android} size={20} color={text} />}
-          <Animated.Text maxFontSizeMultiplier={1.8} style={[type.headline, { color: text }]}>
+          {icon && <Icon ios={icon.ios} android={icon.android} size={sized.icon} color={text} />}
+          <Animated.Text maxFontSizeMultiplier={1.8} numberOfLines={sized.lines} style={[sized.text, { color: text }]}>
             {label}
           </Animated.Text>
         </>
@@ -132,6 +136,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  small: { minHeight: 34, borderRadius: radius.sm, paddingHorizontal: space.md, paddingVertical: 6 },
+  smallText: { ...type.subheadline, fontWeight: "600" },
   withIcon: { flexDirection: "row", gap: space.sm },
+  smallGap: { gap: 6 },
   ripple: { position: "absolute", width: RIPPLE, height: RIPPLE, borderRadius: RIPPLE / 2 },
 });
+
+/** Regular: the big pill of a screen's main action; small: a slim rounded rectangle whose touch area stays 44 high. */
+const SIZES = {
+  regular: { box: undefined, gap: undefined, text: type.headline, icon: 20, lines: undefined, slop: undefined },
+  small: { box: styles.small, gap: styles.smallGap, text: styles.smallText, icon: 16, lines: 1, slop: { top: 5, bottom: 5 } },
+};

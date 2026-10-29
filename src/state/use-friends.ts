@@ -33,6 +33,12 @@ export function useIncomingCount(): number {
   return overview?.incoming.length ?? 0;
 }
 
+/** The friend ids last read (no reload of its own), e.g. to watch who is online. */
+export function useFriendIds(): string {
+  const overview = useSyncExternalStore(subscribe, snapshot);
+  return (overview?.friends ?? []).map((f) => f.id.toLowerCase()).sort().join(",");
+}
+
 /** Friends and requests; reloads whenever the tab gains focus. */
 export function useFriends() {
   const overview = useSyncExternalStore(subscribe, snapshot);

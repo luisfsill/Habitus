@@ -73,6 +73,38 @@ begin
 end;
 $$;
 
+-- Estado no chat (MSN): Disponível, Ausente ou Invisível. Escolhido pela pessoa e guardado na conta.
+alter table public.profiles add column if not exists chat_status text not null default 'online'
+  check (chat_status in ('online', 'away', 'invisible'));
+
+create or replace function public.set_my_chat_status(new_status text)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if new_status is null or new_status not in ('online', 'away', 'invisible') then
+    raise exception 'Estado inválido.' using errcode = '42501';
+  end if;
+  update public.profiles set chat_status = new_status where id = auth.uid();
+end;
+$$;
+
+-- Canal "online:<uuid>" de cada conta (Presence): só a dona marca presença; ela e os amigos ouvem.
+create or replace function public.online_topic_allowed(t text, writing boolean)
+returns boolean language plpgsql stable security definer set search_path = ''
+as $$
+declare owner uuid;
+begin
+  if t is null or t !~ '^online:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+    return false;
+  end if;
+  owner := split_part(t, ':', 2)::uuid;
+  if auth.uid() = owner then
+    return public.has_access();
+  end if;
+  return not writing and public.relation_of(auth.uid(), owner) = 'friends' and not public.blocked_between(auth.uid(), owner);
+end;
+$$;
+
 drop policy if exists "read own chat" on public.messages;
 create policy "read own chat" on public.messages
   for select to authenticated
@@ -248,12 +280,14 @@ $$;
 drop policy if exists "chat pair receives broadcast" on realtime.messages;
 create policy "chat pair receives broadcast" on realtime.messages
   for select to authenticated
-  using (realtime.messages.extension in ('broadcast', 'presence') and (select public.chat_topic_allowed((select realtime.topic()))));
+  using (realtime.messages.extension in ('broadcast', 'presence') and (
+    (select public.chat_topic_allowed((select realtime.topic()))) or (select public.online_topic_allowed((select realtime.topic()), false))));
 
 drop policy if exists "chat pair sends broadcast" on realtime.messages;
 create policy "chat pair sends broadcast" on realtime.messages
   for insert to authenticated
-  with check (realtime.messages.extension in ('broadcast', 'presence') and (select public.chat_topic_allowed((select realtime.topic()))));
+  with check (realtime.messages.extension in ('broadcast', 'presence') and (
+    (select public.chat_topic_allowed((select realtime.topic()))) or (select public.online_topic_allowed((select realtime.topic()), true))));
 
 -- Permissões -------------------------------------------------------------------
 -- O Supabase dá execute em funções novas para anon e authenticated. As duas das políticas também ficam com
@@ -263,7 +297,7 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'chat_unblocked(uuid, uuid)', 'chat_topic_allowed(text)',
+    'chat_unblocked(uuid, uuid)', 'chat_topic_allowed(text)', 'online_topic_allowed(text, boolean)', 'set_my_chat_status(text)',
     'send_message(uuid, text, text, boolean)', 'mark_read(uuid)', 'my_conversations()', 'report_message(uuid)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);

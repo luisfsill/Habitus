@@ -198,6 +198,9 @@ function RootStack() {
         <Stack.Protected guard={home === "/"} redirectTo={home}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="trick/[id]" options={backToToday} />
+          {/* A chat has its own screen, above the tabs: no tab bar under the message field. */}
+          <Stack.Screen name="chat/[id]" />
+          <Stack.Screen name="perfil/[id]" />
           <Stack.Screen name="lembretes/index" options={backToToday} />
           <Stack.Screen name="lembretes/[id]" options={{ ...backToToday, headerBackTitle: "Lembretes" }} />
         </Stack.Protected>

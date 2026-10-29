@@ -1,6 +1,6 @@
 import { Circle, Ellipse, Path, Rect, Text } from "react-native-svg";
 
-import { BLUSH, Cheeks, DotEyes, Drop, Frame, HappyEyes, Head, Heart, INK, Laugh, Line, outline, RED, type StickerArt, TEAR, WHITE, YELLOW } from "./parts";
+import { BLUSH, Cheeks, DotEyes, Drop, Frame, HappyEyes, Head, Heart, INK, Laugh, Line, outline, type StickerArt, WHITE, YELLOW } from "./parts";
 
 // Expressive round faces, drawn on a 100×100 grid.
 export const FACES: Record<string, StickerArt> = {
@@ -40,14 +40,6 @@ export const FACES: Record<string, StickerArt> = {
       <Drop x={64} y={60} s={0.7} />
     </Frame>
   ),
-  chorando: ({ size }) => (
-    <Frame size={size}>
-      <Head />
-      <Line d="M29 42 Q37 50 45 42 M55 42 Q63 50 71 42" />
-      <Line d="M34 50 Q31 64 34 80 M66 50 Q69 64 66 80" color={TEAR} width={6} />
-      <Path d="M38 74 Q50 56 62 74 Z" fill={INK} {...outline} />
-    </Frame>
-  ),
   bravo: ({ size }) => (
     <Frame size={size}>
       <Head fill="#FF8A65" />
@@ -65,14 +57,6 @@ export const FACES: Record<string, StickerArt> = {
       <Circle cx={37} cy={45} r={3.5} fill={INK} />
       <Circle cx={63} cy={45} r={3.5} fill={INK} />
       <Ellipse cx={50} cy={68} rx={7} ry={9} fill={INK} />
-    </Frame>
-  ),
-  apaixonado: ({ size }) => (
-    <Frame size={size}>
-      <Head />
-      <Heart x={36} y={42} s={0.5} />
-      <Heart x={64} y={42} s={0.5} />
-      <Line d="M33 60 Q50 76 67 60" />
     </Frame>
   ),
   "legal-oculos": ({ size }) => (
@@ -109,15 +93,6 @@ export const FACES: Record<string, StickerArt> = {
       </Text>
     </Frame>
   ),
-  beijo: ({ size }) => (
-    <Frame size={size}>
-      <Head />
-      <HappyEyes />
-      <Cheeks />
-      <Line d="M47 60 Q56 63 50 67 Q56 71 47 74" />
-      <Heart x={74} y={70} s={0.3} />
-    </Frame>
-  ),
   abraco: ({ size }) => (
     <Frame size={size}>
       <Head />
@@ -128,19 +103,6 @@ export const FACES: Record<string, StickerArt> = {
       <Ellipse cx={74} cy={76} rx={11} ry={9} fill={YELLOW} {...outline} transform="rotate(25 74 76)" />
       <Heart x={84} y={14} s={0.26} />
       <Heart x={16} y={16} s={0.2} fill={BLUSH} />
-    </Frame>
-  ),
-  festa: ({ size }) => (
-    <Frame size={size}>
-      <Head />
-      <HappyEyes />
-      <Laugh />
-      <Path d="M58 15 L82 24 L80 3 Z" fill="#7B61FF" {...outline} strokeWidth={3} />
-      <Circle cx={80} cy={4} r={4} fill={YELLOW} {...outline} strokeWidth={2.5} />
-      <Rect x={8} y={16} width={6} height={10} rx={2} fill={RED} transform="rotate(-25 11 21)" />
-      <Rect x={88} y={44} width={6} height={10} rx={2} fill={TEAR} transform="rotate(20 91 49)" />
-      <Rect x={8} y={74} width={6} height={10} rx={2} fill="#7B61FF" transform="rotate(30 11 79)" />
-      <Rect x={84} y={80} width={6} height={10} rx={2} fill="#2EC4B6" transform="rotate(-20 87 85)" />
     </Frame>
   ),
 };

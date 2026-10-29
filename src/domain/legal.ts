@@ -77,6 +77,7 @@ export const TERMS: LegalDocument = {
       title: "10. Créditos",
       paragraphs: [
         "Os avatares padrão são do estilo \"Fun Emoji\" do DiceBear, uma adaptação do Fun Emoji Set de Davis Uche, sob a licença CC BY 4.0 (creativecommons.org/licenses/by/4.0).",
+        "As figurinhas animadas das Conversas são do Noto Animated Emoji, do Google, sob a licença CC BY 4.0 (creativecommons.org/licenses/by/4.0). Os sons delas vêm do Mixkit (licença gratuita do Mixkit) e do Freesound (domínio público, CC0).",
       ],
     },
   ],

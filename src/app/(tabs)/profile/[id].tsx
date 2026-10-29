@@ -2,77 +2,112 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
 import { BadgeList } from "@/components/badge-list";
+import { OptionsSheet, type SheetOption } from "@/components/options-sheet";
 import { PrimaryButton } from "@/components/primary-button";
 import { ProfileCard } from "@/components/profile-card";
 import type { Stat } from "@/components/stat-columns";
 import { Screen } from "@/components/screen";
 import { Section } from "@/components/section";
+import { WallComposer } from "@/components/wall-composer";
+import { WallList } from "@/components/wall-post";
 import { BADGES, type BadgeState } from "@/domain/achievements";
 import { STAFF_BADGE, type UserProfile } from "@/domain/friends";
+import { isTestimonial, muralTitle, type WallPost } from "@/domain/wall";
 import { blockUser, cancelFriendRequest, getUserProfile, removeFriend, respondFriendRequest, sendFriendRequest } from "@/services/social";
+import { useAccess } from "@/state/access";
+import { useNow } from "@/state/use-now";
 import { confirm } from "@/state/use-sign-out";
-import { radius, space, useTheme } from "@/theme";
+import { useWall } from "@/state/use-wall";
+import { space } from "@/theme";
 
 /** Runs an action, then reloads the profile, or leaves it (after unfriending or blocking it would be stale). */
 type Run = (action: () => Promise<unknown>, then?: "leave") => void;
-const goBack = () => (router.canGoBack() ? router.back() : router.replace("/amigos"));
+const goBack = () => (router.canGoBack() ? router.back() : router.replace("/profile"));
 
-/** The button (or buttons) for where the two people stand. */
-function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boolean }) {
+/** Instagram-like row of small buttons for where the two people stand; friends get "Amigos ▾" with the rest inside. */
+function Actions({ p, run, busy, onTestimonial }: { p: UserProfile; run: Run; busy: boolean; onTestimonial: () => void }) {
+  const [menu, setMenu] = useState(false);
   if (p.relation === "none") {
     return p.canRequest ? (
-      <PrimaryButton label="Pedir amizade" icon={{ ios: "person.badge.plus", android: "person_add" }} onPress={() => run(() => sendFriendRequest(p.id))} loading={busy} />
+      <PrimaryButton size="small" label="Pedir amizade" icon={{ ios: "person.badge.plus", android: "person_add" }} onPress={() => run(() => sendFriendRequest(p.id))} loading={busy} />
     ) : (
-      <PrimaryButton label="Tente de novo mais tarde" onPress={() => undefined} disabled />
+      <PrimaryButton size="small" variant="tinted" label="Tente de novo mais tarde" onPress={() => undefined} disabled />
     );
   }
   if (p.relation === "outgoing") {
-    return (
-      <Section title="Pedido enviado">
-        <ActionRow label="Cancelar pedido" icon={{ ios: "xmark.circle", android: "cancel" }} destructive onPress={() => run(() => cancelFriendRequest(p.id))} />
-        <AppText variant="footnote" color="secondaryLabel">{`${p.name} ainda não respondeu.`}</AppText>
-      </Section>
-    );
+    const cancel = () => confirm("Cancelar pedido?", `${p.name} ainda não respondeu.`, "Cancelar pedido", () => run(() => cancelFriendRequest(p.id)));
+    return <PrimaryButton size="small" variant="tinted" label="Pedido enviado" icon={{ ios: "clock", android: "schedule" }} onPress={cancel} loading={busy} accessibilityHint="Toque para cancelar o pedido" />;
   }
   if (p.relation === "incoming") {
     return (
-      <View style={styles.pair}>
+      <View style={styles.row}>
         <View style={styles.grow}>
-          <PrimaryButton label="Aceitar" onPress={() => run(() => respondFriendRequest(p.id, true))} loading={busy} />
+          <PrimaryButton size="small" label="Aceitar" onPress={() => run(() => respondFriendRequest(p.id, true))} loading={busy} />
         </View>
         <View style={styles.grow}>
-          <PrimaryButton label="Recusar" variant="tinted" onPress={() => run(() => respondFriendRequest(p.id, false))} disabled={busy} />
+          <PrimaryButton size="small" label="Recusar" variant="tinted" onPress={() => run(() => respondFriendRequest(p.id, false))} disabled={busy} />
         </View>
       </View>
     );
   }
   const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos.`, "Desfazer", () => run(() => removeFriend(p.id), "leave"));
   const block = () => confirm("Bloquear?", `${p.name} não vai mais achar você nem pedir sua amizade.`, "Bloquear", () => run(() => blockUser(p.id), "leave"));
+  const options: SheetOption[] = [
+    { label: "Desfazer amizade", icon: { ios: "person.badge.minus", android: "person_remove" }, destructive: true, onPress: unfriend },
+    { label: "Bloquear", icon: { ios: "hand.raised", android: "block" }, destructive: true, onPress: block },
+  ];
   return (
-    <>
-      <PrimaryButton label="Mandar mensagem" icon={{ ios: "bubble.left", android: "chat" }} onPress={() => router.push(`/conversas/${p.id}`)} />
-      <Section title="Amizade">
-        <ActionRow label="Desfazer amizade" icon={{ ios: "person.badge.minus", android: "person_remove" }} destructive onPress={unfriend} />
-        <ActionRow label="Bloquear" icon={{ ios: "hand.raised", android: "block" }} destructive onPress={block} />
-      </Section>
-    </>
+    <View style={styles.row}>
+      <View style={styles.grow}>
+        <PrimaryButton size="small" variant="tinted" label="Amigos" icon={{ ios: "person.fill.checkmark", android: "how_to_reg" }} onPress={() => setMenu(true)} loading={busy} accessibilityHint="Abre as opções de amizade" />
+      </View>
+      <View style={styles.grow}>
+        <PrimaryButton size="small" label="Direct" onPress={() => router.push(`/chat/${p.id}`)} />
+      </View>
+      <View style={styles.grow}>
+        <PrimaryButton size="small" variant="tinted" label="Depoimento" onPress={onTestimonial} />
+      </View>
+      <OptionsSheet visible={menu} title={`Você e ${p.name} são amigos`} options={options} onClose={() => setMenu(false)} />
+    </View>
   );
 }
 
-const RELATION_TAG: Partial<Record<UserProfile["relation"], string>> = { friends: "Amigos", outgoing: "Pedido enviado", incoming: "Quer ser seu amigo" };
-
-/** A small pill beside the belt. */
-function Tag({ label, tone }: { label: string; tone: "accent" | "success" }) {
-  const { colors } = useTheme();
+/** The person's mural: the depoimentos friends left (their own posts go to the Feed); anyone who can open the profile reads it. */
+function Mural({ p, writing, stopWriting }: { p: UserProfile; writing: boolean; stopWriting: () => void }) {
+  const { profile } = useAccess();
+  const me = profile?.id ?? "";
+  const now = useNow(60_000);
+  const { posts, error, publish, edit, remove } = useWall(p.id);
+  const ask = (post: WallPost) => confirm("Apagar publicação?", "Ela sai do mural e do feed.", "Apagar", () => void remove(post));
   return (
-    <View style={[styles.tag, { backgroundColor: tone === "accent" ? colors.accentSoft : colors.successSoft }]}>
-      <AppText variant="caption" color={tone === "accent" ? "accentText" : "successText"} style={styles.bold}>
-        {label}
-      </AppText>
-    </View>
+    <Section title="Mural">
+      {writing && (
+        <WallComposer
+          label={`Depoimento para ${p.name}`}
+          placeholder="Escreva algo bonito sobre essa pessoa"
+          avatarUrl={profile?.avatarUrl ?? null}
+          onSubmit={(text) => publish(p.id, text).then(stopWriting)}
+          onCancel={stopWriting}
+        />
+      )}
+      {error && (
+        <AppText variant="footnote" color="danger" accessibilityLiveRegion="polite">
+          {error}
+        </AppText>
+      )}
+      <WallList
+        posts={posts?.filter(isTestimonial) ?? null}
+        me={me}
+        now={now}
+        titleOf={(post) => muralTitle(post, me)}
+        empty="Nenhum depoimento ainda."
+        onOpen={(id) => (id === me ? router.navigate("/profile") : router.push(`/profile/${id}`))}
+        onDelete={ask}
+        onEdit={edit}
+      />
+    </Section>
   );
 }
 
@@ -87,6 +122,9 @@ function friendStats({ relation, streak, badges }: UserProfile): Stat[] | undefi
   ];
 }
 
+/** The medals the server shares (friends only), as earned badges. */
+const medalsOf = (p: UserProfile): BadgeState[] => BADGES.filter((b) => p.badges?.includes(b.id)).map((def) => ({ def, unlocked: true, progress: def.target }));
+
 /** Friends see the streak and medals; anyone else gets a line saying so. */
 function FriendDetails({ p }: { p: UserProfile }) {
   if (p.relation !== "friends") {
@@ -96,7 +134,7 @@ function FriendDetails({ p }: { p: UserProfile }) {
       </AppText>
     );
   }
-  const medals: BadgeState[] = BADGES.filter((b) => p.badges?.includes(b.id)).map((def) => ({ def, unlocked: true, progress: def.target }));
+  const medals = medalsOf(p);
   return (
     <Section title={`Medalhas · ${medals.length}`}>
       {medals.length ? (
@@ -128,6 +166,7 @@ export default function PersonScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [writing, setWriting] = useState(false);
 
   const load = useCallback(
     () =>
@@ -162,7 +201,6 @@ export default function PersonScreen() {
     );
   }
 
-  const relation = RELATION_TAG[p.relation];
   return (
     <Screen underHeader>
       <ProfileCard
@@ -171,27 +209,22 @@ export default function PersonScreen() {
         photo={p.avatarUrl}
         level={p.level}
         stats={friendStats(p)}
-        tags={
-          <>
-            {p.isAdmin && <Tag label={STAFF_BADGE} tone="accent" />}
-            {relation && <Tag label={relation} tone="success" />}
-          </>
-        }
+        badges={p.relation === "friends" ? medalsOf(p) : undefined}
+        staff={p.isAdmin ? STAFF_BADGE : undefined}
       />
+      <Actions p={p} run={run} busy={busy} onTestimonial={() => setWriting(true)} />
       {(status ?? loadError) && (
         <AppText variant="subheadline" color="danger" accessibilityLiveRegion="polite">
           {status ?? loadError}
         </AppText>
       )}
       <FriendDetails p={p} />
-      <RelationActions p={p} run={run} busy={busy} />
+      <Mural p={p} writing={writing} stopWriting={() => setWriting(false)} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  tag: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill },
-  bold: { fontWeight: "700" },
-  pair: { flexDirection: "row", gap: space.sm },
+  row: { flexDirection: "row", gap: space.sm },
   grow: { flex: 1 },
 });
