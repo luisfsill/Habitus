@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Linking, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { isValidEmail } from "@/domain/auth-rules";
+import { openWhatsApp } from "@/state/open-whatsapp";
 import { space } from "@/theme";
 
 import { AppText } from "./app-text";
@@ -67,7 +68,7 @@ export function CreateUserCard({ onCreate, onClose }: Props) {
               {password}
             </AppText>
             <View style={styles.buttons}>
-              <PrimaryButton label="Enviar pelo WhatsApp" onPress={() => void Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message)}`)} />
+              <PrimaryButton label="Enviar pelo WhatsApp" onPress={() => openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message)}`)} />
               {Platform.OS === "web" && <PrimaryButton label={copied ? "Copiado" : "Copiar mensagem"} variant="tinted" onPress={copy} />}
               <PrimaryButton label="Concluir" variant="plain" onPress={onClose} />
             </View>

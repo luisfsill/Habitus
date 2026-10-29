@@ -98,6 +98,11 @@ export function renewWhatsAppUrl(name: string, email: string, plan: Pick<Plan, "
   return `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(text)}`;
 }
 
+/** The same wa.me link as the app's own `whatsapp://send` link, which leaves the page where it is. */
+export function whatsAppAppUrl(waMe: string): string {
+  return waMe.replace(/^https:\/\/wa\.me\/(\d*)\?/, (_, phone: string) => `whatsapp://send?${phone ? `phone=${phone}&` : ""}`);
+}
+
 /** The WhatsApp message to ask for help with a payment, with its code. */
 export function helpWhatsAppUrl(name: string, email: string, code: string): string {
   const text = `Olá! Sou ${name} (${email}). Preciso de ajuda com o pagamento do Habitus, pedido ${code}.`;

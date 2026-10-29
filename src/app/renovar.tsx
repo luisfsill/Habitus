@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Linking, Platform, Share, StyleSheet, View } from "react-native";
+import { Alert, Platform, Share, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/app-text";
 import { Icon } from "@/components/icon";
@@ -19,6 +19,7 @@ import { pixPayload } from "@/domain/pix";
 import { fetchPlans, redeemInvite } from "@/services/profile";
 import { useAccess } from "@/state/access";
 import { useAuth } from "@/state/auth";
+import { openWhatsApp } from "@/state/open-whatsapp";
 import { type PixStep as Step, usePixCheckout } from "@/state/pix-checkout";
 import { space, ThemePreferenceContext, useTheme } from "@/theme";
 
@@ -252,7 +253,7 @@ function RenewScreen() {
 
   const sendReceipt = () => {
     if (!profile || !plan || !pixFlow.order) return;
-    void Linking.openURL(renewWhatsAppUrl(displayName(profile), profile.email, plan, pixFlow.order));
+    openWhatsApp(renewWhatsAppUrl(displayName(profile), profile.email, plan, pixFlow.order));
   };
 
   const receipt = usePaidReceipt(pixFlow, plan, refresh, hasAccess);
@@ -282,7 +283,7 @@ function RenewScreen() {
       step={step}
       onPay={() => plan && void pixFlow.start(plan.id)}
       onReceipt={sendReceipt}
-      onHelp={() => profile && auto && void Linking.openURL(helpWhatsAppUrl(displayName(profile), profile.email, auto.paymentId.slice(0, 8).toUpperCase()))}
+      onHelp={() => profile && auto && openWhatsApp(helpWhatsAppUrl(displayName(profile), profile.email, auto.paymentId.slice(0, 8).toUpperCase()))}
       onCpf={() => plan && void pixFlow.submitCpf(plan.id)}
       onChange={pixFlow.reset}
     />

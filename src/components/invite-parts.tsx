@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { type InviteEntry, inviteStatus, type InviteStatus, licenseLabel } from "@/domain/invites";
+import { openWhatsApp } from "@/state/open-whatsapp";
 import { radius, space, useTheme } from "@/theme";
 
 import { formatDate } from "./admin-user-row";
@@ -100,7 +101,7 @@ export function InviteMessageModal({ message, onClose }: { message: string | nul
           </ScrollView>
           <View style={styles.buttons}>
             {Platform.OS === "web" && <PrimaryButton label={copied ? "Copiado ✓" : "Copiar mensagem"} onPress={copy} />}
-            <PrimaryButton label="Enviar pelo WhatsApp" variant="tinted" onPress={() => void Linking.openURL(`https://wa.me/?text=${encodeURIComponent(message ?? "")}`)} />
+            <PrimaryButton label="Enviar pelo WhatsApp" variant="tinted" onPress={() => openWhatsApp(`https://wa.me/?text=${encodeURIComponent(message ?? "")}`)} />
           </View>
         </Glass>
       </View>

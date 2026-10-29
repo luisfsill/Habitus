@@ -17,6 +17,7 @@ import {
   helpWhatsAppUrl,
   renewWhatsAppUrl,
   statusLabel,
+  whatsAppAppUrl,
 } from "../access";
 
 const now = new Date("2026-10-25T12:00:00Z");
@@ -112,6 +113,13 @@ describe("helpWhatsAppUrl", () => {
     const url = helpWhatsAppUrl("Maria", "maria@x.com", "AB12CD34");
     expect(url.startsWith("https://wa.me/5537999216351?text=")).toBe(true);
     expect(decodeURIComponent(url.split("text=")[1])).toBe("Olá! Sou Maria (maria@x.com). Preciso de ajuda com o pagamento do Habitus, pedido AB12CD34.");
+  });
+});
+
+describe("whatsAppAppUrl", () => {
+  it("turns wa.me links into whatsapp://send, with or without a phone", () => {
+    expect(whatsAppAppUrl("https://wa.me/5537999216351?text=Ol%C3%A1")).toBe("whatsapp://send?phone=5537999216351&text=Ol%C3%A1");
+    expect(whatsAppAppUrl("https://wa.me/?text=oi")).toBe("whatsapp://send?text=oi");
   });
 });
 

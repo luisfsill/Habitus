@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Linking, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { formatDate } from "@/components/admin-user-row";
@@ -13,6 +13,7 @@ import { accessStatus, displayName, endOfDaySaoPaulo, extendAccess, parseBrDate,
 import { isValidEmail } from "@/domain/auth-rules";
 import { deleteUser, listProfiles, resetPassword, setAccess, setRole, updateEmail, updateName } from "@/services/admin";
 import { useAuth } from "@/state/auth";
+import { openWhatsApp } from "@/state/open-whatsapp";
 import { confirm } from "@/state/use-sign-out";
 import { HIT, type Palette, radius, space, type, useTheme } from "@/theme";
 
@@ -31,7 +32,7 @@ function newPassword(p: Profile, report: (message: string) => void) {
     .then((pw) => {
       report(`Nova senha provisória: ${pw}`);
       const text = `Olá, ${displayName(p)}! Sua nova senha provisória do Habitus é: ${pw}`;
-      confirm("Senha gerada", `Nova senha: ${pw}\n\nEnviar pelo WhatsApp?`, "Enviar", () => void Linking.openURL(`https://wa.me/?text=${encodeURIComponent(text)}`));
+      confirm("Senha gerada", `Nova senha: ${pw}\n\nEnviar pelo WhatsApp?`, "Enviar", () => openWhatsApp(`https://wa.me/?text=${encodeURIComponent(text)}`));
     })
     .catch((e: Error) => report(e.message));
 }
