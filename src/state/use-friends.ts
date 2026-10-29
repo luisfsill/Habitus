@@ -1,13 +1,11 @@
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
-import { type FriendsOverview, publicStats, type PublicUser, rankWeek, type RankRow } from "@/domain/friends";
+import type { FriendsOverview, PublicUser } from "@/domain/friends";
 import { normalizeQuery } from "@/domain/username";
 import { log } from "@/services/log";
 import { myFriends, searchUsers } from "@/services/social";
 
-import { useAccess } from "./access";
-import { useAppState } from "./app-state";
 
 // The last overview read, shared so the tab bar badge follows what the Amigos tab shows.
 let shared: FriendsOverview | null = null;
@@ -35,10 +33,8 @@ export function useIncomingCount(): number {
   return overview?.incoming.length ?? 0;
 }
 
-/** Friends, requests and the week's ranking (with the viewer's own row); reloads whenever the tab gains focus. */
+/** Friends and requests; reloads whenever the tab gains focus. */
 export function useFriends() {
-  const { profile } = useAccess();
-  const { data } = useAppState();
   const overview = useSyncExternalStore(subscribe, snapshot);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,15 +57,7 @@ export function useFriends() {
     }, [reload]),
   );
 
-  const ranking = useMemo<RankRow[]>(() => {
-    if (!overview || !profile) return [];
-    const now = new Date();
-    const stats = publicStats(data, now);
-    const me = { id: profile.id, name: profile.name, username: profile.username ?? "", level: stats.level, weekXp: stats.weekXp };
-    return rankWeek(me, overview.friends, now);
-  }, [overview, profile, data]);
-
-  return { overview, ranking, loading, error, reload };
+  return { overview, loading, error, reload };
 }
 
 /** People matching the typed name or @, 300 ms after typing stops; only the latest answer is shown. */

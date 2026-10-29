@@ -29,6 +29,7 @@ import { openSystemSettings } from "@/services/notifications";
 import { playDrop } from "@/services/sound";
 import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
+import { useIncomingCount } from "@/state/use-friends";
 import { useNow } from "@/state/use-now";
 import { TabAccount } from "@/state/tab-account";
 
@@ -127,6 +128,7 @@ export default function TodayScreen() {
   const { level, belt } = progress;
   // Bumped on each cup: a new key replays the splash from the start.
   const [splash, setSplash] = useState(0);
+  const requests = useIncomingCount();
 
   return (
     <>
@@ -138,6 +140,9 @@ export default function TodayScreen() {
         onOpenSettings={() => void openSystemSettings()}
         onAllowExactAlarms={() => void askExactAlarms()}
       />
+      {requests > 0 && (
+        <ActionRow label="Pedidos de amizade" icon={{ ios: "bell", android: "notifications" }} detail={requests === 1 ? "1 pessoa quer ser sua amiga" : `${requests} pessoas querem ser suas amigas`} navigates onPress={() => router.push("/amigos/lista")} />
+      )}
 
       {/* No bottom line: the next section's top line already splits it from what follows. */}
       <StatColumns

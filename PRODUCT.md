@@ -52,7 +52,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 ## Amigos
 
 - Cada conta tem um @ único (escolhido na tela "Escolha seu @"; troca em Ajustes > Conta). A busca acha por nome ou por @.
-- Pedido de amizade com aceite, recusa, cancelamento, desfazer amizade e bloqueio. Aba Amigos com o ranking da semana (XP) só entre amigos, pedidos e lista.
+- Pedido de amizade com aceite, recusa, cancelamento, desfazer amizade e bloqueio. Aba Perfil sem ranking: o número de amigos no card (como seguidores) abre a lista, com pedidos e busca para adicionar mais. Pedidos pendentes também aparecem na tela Hoje.
 - Perfil: nome, @, faixa e nível para todos; sequência e conquistas só para amigos. O e-mail nunca aparece. Administradores têm selo "Fundador" e não aparecem na busca de usuários comuns.
 - "Aparecer na busca" em Ajustes > Conta: desligado, a pessoa some da busca e também não consegue buscar. Plano vencido sai da busca e do ranking, mas mantém as amizades.
 - Avisos de pedido por Web Push, quando ativo. Sem chat, mural ou texto livre entre usuários.

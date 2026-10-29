@@ -49,7 +49,7 @@ function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boo
       </View>
     );
   }
-  const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos e do ranking.`, "Desfazer", () => run(() => removeFriend(p.id), "leave"));
+  const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos.`, "Desfazer", () => run(() => removeFriend(p.id), "leave"));
   const block = () => confirm("Bloquear?", `${p.name} não vai mais achar você nem pedir sua amizade.`, "Bloquear", () => run(() => blockUser(p.id), "leave"));
   return (
     <Section title="Amizade">
