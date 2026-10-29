@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 
 import { type Palette, space, useTheme } from "@/theme";
 
@@ -17,14 +17,15 @@ interface Props {
   stats: readonly Stat[];
   /** Columns per row; more stats wrap into further rows. */
   columns?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
 /** Row of figures split by hairlines like a table header. */
-export function StatColumns({ stats, columns = stats.length }: Props) {
+export function StatColumns({ stats, columns = stats.length, style }: Props) {
   const { colors } = useTheme();
   const rows = Math.ceil(stats.length / columns);
   return (
-    <View style={[styles.wrap, { borderColor: colors.separator }]}>
+    <View style={[styles.wrap, { borderColor: colors.separator }, style]}>
       {stats.map((stat, i) => {
         const cell = [
           styles.cell,

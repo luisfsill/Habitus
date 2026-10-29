@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AppText } from "@/components/app-text";
@@ -22,7 +22,7 @@ import { scheduleFor } from "@/domain/app-data";
 import { formatReminderCountdown, shortDay, whenLabel } from "@/domain/reminder-text";
 import { doneReminders, pendingReminders } from "@/domain/reminders";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
-import { atMinutes, dayKey, formatCountdown, formatTime, minutesOfDay, type Weekday } from "@/domain/time";
+import { atMinutes, dayKey, formatCountdown, formatTime, minutesOfDay } from "@/domain/time";
 import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
 import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
@@ -31,7 +31,6 @@ import { useAccess } from "@/state/access";
 import { useAppState } from "@/state/app-state";
 import { useNow } from "@/state/use-now";
 import { TabAccount } from "@/state/tab-account";
-import { space } from "@/theme";
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
@@ -109,20 +108,12 @@ function TodayReminders({ now }: { now: Date }) {
   );
 }
 
-function summary(count: number, activeToday: boolean): string {
-  if (count >= TRICK_COUNT) return "Dia completo! Você fez todas as dicas de hoje.";
-  if (!activeToday) return "Dia de descanso. Você pode praticar mesmo assim.";
-  const left = TRICK_COUNT - count;
-  return left === 1 ? "Falta 1 dica hoje." : `Faltam ${left} dicas hoje.`;
-}
-
 export default function TodayScreen() {
   const { data, permission, exactAlarms, askExactAlarms, progress } = useAppState();
   const now = useNow(1000);
   const today = dayKey(now);
   const { days } = data.settings;
   const result = scheduleFor(data, now);
-  const activeToday = result.ok && result.schedule.days.includes(now.getDay() as Weekday);
   const done = data.completions[today] ?? [];
   const count = doneCount(data.completions, today);
   const streak = currentStreak(data.completions, now, days);
@@ -148,23 +139,20 @@ export default function TodayScreen() {
         onAllowExactAlarms={() => void askExactAlarms()}
       />
 
-      <View style={styles.summary}>
-        <StatColumns
-          stats={[
-            { value: `${count}/${TRICK_COUNT}`, label: "hoje", color: count >= TRICK_COUNT ? "successText" : "label", accessibilityLabel: `Hoje: ${count} de ${TRICK_COUNT} dicas` },
-            { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
-            {
-              value: String(level.level),
-              label: belt.name,
-              onPress: () => router.navigate("/achievements"),
-              accessibilityLabel: `Nível ${level.level}, ${belt.name}. Abre suas conquistas.`,
-            },
-          ]}
-        />
-        <AppText variant="footnote" color="secondaryLabel">
-          {summary(count, activeToday)}
-        </AppText>
-      </View>
+      {/* No bottom line: the next section's top line already splits it from what follows. */}
+      <StatColumns
+        style={{ borderBottomWidth: 0 }}
+        stats={[
+          { value: `${count}/${TRICK_COUNT}`, label: "hoje", color: count >= TRICK_COUNT ? "successText" : "label", accessibilityLabel: `Hoje: ${count} de ${TRICK_COUNT} dicas` },
+          { value: String(streak), label: streak === 1 ? "dia seguido" : "dias seguidos", color: "warm" },
+          {
+            value: String(level.level),
+            label: belt.name,
+            onPress: () => router.navigate("/achievements"),
+            accessibilityLabel: `Nível ${level.level}, ${belt.name}. Abre suas conquistas.`,
+          },
+        ]}
+      />
 
       <TodayWater today={today} onDrink={() => setSplash((n) => n + 1)} />
 
@@ -188,7 +176,3 @@ export default function TodayScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  summary: { gap: space.sm },
-});
