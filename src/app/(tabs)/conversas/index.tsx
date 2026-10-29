@@ -73,8 +73,6 @@ function NewChatButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-const MY_RING = { online: "online", away: "away", invisible: "offline" } as const;
-
 /** My photo with my status ring; tapping it opens "Meu status" to switch Disponível / Ausente / Invisível. */
 function MyStatus() {
   const { profile, refresh } = useAccess();
@@ -94,7 +92,7 @@ function MyStatus() {
   return (
     <>
       <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel="Meu status" hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-        <PresenceAvatar url={profile.avatarUrl} size={40} presence={MY_RING[profile.chatStatus]} />
+        <PresenceAvatar url={profile.avatarUrl} size={40} presence={profile.chatStatus} />
       </Pressable>
       <StatusMenuModal visible={open} current={profile.chatStatus} busy={busy} onPick={pick} onClose={() => setOpen(false)} />
     </>

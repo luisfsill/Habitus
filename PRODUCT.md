@@ -65,7 +65,7 @@ São apresentados como práticas de bem-estar. O app não faz afirmações médi
 - "Digitando…", "visto" e contagem de não lidas no selo da aba. Avisos de mensagem por Web Push no PWA, quando ativo.
 - Desfazer amizade deixa a conversa só para leitura. Bloquear a faz sumir para os dois, sem apagar as mensagens. Toque longo numa mensagem denuncia.
 - A lista mostra só as conversas já iniciadas; o "+" ao lado do título abre "Nova conversa", com os amigos e busca por nome ou @. A conversa abre em tela própria, sem a barra de abas: voltar, foto e nome (abre o perfil por cima) e um campo que cresce, com figurinhas e chamar atenção dentro dele enquanto vazio e o botão de enviar quando há texto. No PC, Enter envia.
-- Status como no MSN: anel verde (Disponível), amarelo (Ausente) ou vermelho (offline, app fechado ou Invisível) na foto dos amigos. Cada um escolhe o seu tocando na própria foto no topo de Conversas; só amigos veem.
+- Status como no MSN: anel verde (Disponível), amarelo (Ausente) ou vermelho (offline, app fechado ou Invisível) na foto dos amigos. Cada um escolhe o seu tocando na própria foto no topo de Conversas (no Invisível, o próprio anel fica cinza claro); só amigos veem.
 
 ## Fluxos críticos
 

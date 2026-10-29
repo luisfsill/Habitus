@@ -30,12 +30,15 @@ export function Avatar({ url, size }: { url: string | null; size: number }) {
   );
 }
 
-// MSN colours: available, away, offline.
-export const PRESENCE_COLORS: Record<Presence, string> = { online: "#22C55E", away: "#F5B400", offline: "#EF4444" };
-const PRESENCE_LABELS: Record<Presence, string> = { online: "Online", away: "Ausente", offline: "Offline" };
+/** A presence ring, plus "invisible" for my own ring (friends see me offline, I see light gray). */
+type Ring = Presence | "invisible";
+
+// MSN colours: available, away, offline; light gray for invisible.
+export const PRESENCE_COLORS: Record<Ring, string> = { online: "#22C55E", away: "#F5B400", offline: "#EF4444", invisible: "#C7C7CC" };
+const PRESENCE_LABELS: Record<Ring, string> = { online: "Online", away: "Ausente", offline: "Offline", invisible: "Invisível" };
 
 /** The avatar inside a ring in the friend's presence colour (green, yellow or red), like MSN. */
-export function PresenceAvatar({ url, size, presence }: { url: string | null; size: number; presence: Presence }) {
+export function PresenceAvatar({ url, size, presence }: { url: string | null; size: number; presence: Ring }) {
   const ring = Math.max(2, Math.round(size / 16));
   return (
     <View

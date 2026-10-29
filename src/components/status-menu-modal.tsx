@@ -11,7 +11,7 @@ import { Icon } from "./icon";
 const OPTIONS: readonly { value: ChatStatus; label: string; detail: string; color: string }[] = [
   { value: "online", label: "Disponível", detail: "Seus amigos veem você online.", color: PRESENCE_COLORS.online },
   { value: "away", label: "Ausente", detail: "Online, mas sem responder agora.", color: PRESENCE_COLORS.away },
-  { value: "invisible", label: "Invisível", detail: "Você aparece offline para todos.", color: PRESENCE_COLORS.offline },
+  { value: "invisible", label: "Invisível", detail: "Você aparece offline para todos.", color: PRESENCE_COLORS.invisible },
 ];
 
 interface Props {
