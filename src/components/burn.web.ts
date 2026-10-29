@@ -38,7 +38,7 @@ function colorLayers(filter: Element) {
 function buildFilter(id: string) {
   const svg = el("svg", { width: "0", height: "0", style: "position:absolute" }, document.body);
   const filter = el("filter", { id, x: "-10%", y: "-10%", width: "120%", height: "120%", "color-interpolation-filters": "sRGB" }, svg);
-  el("feTurbulence", { type: "fractalNoise", baseFrequency: "0.025", numOctaves: "3", seed: "4", result: "noise" }, filter);
+  el("feTurbulence", { type: "fractalNoise", baseFrequency: "0.025", numOctaves: "2", seed: "4", result: "noise" }, filter);
   // Noise into the alpha channel.
   el("feColorMatrix", { in: "noise", type: "matrix", values: "0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.6 0 0 0 -0.3", result: "n" }, filter);
   const keep = threshold(filter, "n", "keep");
@@ -55,24 +55,26 @@ export function burnAway(node: unknown, ms: number, done: () => void): void {
   const target = node as HTMLElement | null;
   if (!target?.style) return done();
   const id = `burn-${++counter}`;
-  const { svg, keep, ahead, sound } = buildFilter(id);
-  target.style.filter = `url(#${id})`;
+  // Two copies, swapped every frame: WebKit (iPhone) does not repaint an element when only the attributes of its
+  // filter change, so the text sat still and then vanished. A new filter url makes it redraw.
+  const filters = [buildFilter(`${id}a`), buildFilter(`${id}b`)];
   const start = performance.now();
+  let frame = 0;
   const tick = (now: number) => {
     const p = Math.min((now - start) / ms, 1);
     // Threshold climbs from "keep all" to "keep nothing"; the edge band runs a little ahead of it.
     const t = -0.1 + p * 1.25;
-    keep.setAttribute("intercept", String(-t * 10));
-    ahead.setAttribute("intercept", String(-(t - 0.08) * 10));
-    sound.setAttribute("intercept", String(-(t + 0.06) * 10));
+    for (const { keep, ahead, sound } of filters) {
+      keep.setAttribute("intercept", String(-t * 10));
+      ahead.setAttribute("intercept", String(-(t - 0.08) * 10));
+      sound.setAttribute("intercept", String(-(t + 0.06) * 10));
+    }
+    target.style.filter = `url(#${id}${++frame % 2 ? "a" : "b"})`;
     if (p < 1) return void requestAnimationFrame(tick);
     target.style.opacity = "0";
     target.style.filter = "";
-    svg.remove();
+    for (const { svg } of filters) svg.remove();
     done();
   };
-  requestAnimationFrame(tick);
+  tick(start);
 }
-
-/** True where burnAway really burns (the web). */
-export const canBurn = true;
