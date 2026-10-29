@@ -1,4 +1,4 @@
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import { REALTIME_PRESENCE_LISTEN_EVENTS, type RealtimeChannel } from "@supabase/supabase-js";
 
 import { type Conversation, type Message, type MessageKind, PAGE_SIZE, parseConversations, parseMessage } from "@/domain/chat";
 
@@ -40,8 +40,9 @@ export async function loadMessages(peer: string, before?: string): Promise<Messa
   return (data as unknown[]).map(parseMessage).filter((m): m is Message => m !== null).reverse();
 }
 
-export async function sendMessage(peer: string, kind: MessageKind, body: string): Promise<Message> {
-  const message = parseMessage(await call("send_message", { to_user: uuid(peer), msg_kind: kind, msg_body: body }));
+/** `quiet`: the friend has this conversation on screen, so the server sends no phone notice. */
+export async function sendMessage(peer: string, kind: MessageKind, body: string, quiet = false): Promise<Message> {
+  const message = parseMessage(await call("send_message", { to_user: uuid(peer), msg_kind: kind, msg_body: body, msg_quiet: quiet }));
   if (!message) throw new Error("Não foi possível enviar a mensagem.");
   return message;
 }
@@ -109,22 +110,39 @@ export function subscribeInbox(
   });
 }
 
-/** "Digitando…" between me and peer over the pair's private Broadcast topic. */
-export function joinTyping(me: string, peer: string, onTyping: (typing: boolean) => void): { setTyping: (on: boolean) => void; leave: () => void } {
+interface PairChannel {
+  setTyping: (on: boolean) => void;
+  /** Tells the friend this conversation is on screen (Presence), so their messages skip the phone notice. */
+  setViewing: (on: boolean) => void;
+  peerViewing: () => boolean;
+  leave: () => void;
+}
+
+/** "Digitando…" (Broadcast) and "conversation on screen" (Presence) between me and peer over the pair's private topic. */
+export function joinTyping(me: string, peer: string, onTyping: (typing: boolean) => void): PairChannel {
   // A bad id (typed route param) gets no channel instead of a throw inside a React effect.
-  if (!UUID.test(me) || !UUID.test(peer)) return { setTyping: () => undefined, leave: () => undefined };
+  if (!UUID.test(me) || !UUID.test(peer)) return { setTyping: () => undefined, setViewing: () => undefined, peerViewing: () => false, leave: () => undefined };
   const [a, b] = [me.toLowerCase(), peer.toLowerCase()].sort();
   let channel: RealtimeChannel | null = null;
   let joined = false;
   let idle: ReturnType<typeof setTimeout> | undefined;
   let sentOn = false;
   let sentAt = 0;
+  let viewing = false;
+  const id = me.toLowerCase();
+  const other = peer.toLowerCase();
+  const publishViewing = () => {
+    if (!channel || !joined) return;
+    void (viewing ? channel.track({ viewing: true }) : channel.untrack());
+  };
 
   const stopTimer = () => clearTimeout(idle);
   const topic = `chat:${a}:${b}`;
   const close = openChannel(topic, () => {
     channel = requireSupabase()
-      .channel(topic, { config: { private: true } })
+      .channel(topic, { config: { private: true, presence: { key: id } } })
+      // Presence keyed by account id; the state is read on send (peerViewing), so the sync needs no handler.
+      .on("presence", { event: REALTIME_PRESENCE_LISTEN_EVENTS.SYNC }, () => undefined)
       .on("broadcast", { event: "typing" }, ({ payload }: { payload?: { typing?: unknown } }) => {
         stopTimer();
         const typing = payload?.typing === true;
@@ -133,6 +151,7 @@ export function joinTyping(me: string, peer: string, onTyping: (typing: boolean)
       })
       .subscribe((status, err) => {
         joined = status === "SUBSCRIBED";
+        if (joined) publishViewing();
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") log.warn(`typing channel ${status}`, err);
       });
     return channel;
@@ -146,6 +165,15 @@ export function joinTyping(me: string, peer: string, onTyping: (typing: boolean)
       sentOn = on;
       sentAt = now;
       void channel.send({ type: "broadcast", event: "typing", payload: { typing: on } });
+    },
+    setViewing(on) {
+      if (on === viewing) return;
+      viewing = on;
+      publishViewing();
+    },
+    peerViewing() {
+      const state = channel && joined ? (channel.presenceState()[other] as { viewing?: unknown }[] | undefined) : undefined;
+      return state?.some((p) => p.viewing === true) ?? false;
     },
     leave() {
       stopTimer();

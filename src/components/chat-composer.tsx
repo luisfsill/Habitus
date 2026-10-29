@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, TextInput, type TextInputKeyPressEvent, View } from "react-native";
 
 import { textProblem } from "@/domain/chat";
 import { HIT, radius, space, type, useTheme } from "@/theme";
@@ -7,6 +7,9 @@ import { HIT, radius, space, type, useTheme } from "@/theme";
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
 import { StickerPicker } from "./sticker-picker";
+
+// A computer (mouse and physical keyboard): Enter sends, Shift+Enter breaks the line. Phones keep Enter as a new line.
+const ENTER_SENDS = Platform.OS === "web" && typeof window !== "undefined" && window.matchMedia?.("(pointer: fine)").matches === true;
 
 interface Props {
   /** Resolves when sent (the field clears); rejects to keep the text. */
@@ -82,6 +85,12 @@ export function ChatComposer({ onSendText, onSendSticker, onNudge, nudgeWaitMs, 
     setText(next);
     onTyping(next !== "");
   };
+  const enterSends = (e: TextInputKeyPressEvent) => {
+    const key = e.nativeEvent as { key: string; shiftKey?: boolean; isComposing?: boolean };
+    if (!ENTER_SENDS || key.key !== "Enter" || key.shiftKey || key.isComposing) return;
+    e.preventDefault();
+    sendText();
+  };
   const sendText = () => {
     if (problem) return;
     run(
@@ -109,6 +118,7 @@ export function ChatComposer({ onSendText, onSendSticker, onNudge, nudgeWaitMs, 
           value={text}
           onChangeText={change}
           multiline
+          onKeyPress={enterSends}
           editable={!disabled}
           placeholder="Mensagem"
           placeholderTextColor={colors.secondaryLabel}

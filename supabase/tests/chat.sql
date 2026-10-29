@@ -202,7 +202,7 @@ begin
   end;
 
   -- Permissões: anon não chama nada; as funções do app são de authenticated.
-  if has_function_privilege('anon', 'public.send_message(uuid, text, text)', 'execute') then
+  if has_function_privilege('anon', 'public.send_message(uuid, text, text, boolean)', 'execute') then
     raise exception 'anon não deveria executar send_message';
   end if;
   if has_function_privilege('authenticated', 'public.queue_social_push(uuid, text, text, text)', 'execute') then

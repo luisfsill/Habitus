@@ -88,7 +88,9 @@ create policy "read own chat reads" on public.chat_reads
 -- Funções do app ----------------------------------------------------------------
 
 -- Envia texto (até 2000 caracteres), figurinha (id do pacote do app) ou "chamar atenção". Devolve a linha inserida.
-create or replace function public.send_message(to_user uuid, msg_kind text, msg_body text)
+-- msg_quiet: o amigo está com a conversa aberta (presença no canal do par), então não precisa de aviso no celular.
+drop function if exists public.send_message(uuid, text, text);
+create or replace function public.send_message(to_user uuid, msg_kind text, msg_body text, msg_quiet boolean default false)
 returns jsonb language plpgsql security definer set search_path = ''
 as $$
 declare
@@ -129,6 +131,9 @@ begin
   end if;
 
   insert into public.messages (sender, recipient, kind, body) values (me, to_user, msg_kind, b) returning * into m;
+  if coalesce(msg_quiet, false) then
+    return to_jsonb(m);
+  end if;
   perform public.queue_social_push(to_user, 'msg', case msg_kind
       when 'text' then '{nome}: ' || left(regexp_replace(b, '\s+', ' ', 'g'), 80)
       when 'sticker' then '{nome} mandou uma figurinha'
@@ -239,16 +244,16 @@ begin
 end;
 $$;
 
--- "digitando…" por Broadcast em canal privado (Realtime Authorization): receber e enviar só no tópico do par.
+-- "digitando…" (Broadcast) e "com a conversa aberta" (Presence) em canal privado: só no tópico do par.
 drop policy if exists "chat pair receives broadcast" on realtime.messages;
 create policy "chat pair receives broadcast" on realtime.messages
   for select to authenticated
-  using (realtime.messages.extension = 'broadcast' and (select public.chat_topic_allowed((select realtime.topic()))));
+  using (realtime.messages.extension in ('broadcast', 'presence') and (select public.chat_topic_allowed((select realtime.topic()))));
 
 drop policy if exists "chat pair sends broadcast" on realtime.messages;
 create policy "chat pair sends broadcast" on realtime.messages
   for insert to authenticated
-  with check (realtime.messages.extension = 'broadcast' and (select public.chat_topic_allowed((select realtime.topic()))));
+  with check (realtime.messages.extension in ('broadcast', 'presence') and (select public.chat_topic_allowed((select realtime.topic()))));
 
 -- Permissões -------------------------------------------------------------------
 -- O Supabase dá execute em funções novas para anon e authenticated. As duas das políticas também ficam com
@@ -259,7 +264,7 @@ declare f text;
 begin
   foreach f in array array[
     'chat_unblocked(uuid, uuid)', 'chat_topic_allowed(text)',
-    'send_message(uuid, text, text)', 'mark_read(uuid)', 'my_conversations()', 'report_message(uuid)'
+    'send_message(uuid, text, text, boolean)', 'mark_read(uuid)', 'my_conversations()', 'report_message(uuid)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon', f);
     execute format('grant execute on function public.%s to authenticated', f);

@@ -193,6 +193,7 @@ export function useConversation(peer: string) {
     };
     events.add(off);
     typingChannel.current = joinTyping(me, peer, setTypingState);
+    typingChannel.current.setViewing(focused.current && AppState.currentState === "active");
     return () => {
       events.delete(off);
       typingChannel.current?.leave();
@@ -205,12 +206,20 @@ export function useConversation(peer: string) {
       focused.current = true;
       openPeer = peer;
       read();
+      // On screen and in the foreground: the friend's messages skip the phone notice (see sendMessage's `quiet`).
+      const viewing = () => typingChannel.current?.setViewing(focused.current && AppState.currentState === "active");
+      viewing();
+      const app = AppState.addEventListener("change", viewing);
       return () => {
         focused.current = false;
+        viewing();
+        app.remove();
         if (openPeer === peer) openPeer = null;
       };
     }, [peer, read]),
   );
+
+  const peerViewing = () => typingChannel.current?.peerViewing() === true;
 
   /** Rejects (and sets `error`) when the message was not sent, so the screen can keep the text. */
   const send = useCallback(
@@ -232,7 +241,7 @@ export function useConversation(peer: string) {
       }
       if (kind === "nudge") busy.current.nudge = true;
       try {
-        const m = await sendMessage(peer, kind, body);
+        const m = await sendMessage(peer, kind, body, peerViewing());
         // RF-2: the Realtime echo of this message has the same id, so it merges into one.
         setMessages((prev) => mergeMessages(prev, [m]));
         applyMessage(me, m);
