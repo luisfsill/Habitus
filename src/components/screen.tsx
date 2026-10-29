@@ -33,11 +33,9 @@ const HEADER = Platform.select({ ios: 44, default: 56 });
 
 /** Room above the title and below the content. */
 function pagePadding(insets: { top: number; bottom: number }, page: { dense?: boolean; underHeader?: boolean; footer: boolean }) {
-  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the title block starts under that.
-  const top = Platform.OS === "web" && !page.dense ? space.xxl + space.sm : space.lg;
   // Dense pages keep just the room the pinned footer button needs.
   const bottom = page.dense ? (page.footer ? 84 : space.xl) : 100;
-  return { paddingTop: insets.top + top + (page.underHeader ? HEADER : 0), paddingBottom: insets.bottom + bottom };
+  return { paddingTop: insets.top + space.lg + (page.underHeader ? HEADER : 0), paddingBottom: insets.bottom + bottom };
 }
 
 function BackLink({ label, onPress }: NonNullable<Props["back"]>) {

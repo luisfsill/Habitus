@@ -59,7 +59,7 @@ function PeerTitle({ id, peer }: { id: string; peer: { name: string; avatarUrl: 
       accessibilityRole="link"
       accessibilityLabel={`${peer?.name ?? "Perfil"}. Abrir perfil`}
       style={({ pressed }) => [styles.title, { opacity: pressed ? 0.6 : 1 }]}>
-      <PresenceAvatar url={peer?.avatarUrl ?? null} size={36} presence={presence} />
+      <PresenceAvatar url={peer?.avatarUrl ?? null} size={48} presence={presence} />
       <AppText variant="headline" numberOfLines={1} style={styles.grow}>
         {peer?.name ?? ""}
       </AppText>
@@ -150,6 +150,9 @@ function usePeer(id: string) {
   return { conversation, peer: conversation?.peer ?? overview?.friends.find((f) => f.id.toLowerCase() === id) };
 }
 
+/** Web: the fixed box itself starts below the status bar (one touching the top edge makes iOS 26 stretch its blur far down over the header). */
+const columnTop = (inset: number) => (web ? 0 : inset);
+
 export default function ChatScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const id = params.id.toLowerCase();
@@ -190,13 +193,11 @@ export default function ChatScreen() {
   };
   // The keyboard padding (KeyboardAvoidingView) replaces the home indicator room.
   const room = keyboard ? space.sm : insets.bottom + space.sm;
-  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the header starts under that, like `Screen`.
-  const top = insets.top + (web ? space.xxl + space.sm : 0);
   return (
-    <View style={[styles.root, web && styles.web]}>
+    <View style={[styles.root, web && [styles.web, { top: insets.top }]]}>
       <ShakeView trigger={nudges}>
         {/* Android is edge to edge (the window does not resize), so it pads for the keyboard too. */}
-        <KeyboardAvoidingView style={[styles.column, { paddingTop: top }]} behavior="padding">
+        <KeyboardAvoidingView style={[styles.column, { paddingTop: columnTop(insets.top) }]} behavior="padding">
           <ChatHeader id={id} peer={peer} />
           <FlatList
             inverted
@@ -226,7 +227,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   // The web page scrolls the document; the chat instead fills the window and scrolls only its own list.
-  web: { ...pinned, top: 0, left: 0, right: 0, bottom: 0 },
+  web: { ...pinned, left: 0, right: 0, bottom: 0 },
   column: { flex: 1, width: "100%", maxWidth: MAX_WIDTH, alignSelf: "center" },
   list: { paddingHorizontal: space.lg, paddingVertical: space.sm, gap: space.xs },
   day: { paddingVertical: space.sm },
