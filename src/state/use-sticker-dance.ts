@@ -31,14 +31,15 @@ export function useStickerDance(peer: string, messages: readonly Message[], ms: 
   const at = dancing?.createdAt ?? null;
 
   useEffect(() => {
-    if (id) playSticker(id, ms);
-  }, [id, at, ms]);
+    if (!id || !at) return;
+    playSticker(id, ms);
+    // Saved as it starts: leaving the chat (or the app) mid-dance must not make it dance again next time.
+    void saveStickerSeen(peer, at);
+  }, [peer, id, at, ms]);
 
   const done = useCallback(() => {
-    if (at === null) return;
-    setSeen(at);
-    void saveStickerSeen(peer, at);
-  }, [peer, at]);
+    if (at !== null) setSeen(at);
+  }, [at]);
 
   return { dance: dancing ? { id: dancing.body, key: dancing.id } : null, done };
 }
