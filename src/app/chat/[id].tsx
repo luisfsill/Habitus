@@ -190,11 +190,13 @@ export default function ChatScreen() {
   };
   // The keyboard padding (KeyboardAvoidingView) replaces the home indicator room.
   const room = keyboard ? space.sm : insets.bottom + space.sm;
+  // The installed iPhone app blurs some 40pt below the status bar (iOS 26 Liquid Glass): the header starts under that, like `Screen`.
+  const top = insets.top + (web ? space.xxl + space.sm : 0);
   return (
     <View style={[styles.root, web && styles.web]}>
       <ShakeView trigger={nudges}>
         {/* Android is edge to edge (the window does not resize), so it pads for the keyboard too. */}
-        <KeyboardAvoidingView style={[styles.column, { paddingTop: insets.top }]} behavior="padding">
+        <KeyboardAvoidingView style={[styles.column, { paddingTop: top }]} behavior="padding">
           <ChatHeader id={id} peer={peer} />
           <FlatList
             inverted
