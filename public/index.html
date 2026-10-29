@@ -23,6 +23,41 @@
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
       }
+      // A deploy renames every screen's bundle: an app left open would ask for files that are gone (black screen).
+      // Back in the app, a page that points at another bundle means a new version: reload before anything breaks.
+      // A screen bundle that fails to load reloads too, at most once a minute so a real outage cannot loop.
+      (function () {
+        const BUNDLE = 'script[src*="/_expo/static/js/web/"]';
+        // Every bundle tag: the Metro runtime one alone rarely changes between deploys.
+        const bundleOf = (doc) => [...doc.querySelectorAll(BUNDLE)].map((s) => s.getAttribute("src")).join(" ") || null;
+        const reload = () => {
+          try {
+            const last = Number(sessionStorage.getItem("habitus:reloaded") || 0);
+            if (Date.now() - last < 60000) return;
+            sessionStorage.setItem("habitus:reloaded", String(Date.now()));
+          } catch {}
+          location.reload();
+        };
+        document.addEventListener("visibilitychange", () => {
+          const current = bundleOf(document);
+          if (document.visibilityState !== "visible" || !current) return; // no bundle tag: the dev server
+          fetch("/", { cache: "no-store" })
+            .then((response) => (response.ok ? response.text() : ""))
+            .then((html) => {
+              const next = bundleOf(new DOMParser().parseFromString(html, "text/html"));
+              if (next && next !== current) reload();
+            })
+            .catch(() => {});
+        });
+        window.addEventListener(
+          "error",
+          (event) => {
+            const src = event.target?.src;
+            if (event.target?.tagName === "SCRIPT" && src?.includes("/_expo/static/js/web/")) reload();
+          },
+          true,
+        );
+      })();
       // Chrome fires this once, possibly before React mounts: keep it for the "Instalar agora" button.
       window.addEventListener("beforeinstallprompt", (event) => {
         event.preventDefault();

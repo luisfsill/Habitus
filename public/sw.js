@@ -1,13 +1,21 @@
 // Habitus service worker: fast loads, offline fallback, server push reminders and notification taps.
 // Bundles and assets have a content hash in their path, so a cached copy is always right: cache-first.
 // Pages stay network-first, so a new deploy is picked up on the next load; a slow network falls back to the cache.
-const CACHE = "habitus-v1";
+// v2: drops copies saved by v1 when a deploy answered an old bundle with the HTML page.
+const CACHE = "habitus-v2";
 // Export output only (dev serves /assets/?unstable_path=… without a hash in the name).
 const HASHED = /^\/_expo\/static\/|\.[0-9a-f]{32}\.\w+$/;
 const PAGE_TIMEOUT_MS = 3000;
 
 self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener("activate", (event) =>
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim()),
+  ),
+);
 
 function store(request, response) {
   // Only whole, successful responses (a video's range request answers 206, which the cache refuses).
@@ -25,7 +33,9 @@ self.addEventListener("fetch", (event) => {
   // Dev server bundles (/index.ts.bundle?…) are slow to build and change on every edit: a cached copy would be stale.
   if (url.pathname.endsWith(".bundle")) return;
   if (HASHED.test(url.pathname)) {
-    event.respondWith(caches.match(request).then((hit) => hit || fetch(request).then((response) => store(request, response))));
+    // A bundle answered with HTML (the page, for a file a deploy removed) is never cached: it would break the app for good.
+    const keep = (response) => (response.headers.get("content-type")?.includes("text/html") ? response : store(request, response));
+    event.respondWith(caches.match(request).then((hit) => hit || fetch(request).then(keep)));
     return;
   }
   const network = fetch(request).then((response) => store(request, response));
