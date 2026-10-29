@@ -31,6 +31,12 @@ const SETTLE_S = 1.2;
 const RING_S = 0.4;
 
 let ctx: AudioContext | null = null;
+// Ajustes → Sons e notificações → Sons da dock; the app state keeps it in step with the settings.
+let dockOn = true;
+
+export function setDockSound(on: boolean): void {
+  dockOn = on;
+}
 let buffer: AudioBuffer | null = null;
 
 /** Creates the context and decodes the recording once; until it is decoded the water is silent. */
@@ -81,6 +87,7 @@ function nextSlosh(audio: AudioContext, volume: number): void {
 
 /** The water sloshing under a dragging finger; `strength` (0 to 1) follows the finger's speed. Silent if audio is unavailable. */
 export function stirWater(strength: number): void {
+  if (!dockOn) return;
   try {
     const audio = context();
     if (!audio || !buffer || audio.state !== "running") return;
@@ -115,6 +122,7 @@ const splash = { last: -1, source: null as AudioBufferSourceNode | null };
 
 /** A finger touching the water: a random short splash at full volume. Silent if audio is unavailable. */
 export function playSplash(): void {
+  if (!dockOn) return;
   try {
     const audio = context();
     if (!audio || !buffer) return;

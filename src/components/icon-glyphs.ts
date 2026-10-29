@@ -54,6 +54,7 @@ export const GLYPHS: Record<string, number> = {
   "flag": 57683,
   "flight": 58681,
   "format_quote": 57924,
+  "help": 59527,
   "highlight": 57951,
   "history": 59529,
   "home": 59530,

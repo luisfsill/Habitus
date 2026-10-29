@@ -6,8 +6,15 @@ import { log } from "./log";
 
 // One player per sound for the whole app: each is short and replays from the start.
 const players = new Map<number, AudioPlayer>();
+// Ajustes → Sons e notificações → Efeitos sonoros; the app state keeps it in step with the settings.
+let effectsOn = true;
+
+export function setEffectSounds(on: boolean): void {
+  effectsOn = on;
+}
 
 function play(source: number): void {
+  if (!effectsOn) return;
   try {
     let player = players.get(source);
     if (!player) {
@@ -59,7 +66,7 @@ const AMBIENT_SOUNDS: Partial<Record<TrickIndex, number>> = {
 /** Starts a tip's background sound in a loop, if it has one; the returned function stops it. */
 export function playAmbient(index: TrickIndex): () => void {
   const source = AMBIENT_SOUNDS[index];
-  if (source === undefined) return () => undefined;
+  if (source === undefined || !effectsOn) return () => undefined;
   try {
     const player = createAudioPlayer(source);
     player.loop = true;

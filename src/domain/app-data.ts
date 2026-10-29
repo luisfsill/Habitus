@@ -15,6 +15,10 @@ export interface Settings {
   days: Weekday[];
   affirmations: string[];
   sound: boolean;
+  /** Water sounds of the web tab bar (the dock). */
+  dockSound: boolean;
+  /** In-app sound effects: the drop of a cup of water and the sounds of the tips. */
+  effectSounds: boolean;
   /** "auto" follows the system light/dark setting. */
   theme: ThemePreference;
   /** The bedtime the user told us ("HH:MM"); the starting point for learning. */
@@ -57,6 +61,8 @@ export function defaultData(): AppData {
       days: [...ALL_WEEKDAYS],
       affirmations: [...DEFAULT_AFFIRMATIONS],
       sound: true,
+      dockSound: true,
+      effectSounds: true,
       theme: "auto",
       bedtime: DEFAULT_BEDTIME,
       water: { ...DEFAULT_WATER },
@@ -99,6 +105,8 @@ function sanitizeSettings(raw: unknown, fallback: Settings): Settings {
     days,
     affirmations,
     sound: typeof raw.sound === "boolean" ? raw.sound : fallback.sound,
+    dockSound: typeof raw.dockSound === "boolean" ? raw.dockSound : fallback.dockSound,
+    effectSounds: typeof raw.effectSounds === "boolean" ? raw.effectSounds : fallback.effectSounds,
     theme: THEMES.includes(raw.theme as ThemePreference) ? (raw.theme as ThemePreference) : fallback.theme,
     bedtime: typeof raw.bedtime === "string" && parseBedtime(raw.bedtime) !== null ? raw.bedtime : fallback.bedtime,
     water: sanitizeWater(raw.water, fallback.water),

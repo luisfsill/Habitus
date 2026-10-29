@@ -1,6 +1,6 @@
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { ActionRow } from "@/components/action-row";
 import { AffirmationsEditor } from "@/components/affirmations-editor";
@@ -81,6 +81,36 @@ function Affirmations({ change }: PageProps) {
   );
 }
 
+/** A sound's on/off row; the "?" opens a line saying what the switch turns off. */
+function SoundRow({ label, help, value, onChange }: { label: string; help: string; value: boolean; onChange: (on: boolean) => void }) {
+  const { colors } = useTheme();
+  const [open, setOpen] = useState(false);
+  return (
+    <View>
+      <View style={styles.row}>
+        <View style={styles.label}>
+          <AppText variant="body">{label}</AppText>
+          <Pressable
+            onPress={() => setOpen(!open)}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={`O que é ${label}?`}
+            accessibilityState={{ expanded: open }}
+          >
+            <Icon ios="questionmark.circle" android="help" size={20} color={colors.secondaryLabel} />
+          </Pressable>
+        </View>
+        <ToggleSwitch value={value} onValueChange={onChange} accessibilityLabel={label} />
+      </View>
+      {open && (
+        <AppText variant="footnote" color="secondaryLabel">
+          {help}
+        </AppText>
+      )}
+    </View>
+  );
+}
+
 function Notifications({ draft, change, setStatus }: PageProps) {
   const { permission, askPermission } = useAppState();
 
@@ -91,13 +121,32 @@ function Notifications({ draft, change, setStatus }: PageProps) {
   };
 
   return (
-    <Section>
-      <View style={styles.row}>
-        <AppText variant="body">Som</AppText>
-        <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
-      </View>
-      <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
-    </Section>
+    <>
+      <Section title="Sons do app">
+        {/* Only the web has the water dock; iOS and Android use the system tab bar, which is silent. */}
+        {Platform.OS === "web" && (
+          <SoundRow
+            label="Sons da dock"
+            help="O barulhinho de água ao tocar ou arrastar o dedo na barra de abas, no pé da tela."
+            value={draft.dockSound}
+            onChange={(dockSound) => void change({ dockSound })}
+          />
+        )}
+        <SoundRow
+          label="Sons de efeito"
+          help="A gota caindo ao marcar um copo de água, os sons de fundo das dicas e os sons de comemoração ao concluir uma dica."
+          value={draft.effectSounds}
+          onChange={(effectSounds) => void change({ effectSounds })}
+        />
+      </Section>
+      <Section title="Notificações">
+        <View style={styles.row}>
+          <AppText variant="body">Som</AppText>
+          <ToggleSwitch value={draft.sound} onValueChange={(sound) => void change({ sound })} accessibilityLabel="Som das notificações" />
+        </View>
+        <ActionRow label="Testar uma notificação agora" icon={{ ios: "bell", android: "notifications" }} onPress={() => void testNow()} />
+      </Section>
+    </>
   );
 }
 
@@ -157,7 +206,7 @@ const PAGES = {
   horario: { title: "Horário", Page: Schedule },
   dias: { title: "Dias da semana", Page: Days },
   afirmacoes: { title: "Afirmações", Page: Affirmations },
-  notificacoes: { title: "Notificações", Page: Notifications },
+  notificacoes: { title: "Sons e notificações", Page: Notifications },
   agua: { title: "Água", Page: Water },
   aparencia: { title: "Aparência", Page: Appearance },
 } as const;
@@ -176,7 +225,8 @@ export default function SettingsSectionScreen() {
     const result = await updateSettings(next);
     // A rejected change (no days, start after end…) says why instead of silently keeping the old value.
     setFailed(!result.ok);
-    setStatus(result.ok ? "Notificações reagendadas." : result.message);
+    const soundOnly = Object.keys(patch).every((key) => key === "dockSound" || key === "effectSounds");
+    setStatus(result.ok ? (soundOnly ? "Salvo." : "Notificações reagendadas.") : result.message);
   };
 
   const page = section in PAGES ? PAGES[section as keyof typeof PAGES] : null;

@@ -14,7 +14,7 @@ const ITEMS: readonly { label: string; icon: { ios: string; android: string }; h
   { label: "Conta", icon: { ios: "person.crop.circle", android: "account_circle" }, href: "/settings/conta" },
   { label: "Horário", icon: { ios: "clock", android: "schedule" }, href: "/settings/horario" },
   { label: "Dias da semana", icon: { ios: "calendar", android: "calendar_month" }, href: "/settings/dias" },
-  { label: "Notificações", icon: { ios: "bell", android: "notifications" }, href: "/settings/notificacoes" },
+  { label: "Sons e notificações", icon: { ios: "bell", android: "notifications" }, href: "/settings/notificacoes" },
   { label: "Água", icon: { ios: "drop", android: "water_drop" }, href: "/settings/agua" },
   { label: "Afirmações", icon: { ios: "quote.bubble", android: "format_quote" }, href: "/settings/afirmacoes" },
   { label: "Aparência", icon: { ios: "paintpalette", android: "palette" }, href: "/settings/aparencia" },

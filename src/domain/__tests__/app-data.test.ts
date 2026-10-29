@@ -19,12 +19,12 @@ describe("sanitizeData", () => {
     const data = sanitizeData({
       version: 1,
       onboarded: true,
-      settings: { start: "25:00", end: "17:30", days: [1, 9, 1, "2"], affirmations: ["  Sou forte ", "", 3], sound: "yes" },
+      settings: { start: "25:00", end: "17:30", days: [1, 9, 1, "2"], affirmations: ["  Sou forte ", "", 3], sound: "yes", dockSound: false, effectSounds: 0 },
       completions: { "2026-10-24": [0, 0, 7, 2], bad: [1] },
       gratitude: { "2026-10-24": " Obrigado ", "2026-10-25": "" },
     });
     expect(data.onboarded).toBe(true);
-    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, bedtime: "23:00", theme: "auto", water: { enabled: false, goal: 8, everyMinutes: 90 } });
+    expect(data.settings).toEqual({ start: "08:00", end: "17:30", days: [1], affirmations: ["Sou forte"], sound: true, dockSound: false, effectSounds: true, bedtime: "23:00", theme: "auto", water: { enabled: false, goal: 8, everyMinutes: 90 } });
     expect(data.sleepLog).toEqual({});
     expect(data.completions).toEqual({ "2026-10-24": [0, 2] });
     expect(data.gratitude).toEqual({ "2026-10-24": "Obrigado" });

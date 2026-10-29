@@ -24,9 +24,10 @@ import {
   rescheduleAll,
   setAccessCutoff,
 } from "@/services/notifications";
-import { playCelebration } from "@/services/sound";
+import { playCelebration, setEffectSounds } from "@/services/sound";
 import { clearData, loadData, saveData } from "@/services/storage";
 import { pushMerged } from "@/services/sync";
+import { setDockSound } from "@/services/water-sound";
 
 import { useReminderActions } from "./use-reminders";
 
@@ -133,6 +134,11 @@ export function AppStateProvider({ children, userId, accessCutoff }: ProviderPro
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dataRef = useRef(data);
   const progress = useMemo(() => progressOf(data, new Date()), [data]);
+  const { dockSound, effectSounds } = data.settings;
+  useEffect(() => {
+    setDockSound(dockSound);
+    setEffectSounds(effectSounds);
+  }, [dockSound, effectSounds]);
 
   /** Sends local data and takes in what other devices sent. Offline just leaves it pending. */
   const sync = useCallback(async () => {

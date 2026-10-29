@@ -19,7 +19,7 @@
 
 ## Testar notificações rapidamente
 
-Ajustes → Notificações → "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
+Ajustes → Sons e notificações → "Testar uma notificação agora" dispara uma em 3 s. Detalhes no [README](../README.md).
 
 ## Armadilhas conhecidas
 

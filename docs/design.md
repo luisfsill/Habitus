@@ -58,7 +58,7 @@ O botão de conta (`AccountMenu`: bonequinho num círculo de vidro dentro de um 
 
 ## Interruptores
 
-Som das notificações (Ajustes) usa `ToggleSwitch`: trilho cinza `#ddd` que fica verde `#05c46b` ao ligar e bolinha branca que desliza em 300 ms (ease-in-out), 48 × 24 pt. Os interruptores do admin (planos e usuário) ainda são o `Switch` nativo.
+Os interruptores de Ajustes → Sons e notificações (sons da dock, só na web; sons de efeito, que calam a gota do copo de água e os sons das dicas; som das notificações) usam `ToggleSwitch`; os dois de sons do app têm um "?" ao lado do nome que abre uma linha dizendo o que o interruptor desliga. O `ToggleSwitch`: trilho cinza `#ddd` que fica verde `#05c46b` ao ligar e bolinha branca que desliza em 300 ms (ease-in-out), 48 × 24 pt. Os interruptores do admin (planos e usuário) ainda são o `Switch` nativo.
 
 ## Horários
 

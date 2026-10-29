@@ -96,7 +96,7 @@ Esse comando roda o ESLint rápido, o ESLint com tipos, o self-check das regras 
 ## Como testar as notificações
 
 1. Abra o app no aparelho (Expo Go ou development build), conclua o onboarding e **permita as notificações**.
-2. Vá em **Ajustes → Notificações**:
+2. Vá em **Ajustes → Sons e notificações**:
    - **Testar uma notificação agora**: dispara um lembrete da dica 2 em 3 segundos.
 3. Toque numa notificação de dica: o app abre direto na tela daquela dica.
 4. Use as ações **Feito** e **Adiar 10 min**. No Android elas rodam sem abrir o app, inclusive com o app encerrado. No iOS elas abrem o app para registrar a ação.
