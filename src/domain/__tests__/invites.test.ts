@@ -19,6 +19,7 @@ describe("invites", () => {
   it("writes the message with license, site link, redeem steps, code and deadline", () => {
     const text = inviteMessage(invite);
     expect(text).toContain("*6 meses* de licença gratuita");
+    expect(text).toContain("Gota a gota, um hábito se forma.");
     expect(text).toContain("Abra https://habitushub.vercel.app, instale");
     expect(text).not.toContain("convite=");
     expect(text).toContain("*AB12CD34EF*");

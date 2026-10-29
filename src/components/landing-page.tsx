@@ -94,11 +94,11 @@ function Hero({ wide, onStart }: { wide: boolean; onStart: () => void }) {
     <View style={[styles.hero, wide && styles.heroWide]}>
       <Animated.View entering={FadeInUp.duration(700)} style={[styles.heroText, wide && styles.heroTextWide]}>
         <AppText style={[styles.headline, !wide && styles.headlineNarrow]} accessibilityRole="header">
-          Água, lembretes{"\n"}e pausas.{"\n"}
-          <AppText style={[styles.headline, !wide && styles.headlineNarrow, { color: colors.accentText }]}>Na hora certa.</AppText>
+          Gota a gota,{"\n"}um hábito{"\n"}
+          <AppText style={[styles.headline, !wide && styles.headlineNarrow, { color: colors.accentText }]}>se forma.</AppText>
         </AppText>
         <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-          O Habitus lembra você de beber água, dos seus compromissos e de seis pausas rápidas de bem-estar, ao longo do seu dia.
+          Não com uma virada de chave, mas com pequenos gestos todos os dias. O Habitus espalha seis pausas de bem-estar pelo seu dia, cuida da água e dos seus compromissos, e te avisa de cada um na hora certa.
         </AppText>
         <View style={styles.heroActions}>
           <SurfaceButton label="Começar meus 7 dias grátis" onPress={onStart} />
@@ -176,7 +176,7 @@ export function LandingPage({ onStart, onSignIn, onLegal, onInstall, children }:
             <Faq />
           </Reveal>
           <Reveal style={styles.final}>
-            <AppText style={[styles.finalTitle, !wide && styles.headlineNarrow]}>Seu dia mais leve começa hoje.</AppText>
+            <AppText style={[styles.finalTitle, !wide && styles.headlineNarrow]}>Seu próximo hábito começa hoje.</AppText>
             <AppText variant="body" color="secondaryLabel" align="center">
               Crie sua conta em menos de um minuto e use água, lembretes e as 6 dicas por 7 dias, sem cartão.
             </AppText>

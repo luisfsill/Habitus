@@ -161,7 +161,7 @@ export function Tips({ wide }: { wide: boolean }) {
         <DayRing shown={shown} />
         <View style={[styles.tipsText, wide && styles.flex]}>
           <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-            Pequenos gestos espalhados pelo seu horário, do começo do dia até a hora de dormir. Quais são? Você descobre ao entrar.
+            A rotina engole o dia e a boa intenção fica para amanhã. Por isso o Habitus espalha pequenos gestos pelo seu horário, do começo do dia até a hora de dormir, e te avisa de cada um. Quais são? Você descobre ao entrar.
           </AppText>
           <View style={styles.gains}>
             {GAINS.map((gain, i) => (
