@@ -6,8 +6,9 @@ import { PrimaryButton } from "@/components/primary-button";
 import { Screen } from "@/components/screen";
 import { TextField } from "@/components/text-field";
 import { parsePrice, type Plan } from "@/domain/access";
-import { savePlan } from "@/services/admin";
+import { savePlan, setFreeAccess } from "@/services/admin";
 import { fetchPlans } from "@/services/profile";
+import { useAccess } from "@/state/access";
 import { HIT, space, useTheme } from "@/theme";
 
 interface Draft {
@@ -71,6 +72,45 @@ function PlanEditor({ plan, onSaved }: { plan: Plan; onSaved: (message: string) 
   );
 }
 
+/** While on, every account gets in, expired or not; the plans below wait for when charging starts. */
+function FreeAccessSwitch({ onSaved }: { onSaved: (message: string) => void }) {
+  const { colors } = useTheme();
+  const { profile, refresh } = useAccess();
+  const [busy, setBusy] = useState(false);
+  const on = profile?.freeAccess === true;
+  const change = async (next: boolean) => {
+    setBusy(true);
+    try {
+      await setFreeAccess(next);
+      await refresh();
+      onSaved(next ? "App liberado para todos." : "Cobrança ligada: vale o plano de cada conta.");
+    } catch (e) {
+      onSaved((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <View style={styles.editor}>
+      <View style={styles.row}>
+        <AppText variant="headline">App liberado para todos</AppText>
+        <Switch
+          value={on}
+          disabled={busy}
+          onValueChange={(next) => void change(next)}
+          trackColor={{ true: colors.accent, false: colors.switchOff }}
+          thumbColor="#FFFFFF"
+          {...{ activeThumbColor: "#FFFFFF" }}
+          accessibilityLabel="App liberado para todos"
+        />
+      </View>
+      <AppText variant="footnote" color="secondaryLabel">
+        {on ? "Ninguém precisa de plano agora. Desligue quando for começar a cobrar." : "Cada conta usa o app enquanto o plano dela estiver em dia."}
+      </AppText>
+    </View>
+  );
+}
+
 export default function AdminPlansScreen() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -88,6 +128,7 @@ export default function AdminPlansScreen() {
           {message}
         </AppText>
       )}
+      <FreeAccessSwitch onSaved={setMessage} />
       {plans.map((p) => (
         <PlanEditor key={p.id} plan={p} onSaved={setMessage} />
       ))}

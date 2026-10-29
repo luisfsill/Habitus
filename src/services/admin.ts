@@ -26,6 +26,11 @@ export async function listProfiles(): Promise<Profile[]> {
   return (data as unknown[]).map(parseProfile).filter((p): p is Profile => p !== null);
 }
 
+/** Opens the app to everyone (true) or back to plans (false). */
+export function setFreeAccess(on: boolean): Promise<void> {
+  return rpc("admin_set_free_access", { on_free: on });
+}
+
 export function setAccess(id: string, access: { until: string | null; unlimited: boolean; plan: PlanKind }): Promise<void> {
   return rpc("admin_set_access", { uid: id, until: access.until, is_unlimited: access.unlimited, new_plan: access.plan });
 }

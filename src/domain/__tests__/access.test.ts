@@ -25,7 +25,7 @@ const hour = 3_600_000;
 const day = 24 * hour;
 
 function profile(patch: Partial<Profile>): Profile {
-  return { id: "u1", name: "João Silva", email: "joao.silva@email.com", role: "user", plan: "trial", accessUntil: null, unlimited: false, createdAt: now.toISOString(), username: null, searchable: true, avatarUrl: null, ...patch };
+  return { id: "u1", name: "João Silva", email: "joao.silva@email.com", role: "user", plan: "trial", accessUntil: null, unlimited: false, createdAt: now.toISOString(), username: null, searchable: true, avatarUrl: null, freeAccess: false, ...patch };
 }
 const at = (ms: number) => new Date(now.getTime() + ms).toISOString();
 
@@ -48,6 +48,12 @@ describe("access status", () => {
     expect(accessStatus(profile({ role: "admin", accessUntil: at(-day) }), now)).toBe("admin");
     expect(hasAccess(profile({ role: "admin", accessUntil: null }), now)).toBe(true);
     expect(accessStatus(profile({ unlimited: true }), now)).toBe("unlimited");
+  });
+
+  it("lets an expired account in while the app is free", () => {
+    const p = profile({ plan: "paid", accessUntil: at(-day), freeAccess: true });
+    expect(hasAccess(p, now)).toBe(true);
+    expect(accessStatus(p, now)).toBe("unlimited");
   });
 
   it("shows a paid account in date as active", () => {
@@ -126,7 +132,7 @@ describe("whatsAppAppUrl", () => {
 describe("parsing rows", () => {
   it("reads a profile row and rejects bad roles", () => {
     const row = { id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", access_until: null, unlimited: true, created_at: "2026-10-25T00:00:00Z" };
-    expect(parseProfile(row)).toEqual({ id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", accessUntil: null, unlimited: true, createdAt: "2026-10-25T00:00:00Z", username: undefined, searchable: true, avatarUrl: null });
+    expect(parseProfile(row)).toEqual({ id: "u1", name: "A", email: "a@x.com", role: "admin", plan: "paid", accessUntil: null, unlimited: true, createdAt: "2026-10-25T00:00:00Z", username: undefined, searchable: true, avatarUrl: null, freeAccess: false });
     expect(parseProfile({ ...row, username: null })?.username).toBeNull();
     expect(parseProfile({ ...row, username: "ana", searchable: false })).toMatchObject({ username: "ana", searchable: false });
     expect(parseProfile({ ...row, role: "root" })).toBeNull();

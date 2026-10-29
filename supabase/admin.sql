@@ -17,6 +17,29 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- App liberado: com free_access ligado, toda conta tem acesso, vencida ou não (os planos continuam guardados
+-- para quando a cobrança voltar). Uma linha só; rodar de novo não muda o valor escolhido no painel.
+create table if not exists public.app_settings (
+  id boolean primary key default true check (id),
+  free_access boolean not null default true
+);
+insert into public.app_settings (id) values (true) on conflict (id) do nothing;
+alter table public.app_settings enable row level security;
+-- Sem políticas: só as funções abaixo leem e mudam.
+
+create or replace function public.app_is_free()
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select coalesce((select free_access from public.app_settings), false);
+$$;
+
+-- Coluna calculada: o app lê com select("*, free_access") junto do próprio perfil.
+create or replace function public.free_access(p public.profiles)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select public.app_is_free();
+$$;
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = ''
 as $$
@@ -28,7 +51,7 @@ returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid() and (role = 'admin' or unlimited or access_until > now())
+    where id = auth.uid() and (role = 'admin' or unlimited or access_until > now() or public.app_is_free())
   );
 $$;
 
@@ -193,6 +216,15 @@ begin
 end;
 $$;
 
+create or replace function public.admin_set_free_access(on_free boolean)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  perform public.require_admin();
+  update public.app_settings set free_access = on_free where id;
+end;
+$$;
+
 create or replace function public.admin_set_role(uid uuid, new_role text)
 returns void language plpgsql security definer set search_path = ''
 as $$
@@ -319,7 +351,7 @@ do $$
 declare f text;
 begin
   foreach f in array array[
-    'is_admin()', 'has_access()', 'require_admin()',
+    'is_admin()', 'has_access()', 'require_admin()', 'app_is_free()', 'free_access(public.profiles)', 'admin_set_free_access(boolean)',
     'admin_set_access(uuid, timestamptz, boolean, text)', 'admin_set_role(uuid, text)',
     'admin_update_name(uuid, text)', 'admin_delete_user(uuid)',
     'admin_save_plan(text, text, int, int, boolean, boolean)', 'update_my_name(text)', 'admin_create_invite(int, int)', 'admin_delete_invite(text)',

@@ -95,6 +95,32 @@
         from { opacity: 1; }
         to { opacity: 1; }
       }
+      /* Thin pill scrollbar on a clear track (chat list, sticker picker); the grey reads on light and dark themes. */
+      /* Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so the standard pair is for Firefox only. */
+      @supports not selector(::-webkit-scrollbar) {
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(128, 128, 128, 0.45) transparent;
+        }
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track,
+      ::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.45);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(128, 128, 128, 0.7);
+      }
+      ::-webkit-scrollbar-button {
+        display: none;
+      }
     </style>
   </head>
 

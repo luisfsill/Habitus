@@ -32,6 +32,11 @@ export function playDrop(): void {
   play(require("../../assets/sounds/drop.mp3") as number);
 }
 
+/** Conversas: the buzzing boing of "chamar atenção" (made by scripts/build-nudge-sound.mjs). */
+export function playNudge(): void {
+  play(require("../../assets/sounds/nudge.wav") as number);
+}
+
 /**
  * Gratidão antecipada: a twinkle as today's star is born, and when it completes a constellation a magic
  * flourish a moment later, while the lines draw (assets/sounds).

@@ -22,7 +22,7 @@ import { scheduleFor } from "@/domain/app-data";
 import { formatReminderCountdown, shortDay, whenLabel } from "@/domain/reminder-text";
 import { doneReminders, pendingReminders } from "@/domain/reminders";
 import { greetingFor, trickTimeLabels } from "@/domain/schedule";
-import { atMinutes, dayKey, formatCountdown, formatTime, minutesOfDay } from "@/domain/time";
+import { atMinutes, MONTHS, dayKey, formatCountdown, formatTime, minutesOfDay } from "@/domain/time";
 import { TRICK_COUNT, TRICKS } from "@/domain/tricks";
 import { cupsOn } from "@/domain/water";
 import { openSystemSettings } from "@/services/notifications";
@@ -32,8 +32,6 @@ import { useAppState } from "@/state/app-state";
 import { useIncomingCount } from "@/state/use-friends";
 import { useNow } from "@/state/use-now";
 import { TabAccount } from "@/state/tab-account";
-
-const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function title(now: Date, profile: Profile | null): string {
   return `${greetingFor(minutesOfDay(now))}${profile ? `, ${firstName(profile)}` : ""}!`;

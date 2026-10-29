@@ -36,11 +36,16 @@ export function TabAccount() {
         progress={doneCount(data.completions, dayKey(new Date())) / TRICK_COUNT}
         onTheme={(theme) => void updateSettings({ theme })}
         menu={[
-          {
-            label: "Renovar plano",
-            icon: { ios: "arrow.clockwise.circle", android: "autorenew" },
-            onPress: () => router.push("/renovar"),
-          },
+          // While the app is free there is nothing to renew.
+          ...(profile?.freeAccess
+            ? []
+            : [
+                {
+                  label: "Renovar plano",
+                  icon: { ios: "arrow.clockwise.circle", android: "autorenew" } as const,
+                  onPress: () => router.push("/renovar"),
+                },
+              ]),
           {
             label: "Gift Code",
             icon: { ios: "gift", android: "redeem" },

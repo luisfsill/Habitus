@@ -148,7 +148,7 @@ returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.profiles
-    where id = target and (role = 'admin' or unlimited or access_until > now())
+    where id = target and (role = 'admin' or unlimited or access_until > now() or public.app_is_free())
   );
 $$;
 
@@ -205,9 +205,11 @@ begin
 end;
 $$;
 
--- Aviso de amizade na fila de Web Push. O mesmo id substitui o aviso anterior.
+-- Aviso de amizade (ou de conversa, por chat.sql) na fila de Web Push. O mesmo id substitui o aviso anterior.
 -- plpgsql só resolve push_queue ao executar: sem push.sql (Web Push opcional), não avisa e não falha.
-create or replace function public.queue_social_push(target uuid, kind text, message text)
+-- A versão antiga, sem url, sai antes: com as duas, uma chamada de 3 argumentos ficaria ambígua.
+drop function if exists public.queue_social_push(uuid, text, text);
+create or replace function public.queue_social_push(target uuid, kind text, message text, url text default '/amigos')
 returns void language plpgsql security definer set search_path = ''
 as $$
 begin
@@ -216,7 +218,7 @@ begin
   end if;
   insert into public.push_queue (user_id, id, send_at, title, body, url)
   select target, 'social:' || kind || ':' || p.id, now(), 'Habitus',
-    replace(message, '{nome}', coalesce(nullif(trim(p.name), ''), '@' || p.username, 'Alguém')), '/amigos'
+    replace(message, '{nome}', coalesce(nullif(trim(p.name), ''), '@' || p.username, 'Alguém')), queue_social_push.url
   from public.profiles p where p.id = auth.uid()
   on conflict (user_id, id) do update
     set send_at = excluded.send_at, title = excluded.title, body = excluded.body, url = excluded.url;
@@ -518,7 +520,7 @@ begin
   foreach f in array array[
     'username_problem(text, boolean)', 'fold(text)', 'user_has_access(uuid)', 'invisible_to(uuid, uuid)',
     'blocked_between(uuid, uuid)', 'relation_of(uuid, uuid)', 'public_user(uuid, uuid)', 'require_access()',
-    'queue_social_push(uuid, text, text)'
+    'queue_social_push(uuid, text, text, text)'
   ] loop
     execute format('revoke execute on function public.%s from public, anon, authenticated', f);
   end loop;

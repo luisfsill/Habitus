@@ -78,6 +78,8 @@ Isso cria os perfis (nome, cargo, validade do acesso), os planos com os preços 
 
 Se um dia você rodar `schema.sql` de novo, rode `admin.sql` logo depois: ele reaplica a regra de que só quem tem acesso ativo sincroniza.
 
+`admin.sql` também cria a chave **App liberado para todos**, que já começa ligada: ninguém precisa de plano até você desligá-la em Admin › Planos. Ao atualizar um banco que já existia, rode `admin.sql` e depois `social.sql` de novo, para as duas regras de acesso passarem a respeitar a chave.
+
 ## 7. Amigos
 
 **Rode antes de publicar esta versão do app.** Sem estas tabelas e funções, a aba Amigos e a tela "Escolha seu @" não funcionam.
@@ -90,6 +92,17 @@ Cria o @usuário, a busca, os pedidos de amizade e o ranking da semana. Rode **d
 Isso liga a extensão `unaccent` (busca sem acento), acrescenta `username` e `searchable` aos perfis e cria `public_stats`, `friendships`, `blocks` e `friend_request_log`. Os perfis continuam sem leitura pública: uma conta só vê outra pelas funções do arquivo, que nunca devolvem e-mail, plano ou validade. Se aparecer erro dizendo que `extensions.unaccent` não existe, a extensão foi ligada antes em outro esquema: em **Database → Extensions**, desligue `unaccent` e rode o arquivo de novo.
 
 O roteiro para conferir está no fim desta página, em "Conferir os amigos".
+
+### Conversas
+
+**Rode antes de publicar a versão do app com a aba Conversas.** Ao atualizar um banco que já existia, rode `social.sql` de novo antes: ele troca `queue_social_push` pela versão que recebe o link do aviso, e `chat.sql` depende dela.
+
+1. Abra **SQL Editor → New query**.
+2. Cole todo o conteúdo de [`supabase/chat.sql`](../supabase/chat.sql) e clique em **Run**. Pode rodar de novo.
+
+Isso cria `messages` (texto até 2000 caracteres, figurinha ou "chamar atenção"), `chat_reads` (o "visto" e as não lidas) e `message_reports` (denúncias, sem tela no app: consulte em **Table Editor → message_reports**). Só amigos trocam mensagens, cada conta lê só as próprias conversas, e um bloqueio esconde a conversa dos dois sem apagar nada. O arquivo também põe `messages` e `chat_reads` na publicação `supabase_realtime` (mensagens ao vivo) e cria as políticas em `realtime.messages` que liberam o canal privado de "digitando…" só para os dois amigos. Com o Web Push (passo 9) instalado, cada mensagem gera um aviso que abre a conversa.
+
+Para conferir, cole [`supabase/tests/chat.sql`](../supabase/tests/chat.sql) em outra query e rode. Esperado: `chat ok` nas mensagens. O script cria contas de teste e desfaz tudo no fim, sem deixar linhas no banco.
 
 ### Ranking global
 

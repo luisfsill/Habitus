@@ -68,3 +68,5 @@ export function formatCountdown(ms: number): string {
   if (h > 0) return `${h} h ${String(m).padStart(2, "0")} min`;
   return `${m}:${String(s).padStart(2, "0")}`;
 }
+
+export const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];

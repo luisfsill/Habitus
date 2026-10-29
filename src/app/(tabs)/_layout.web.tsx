@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 
 import { Icon } from "@/components/icon";
 import { LiquidNavbar, type NimbusFx } from "@/components/ui/liquid-glass-navbar";
+import { useUnreadCount } from "@/state/use-chat";
 import { useIncomingCount } from "@/state/use-friends";
 import { playSplash, settleWater, stirWater } from "@/services/water-sound";
 import { MAX_WIDTH, pinned, useTheme } from "@/theme";
@@ -13,8 +14,8 @@ import { MAX_WIDTH, pinned, useTheme } from "@/theme";
 // page can overflow and the document scrolls (mobile Safari then hides its bars).
 const TABS = [
   { key: "index", fx: "glow" as NimbusFx, label: "Hoje", ios: "sun.max", android: "wb_sunny", href: "/" },
-  { key: "history", fx: "spin" as NimbusFx, label: "Histórico", ios: "calendar", android: "calendar_month", href: "/history" },
   { key: "achievements", fx: "pop" as NimbusFx, label: "Conquistas", ios: "trophy", android: "emoji_events", href: "/achievements" },
+  { key: "conversas", fx: "pop" as NimbusFx, label: "Conversas", ios: "bubble.left.and.bubble.right", android: "chat", href: "/conversas" },
   { key: "amigos", fx: "pop" as NimbusFx, label: "Perfil", ios: "person.crop.circle", android: "account_circle", href: "/amigos" },
   { key: "settings", fx: "wave" as NimbusFx, label: "Ajustes", ios: "gearshape", android: "settings", href: "/settings" },
   { key: "admin", fx: "pop" as NimbusFx, label: "Admin", ios: "shield", android: "admin_panel_settings", href: "/admin" },
@@ -28,9 +29,15 @@ function Bar({ tabs }: { tabs: readonly Tab[] }) {
   const active = getTrigger("admin")?.isFocused ? -1 : Math.max(0, tabs.findIndex((tab) => getTrigger(tab.key)?.isFocused));
   const { colors, scheme } = useTheme();
   const incoming = useIncomingCount();
+  const unread = useUnreadCount();
   const items = tabs.map((tab, i) => ({
     key: tab.key,
-    label: tab.key === "amigos" && incoming > 0 ? `${tab.label}, ${incoming} ${incoming === 1 ? "pedido" : "pedidos"}` : tab.label,
+    label:
+      tab.key === "amigos" && incoming > 0
+        ? `${tab.label}, ${incoming} ${incoming === 1 ? "pedido" : "pedidos"}`
+        : tab.key === "conversas" && unread > 0
+          ? `${tab.label}, ${unread} ${unread === 1 ? "não lida" : "não lidas"}`
+          : tab.label,
     fx: tab.fx,
     icon: <Icon ios={tab.ios} android={tab.android} size={24} color={i === active ? colors.label : colors.secondaryLabel} />,
   }));

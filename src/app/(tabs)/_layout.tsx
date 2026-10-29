@@ -1,24 +1,32 @@
 import { NativeTabs } from "expo-router/native-tabs";
 
+import { useUnreadCount } from "@/state/use-chat";
 import { useIncomingCount } from "@/state/use-friends";
 import { useTheme } from "@/theme";
 
 export default function TabsLayout() {
   const { colors } = useTheme();
   const requests = useIncomingCount();
+  const unread = useUnreadCount();
   return (
     <NativeTabs tintColor={colors.accent} labelStyle={{ selected: { color: colors.accent } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Hoje</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "sun.max", selected: "sun.max.fill" }} md="wb_sunny" />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="history">
+      {/* Now a segment of Conquistas; the route only redirects. */}
+      <NativeTabs.Trigger name="history" hidden>
         <NativeTabs.Trigger.Label>Histórico</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "calendar", selected: "calendar" }} md="calendar_month" />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="achievements">
         <NativeTabs.Trigger.Label>Conquistas</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "trophy", selected: "trophy.fill" }} md="emoji_events" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="conversas">
+        <NativeTabs.Trigger.Label>Conversas</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" }} md="chat" />
+        <NativeTabs.Trigger.Badge hidden={unread === 0}>{String(unread)}</NativeTabs.Trigger.Badge>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="amigos">
         <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>

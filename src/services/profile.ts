@@ -9,7 +9,10 @@ export function serviceError(error: { code?: string; message?: string; name?: st
 }
 
 export async function fetchMyProfile(userId: string): Promise<Profile> {
-  const result = await requireSupabase().from("profiles").select("*").eq("id", userId).single();
+  const read = (columns: string) => requireSupabase().from("profiles").select(columns).eq("id", userId).single();
+  // Before admin.sql adds free_access the column is unknown: read the profile without it.
+  let result = await read("*, free_access");
+  if (result.error) result = await read("*");
   if (result.error) throw serviceError(result.error);
   const profile = parseProfile(result.data as unknown);
   if (!profile) throw new Error("Perfil inválido.");

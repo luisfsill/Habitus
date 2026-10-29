@@ -18,6 +18,8 @@ export interface Profile {
   searchable: boolean;
   /** Public link to the profile photo; null shows the person icon. */
   avatarUrl: string | null;
+  /** The app is open to everyone for now (admin switch); only read with the viewer's own profile. */
+  freeAccess: boolean;
 }
 
 export interface Plan {
@@ -39,12 +41,12 @@ export const OWNER_PIX = { key: "habitushub@gmail.com", name: "Luis Felipe S Vie
 const DAY_MS = 86_400_000;
 
 export function hasAccess(p: Profile, now: Date): boolean {
-  return p.role === "admin" || p.unlimited || (p.accessUntil !== null && Date.parse(p.accessUntil) > now.getTime());
+  return p.role === "admin" || p.unlimited || p.freeAccess || (p.accessUntil !== null && Date.parse(p.accessUntil) > now.getTime());
 }
 
 export function accessStatus(p: Profile, now: Date): AccessStatus {
   if (p.role === "admin") return "admin";
-  if (p.unlimited) return "unlimited";
+  if (p.unlimited || p.freeAccess) return "unlimited";
   if (!hasAccess(p, now)) return "expired";
   return p.plan === "trial" ? "trial" : "active";
 }
@@ -120,7 +122,7 @@ export const photoLink = (v: unknown): string | null =>
 /** A `profiles` row from Supabase, or null when it is not one. */
 export function parseProfile(row: unknown): Profile | null {
   if (!isRecord(row)) return null;
-  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable, avatar_url } = row;
+  const { id, name, email, role, plan, access_until, unlimited, created_at, username, searchable, avatar_url, free_access } = row;
   if (typeof id !== "string" || typeof email !== "string" || typeof created_at !== "string") return null;
   if (role !== "user" && role !== "admin") return null;
   if (plan !== "trial" && plan !== "paid") return null;
@@ -136,6 +138,7 @@ export function parseProfile(row: unknown): Profile | null {
     username: typeof username === "string" ? username : username === null ? null : undefined,
     searchable: searchable !== false,
     avatarUrl: photoLink(avatar_url),
+    freeAccess: free_access === true,
   };
 }
 
@@ -163,6 +166,7 @@ export function parseCachedProfile(value: unknown): Profile | null {
     username: value.username,
     searchable: value.searchable,
     avatar_url: value.avatarUrl,
+    free_access: value.freeAccess,
   });
 }
 

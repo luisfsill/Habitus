@@ -52,10 +52,13 @@ function RelationActions({ p, run, busy }: { p: UserProfile; run: Run; busy: boo
   const unfriend = () => confirm("Desfazer amizade?", `${p.name} sai da sua lista de amigos.`, "Desfazer", () => run(() => removeFriend(p.id), "leave"));
   const block = () => confirm("Bloquear?", `${p.name} não vai mais achar você nem pedir sua amizade.`, "Bloquear", () => run(() => blockUser(p.id), "leave"));
   return (
-    <Section title="Amizade">
-      <ActionRow label="Desfazer amizade" icon={{ ios: "person.badge.minus", android: "person_remove" }} destructive onPress={unfriend} />
-      <ActionRow label="Bloquear" icon={{ ios: "hand.raised", android: "block" }} destructive onPress={block} />
-    </Section>
+    <>
+      <PrimaryButton label="Mandar mensagem" icon={{ ios: "bubble.left", android: "chat" }} onPress={() => router.push(`/conversas/${p.id}`)} />
+      <Section title="Amizade">
+        <ActionRow label="Desfazer amizade" icon={{ ios: "person.badge.minus", android: "person_remove" }} destructive onPress={unfriend} />
+        <ActionRow label="Bloquear" icon={{ ios: "hand.raised", android: "block" }} destructive onPress={block} />
+      </Section>
+    </>
   );
 }
 

@@ -284,7 +284,7 @@ function AccountRoot() {
 /** Reminders stop when the plan ends; with no plan, none are scheduled. */
 function AccountData({ userId }: { userId: string | null }) {
   const { profile, hasAccess } = useAccess();
-  const unlimited = profile?.role === "admin" || profile?.unlimited === true;
+  const unlimited = profile?.role === "admin" || profile?.unlimited === true || profile?.freeAccess === true;
   const cutoff = !userId || !hasAccess ? 0 : unlimited || !profile?.accessUntil ? null : Date.parse(profile.accessUntil);
   return (
     <AppStateProvider key={userId ?? "signed-out"} userId={userId} accessCutoff={cutoff}>
