@@ -39,7 +39,7 @@ export default function AchievementsScreen() {
       {tab === "historico" ? (
         <HistoryPanel data={data} />
       ) : tab === "ranking" ? (
-        <Section title="Top 10 da semana">
+        <Section title="Top 20 da semana">
           {error ? (
             <>
               <AppText variant="subheadline" color="danger">
