@@ -59,16 +59,17 @@ function Actions({ p, run, busy, onTestimonial }: { p: UserProfile; run: Run; bu
     { label: "Bloquear", icon: { ios: "hand.raised", android: "block" }, destructive: true, onPress: block },
   ];
   return (
-    <View style={styles.row}>
-      <View style={styles.grow}>
-        <PrimaryButton size="small" variant="tinted" label="Amigos" icon={{ ios: "person.fill.checkmark", android: "how_to_reg" }} onPress={() => setMenu(true)} loading={busy} accessibilityHint="Abre as opções de amizade" />
+    <View style={styles.stack}>
+      <View style={styles.row}>
+        <View style={styles.grow}>
+          <PrimaryButton size="small" variant="tinted" label="Amigos" icon={{ ios: "person.fill.checkmark", android: "how_to_reg" }} onPress={() => setMenu(true)} loading={busy} accessibilityHint="Abre as opções de amizade" />
+        </View>
+        <View style={styles.grow}>
+          <PrimaryButton size="small" label="Direct" icon={{ ios: "bubble.left.and.bubble.right", android: "chat" }} onPress={() => router.push(`/chat/${p.id}`)} />
+        </View>
       </View>
-      <View style={styles.grow}>
-        <PrimaryButton size="small" label="Direct" onPress={() => router.push(`/chat/${p.id}`)} />
-      </View>
-      <View style={styles.grow}>
-        <PrimaryButton size="small" variant="tinted" label="Depoimento" onPress={onTestimonial} />
-      </View>
+      {/* Full width under the other two: three labels with icons do not fit one phone row. */}
+      <PrimaryButton size="small" variant="tinted" label="Depoimento" icon={{ ios: "square.and.pencil", android: "edit" }} onPress={onTestimonial} />
       <OptionsSheet visible={menu} title={`Você e ${p.name} são amigos`} options={options} onClose={() => setMenu(false)} />
     </View>
   );
@@ -227,4 +228,5 @@ export default function PersonScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: space.sm },
   grow: { flex: 1 },
+  stack: { gap: space.sm },
 });

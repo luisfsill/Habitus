@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { type ComponentProps, useCallback, useEffect, useMemo, useState } from "react";
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,6 +21,10 @@ import { Icon } from "@/components/icon";
 import { HIT, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
 
 const web = Platform.OS === "web";
+/** The header row: the 48pt photo plus its vertical padding, and the hairline under it. */
+const HEADER_ROW = 48 + space.xs * 2 + 1;
+/** Web: room above the header, so the photo starts below the iPhone's blur (about 70pt from the top on iOS 26). */
+const WEB_TOP = space.md;
 
 type Row = { key: string; day: string } | { key: string; message: Message };
 
@@ -150,7 +154,15 @@ function usePeer(id: string) {
   return { conversation, peer: conversation?.peer ?? overview?.friends.find((f) => f.id.toLowerCase() === id) };
 }
 
-/** Web: the fixed box itself starts below the status bar (one touching the top edge makes iOS 26 stretch its blur far down over the header). */
+/** Web: the header sits in the page and the fixed box starts below it, as when it was the stack header. */
+function WebHeader({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  if (!web) return null;
+  return <View style={[styles.bar, { paddingTop: insets.top + WEB_TOP }]}>{children}</View>;
+}
+
+/** Web: the chat box below the header (the status bar plus one header row); native: the whole screen. */
+const boxStyle = (inset: number) => (web ? [styles.web, { top: inset + WEB_TOP + HEADER_ROW }] : null);
 const columnTop = (inset: number) => (web ? 0 : inset);
 
 export default function ChatScreen() {
@@ -193,41 +205,46 @@ export default function ChatScreen() {
   };
   // The keyboard padding (KeyboardAvoidingView) replaces the home indicator room.
   const room = keyboard ? space.sm : insets.bottom + space.sm;
+  const header = <ChatHeader id={id} peer={peer} />;
   return (
-    <View style={[styles.root, web && [styles.web, { top: insets.top }]]}>
-      <ShakeView trigger={nudges}>
-        {/* Android is edge to edge (the window does not resize), so it pads for the keyboard too. */}
-        <KeyboardAvoidingView style={[styles.column, { paddingTop: columnTop(insets.top) }]} behavior="padding">
-          <ChatHeader id={id} peer={peer} />
-          <FlatList
-            inverted
-            data={rows}
-            keyExtractor={(r) => r.key}
-            onEndReached={() => void loadOlder()}
-            onEndReachedThreshold={0.3}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.list}
-            renderItem={({ item }) => <RowView row={item} me={me} peerName={peer?.name.split(" ")[0]} seen={seen} onReport={reportMessage} />}
-          />
-          <View style={[styles.bottom, { paddingBottom: room }]}>
-            {typing && (
-              <AppText variant="caption" color="secondaryLabel" accessibilityLiveRegion="polite">
-                {`${peer?.name.split(" ")[0] ?? "Seu amigo"} está digitando…`}
-              </AppText>
-            )}
-            <Footer status={error ?? notice} failed={error !== null} ended={conversation?.friends === false} composer={composer} />
-          </View>
-        </KeyboardAvoidingView>
-      </ShakeView>
-      {dance && <StickerDance key={dance.key} id={dance.id} onDone={done} />}
+    <View style={styles.root}>
+      <WebHeader>{header}</WebHeader>
+      <View style={[styles.root, boxStyle(insets.top)]}>
+        <ShakeView trigger={nudges}>
+          {/* Android is edge to edge (the window does not resize), so it pads for the keyboard too. */}
+          <KeyboardAvoidingView style={[styles.column, { paddingTop: columnTop(insets.top) }]} behavior="padding">
+            {!web && header}
+            <FlatList
+              inverted
+              data={rows}
+              keyExtractor={(r) => r.key}
+              onEndReached={() => void loadOlder()}
+              onEndReachedThreshold={0.3}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.list}
+              renderItem={({ item }) => <RowView row={item} me={me} peerName={peer?.name.split(" ")[0]} seen={seen} onReport={reportMessage} />}
+            />
+            <View style={[styles.bottom, { paddingBottom: room }]}>
+              {typing && (
+                <AppText variant="caption" color="secondaryLabel" accessibilityLiveRegion="polite">
+                  {`${peer?.name.split(" ")[0] ?? "Seu amigo"} está digitando…`}
+                </AppText>
+              )}
+              <Footer status={error ?? notice} failed={error !== null} ended={conversation?.friends === false} composer={composer} />
+            </View>
+          </KeyboardAvoidingView>
+        </ShakeView>
+        {dance && <StickerDance key={dance.key} id={dance.id} onDone={done} />}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  // The web page scrolls the document; the chat instead fills the window and scrolls only its own list.
+  // The web page scrolls the document; the chat instead fills the window below the header and scrolls only its own list.
   web: { ...pinned, left: 0, right: 0, bottom: 0 },
+  bar: { width: "100%", maxWidth: MAX_WIDTH, alignSelf: "center" },
   column: { flex: 1, width: "100%", maxWidth: MAX_WIDTH, alignSelf: "center" },
   list: { paddingHorizontal: space.lg, paddingVertical: space.sm, gap: space.xs },
   day: { paddingVertical: space.sm },
