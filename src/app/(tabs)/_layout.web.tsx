@@ -73,16 +73,20 @@ export default function WebTabsLayout() {
 
 // A tap touches the water; dragging a finger across it sloshes the water.
 const SOUNDS = { tap: playSplash, stir: stirWater, settle: settleWater };
-// Almost edge to edge on a phone, as wide as the page column on a computer.
-const BAR = { width: "100%", maxWidth: MAX_WIDTH };
 // The same gap below and at the sides, so the pill follows the rounded screen corners. Like iOS 26's own tab bar
 // it sits over the home indicator's safe area (34 pt), still clear of the indicator line itself.
 const EDGE = 18;
+// Almost edge to edge on a phone, as wide as the page column on a computer. The pill is wider than its fixed wrap
+// (it overflows it evenly): mobile Safari paints its toolbar in a solid colour when a fixed box at least 90% of the
+// window wide sits at the bottom edge, and keeps that colour once a scroll has put its probe point inside the box
+// (WebKit fixedContainerEdges). The wrap stays at 84%, below that, and off the edge (`bottom`, not padding).
+const BAR = { width: `calc(100vw - ${2 * EDGE}px)`, maxWidth: MAX_WIDTH };
+const SIDE = "8%";
 
 const styles = StyleSheet.create({
   // The triggers only register the tabs; the floating bar is the visible one.
   hidden: { display: "none" },
-  wrap: { left: 0, right: 0, bottom: 0, alignItems: "center", paddingHorizontal: EDGE, paddingBottom: EDGE },
+  wrap: { left: SIDE, right: SIDE, bottom: EDGE, alignItems: "center" },
   // Unread messages or friend requests: a red dot on the icon's top right, gone once seen.
   dot: { position: "absolute", top: -2, right: -4, width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: "#FFFFFF" },
 });
