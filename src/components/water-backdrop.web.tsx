@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { palettes } from "@/theme";
 
 import { initSceneGL } from "./ui/fullscreen-gl";
+import { CANVAS_2D, createSea } from "./ui/sea-life";
 import { BACKDROP_FRAG } from "./ui/water-backdrop-gl";
 
 interface Props {
@@ -60,6 +61,7 @@ function mouseRipples(start: number, on: () => boolean) {
  */
 export function WaterBackdrop({ scheme, ripples }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lifeRef = useRef<HTMLCanvasElement>(null);
   // Read each frame, so a theme or page change does not build a new WebGL context (browsers cap how many live at once).
   const live = useRef({ scheme, ripples });
   // With "reduce motion" nothing redraws on its own, so a theme change paints its one still frame here.
@@ -71,14 +73,18 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
 
   useEffect(() => {
     const cv = canvasRef.current;
-    const scene = cv ? initSceneGL(cv, BACKDROP_FRAG, ["uBase", "uDrops"]) : null;
+    const scene = cv ? initSceneGL(cv, BACKDROP_FRAG, ["uBase", "uDrops", "uShark"]) : null;
     if (!cv || !scene) return;
     const { gl, u } = scene;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = performance.now();
     const stir = mouseRipples(start, () => !!live.current.ripples && !reduce);
+    // Bubbles, sea animals and the odd shark; none with "reduce motion".
+    const sea = reduce ? null : createSea();
+    const life = lifeRef.current?.getContext(CANVAS_2D);
     let raf = 0;
     let last = 0;
+    let seaT = 0;
     const draw = (now: number) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -97,6 +103,14 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
       gl.uniform1f(u.uDark, theme === "dark" ? 1 : 0);
       gl.uniform3f(u.uBase, ...rgb(palettes[theme].background));
       gl.uniform4fv(u.uDrops, stir.drops);
+      if (sea && life) {
+        const t = (now - start) / 1000;
+        // A hidden tab pauses the loop: do not jump a whole minute ahead when it comes back.
+        sea.step(Math.min(t - seaT, 0.1), w, h, t);
+        seaT = t;
+        sea.draw(life, w, h, theme === "dark");
+        gl.uniform4fv(u.uShark, sea.shark);
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
     const tick = (now: number) => {
@@ -136,6 +150,7 @@ export function WaterBackdrop({ scheme, ripples }: Props) {
         background: FALLBACK[scheme],
       }}>
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      <canvas ref={lifeRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
     </div>
   );
 }
