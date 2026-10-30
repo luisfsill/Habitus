@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import type { Message } from "@/domain/chat";
 import { stickerLabel } from "@/domain/stickers";
@@ -69,7 +69,8 @@ const styles = StyleSheet.create({
   line: { flexDirection: "row", paddingVertical: 2 },
   left: { justifyContent: "flex-start" },
   right: { justifyContent: "flex-end" },
-  bubble: { maxWidth: "80%", paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, gap: 2 },
+  // Capped on a wide screen, where 80% of the column would make lines too long to read.
+  bubble: { maxWidth: Platform.OS === "web" ? ("min(80%, 560px)" as "80%") : "80%", paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, gap: 2 },
   mine: { borderBottomRightRadius: radius.sm / 2 },
   theirs: { borderBottomLeftRadius: radius.sm / 2 },
   nudge: { paddingVertical: space.sm, alignItems: "center" },

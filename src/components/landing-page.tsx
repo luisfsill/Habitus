@@ -5,10 +5,11 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { space, ThemePreferenceContext, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
-import { DayChart, StatsBand } from "./landing-day";
+import { DayChart } from "./landing-day";
 import { LandingMenu, MenuButton } from "./landing-menu";
 import { RemindersSection } from "./landing-reminders";
-import { Faq, Features, Footer, Plans, Steps, Tips } from "./landing-sections";
+import { Faq, Footer, Tips } from "./landing-sections";
+import { SocialSection } from "./landing-social";
 import { WaterSection } from "./landing-water";
 import { PhoneMock } from "./phone-mock";
 import { css, NavLink, Reveal, SurfaceButton } from "./surface-parts";
@@ -18,9 +19,9 @@ const PAGE_WIDTH = 1120;
 const BAR_HEIGHT = 72;
 const NAV = [
   { id: "agua", label: "Água" },
+  { id: "amigos", label: "Amigos" },
   { id: "lembretes", label: "Lembretes" },
   { id: "dicas", label: "As 6 dicas" },
-  { id: "planos", label: "Planos" },
   { id: "duvidas", label: "Dúvidas" },
 ] as const;
 
@@ -30,6 +31,8 @@ interface Props {
   onLegal: (page: "terms" | "privacy") => void;
   /** A phone's browser, where the app runs installed: "Instalar app" takes the bar's main button. */
   onInstall?: () => void;
+  /** Plays the app's nudge sound in the friends section's demo. */
+  onNudge?: () => void;
   /** Dialogs and bars laid over the page, under its dark theme. */
   children?: ReactNode;
 }
@@ -94,18 +97,18 @@ function Hero({ wide, onStart }: { wide: boolean; onStart: () => void }) {
     <View style={[styles.hero, wide && styles.heroWide]}>
       <Animated.View entering={FadeInUp.duration(700)} style={[styles.heroText, wide && styles.heroTextWide]}>
         <AppText style={[styles.headline, !wide && styles.headlineNarrow]} accessibilityRole="header">
-          Gota a gota,{"\n"}um hábito{"\n"}
-          <AppText style={[styles.headline, !wide && styles.headlineNarrow, { color: colors.accentText }]}>se forma.</AppText>
+          Cuide de você.{"\n"}Chame a atenção{"\n"}
+          <AppText style={[styles.headline, !wide && styles.headlineNarrow, { color: colors.accentText }]}>da galera.</AppText>
         </AppText>
         <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-          Não com uma virada de chave, mas com pequenos gestos todos os dias. O Habitus espalha seis pausas de bem-estar pelo seu dia, cuida da água e dos seus compromissos, e te avisa de cada um na hora certa.
+          Água, lembretes e 6 pausas no seu dia. Com amigos, chamar a atenção e depoimentos, como no MSN e no Orkut.
         </AppText>
         <View style={styles.heroActions}>
-          <SurfaceButton label="Começar meus 7 dias grátis" onPress={onStart} />
-          <NavLink label="Ver como funciona" onPress={() => scrollTo("como-funciona")} />
+          <SurfaceButton label="Começar grátis" onPress={onStart} />
+          <NavLink label="Ver o lado social" onPress={() => scrollTo("amigos")} />
         </View>
         <AppText variant="footnote" color="secondaryLabel">
-          7 dias grátis, sem cartão.
+          Grátis. Traga seus amigos: cada um cria a própria conta.
         </AppText>
       </Animated.View>
       <Animated.View entering={FadeInDown.delay(200).duration(800)} style={REFLECT}>
@@ -119,10 +122,9 @@ function Hero({ wide, onStart }: { wide: boolean; onStart: () => void }) {
  * Home for visitors ("Superfície"), on a computer and in a phone's browser (`InstallGate`): clean type and white buttons over live dark water that the mouse stirs.
  * Always the dark theme, whatever the system's, so the text reads on the water.
  */
-export function LandingPage({ onStart, onSignIn, onLegal, onInstall, children }: Props) {
+export function LandingPage({ onStart, onSignIn, onLegal, onInstall, onNudge, children }: Props) {
   const { width } = useWindowDimensions();
   const wide = width >= 960;
-  const columns = width >= 960 ? 3 : width >= 640 ? 2 : 1;
   // Section links land below the fixed bar instead of under it.
   useEffect(() => {
     document.documentElement.style.scrollPaddingTop = `${BAR_HEIGHT}px`;
@@ -133,6 +135,8 @@ export function LandingPage({ onStart, onSignIn, onLegal, onInstall, children }:
     setMenu(false);
     if (id) scrollTo(id);
   }, []);
+  // Friends section and closing call: on a phone the page exists to get the app installed.
+  const invite = onInstall ? { label: "Instale o PWA e chame sua galera", onPress: onInstall } : { label: "Criar conta e chamar a galera", onPress: onStart };
   const fromMenu = (go: () => void) => () => {
     setMenu(false);
     go();
@@ -154,33 +158,23 @@ export function LandingPage({ onStart, onSignIn, onLegal, onInstall, children }:
         <Nav wide={wide} onSignIn={onSignIn} onStart={onStart} onInstall={onInstall} menu={menu && !wide} onMenu={() => setMenu(!menu)} />
         <View style={[styles.page, styles.belowBar]}>
           <Hero wide={wide} onStart={onStart} />
-          <Reveal>
-            <StatsBand columns={width >= 760 ? 4 : 2} />
-          </Reveal>
           <WaterSection wide={wide} />
+          <SocialSection wide={wide} cta={invite} onNudge={onNudge} />
           <RemindersSection wide={wide} />
           <Reveal>
             <DayChart wide={wide} />
           </Reveal>
           <Tips wide={wide} />
-          <Reveal>
-            <Steps columns={Math.min(columns, 3)} />
-          </Reveal>
-          <Reveal>
-            <Features columns={columns} />
-          </Reveal>
-          <Reveal>
-            <Plans wide={wide} onStart={onStart} />
-          </Reveal>
+          {/* Plans (landing-sections.tsx) are hidden while the app is free. */}
           <Reveal>
             <Faq />
           </Reveal>
           <Reveal style={styles.final}>
-            <AppText style={[styles.finalTitle, !wide && styles.headlineNarrow]}>Seu próximo hábito começa hoje.</AppText>
+            <AppText style={[styles.finalTitle, !wide && styles.headlineNarrow]}>Chame sua galera. O próximo hábito começa hoje.</AppText>
             <AppText variant="body" color="secondaryLabel" align="center">
-              Crie sua conta em menos de um minuto e use água, lembretes e as 6 dicas por 7 dias, sem cartão.
+              Conta em menos de um minuto. Grátis.
             </AppText>
-            <SurfaceButton label="Criar minha conta grátis" onPress={onStart} />
+            <SurfaceButton label={invite.label} onPress={invite.onPress} />
           </Reveal>
           <Footer onLegal={onLegal} />
         </View>

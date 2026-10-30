@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { pinned, space, useColumnGutter } from "@/theme";
+import { ACTION_WIDTH, pinned, space, useColumnGutter } from "@/theme";
 
 import { AppText } from "./app-text";
 import { textShadow } from "./spoken-phrase";
@@ -47,7 +47,11 @@ export function SceneShell({ backdrop, subtitle, title, line, children, footer }
         )}
         {children}
       </View>
-      {footer && <View style={[styles.footer, side, { bottom: insets.bottom + space.lg }]}>{footer}</View>}
+      {footer && (
+        <View style={[styles.footer, { bottom: insets.bottom + space.lg }]}>
+          <View style={styles.action}>{footer}</View>
+        </View>
+      )}
     </View>
   );
 }
@@ -66,5 +70,6 @@ const styles = StyleSheet.create({
   text: { position: "absolute", gap: space.sm },
   dim: { color: "rgba(240,242,250,0.8)" },
   line: { color: "#F2F4FA", fontWeight: "600", letterSpacing: 0.3 },
-  footer: { position: "absolute" },
+  footer: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  action: { width: "100%", maxWidth: ACTION_WIDTH + 2 * space.xl, paddingHorizontal: space.xl },
 });

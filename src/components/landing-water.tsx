@@ -7,7 +7,7 @@ import { radius, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
-import { Bullets, Block } from "./landing-sections";
+import { Block } from "./landing-sections";
 import { css, SurfaceButton, useCountUp, useInView } from "./surface-parts";
 
 // The simulator runs the app's own rule (waterMinutes) on the default 08:00–16:00 day, so what it shows is what the app does.
@@ -17,13 +17,6 @@ const TIPS = sliceCenters(START, END - START).map(Math.round);
 const EVERY = [60, 90, 120] as const;
 const GOAL = 8;
 const at = (minutes: number) => `${((minutes - START) / (END - START)) * 100}%`;
-
-const POINTS = [
-  { icon: "water_drop", text: "Meta de 1 a 20 copos por dia. Quem decide é você." },
-  { icon: "timer", text: "Avisos a cada 30 min até 4 h, só dentro do seu horário." },
-  { icon: "notifications_off", text: "Bateu a meta? Os avisos param até o dia seguinte." },
-  { icon: "emoji_events", text: "+15 XP em cada dia com a meta batida." },
-] as const;
 
 function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
@@ -37,15 +30,58 @@ function Chip({ label, selected, onPress }: { label: string; selected: boolean; 
   );
 }
 
-/** Pick an interval and watch the day's reminders move along the timeline; then log cups up to the goal. */
+const GLASS = "M24 8 H176 L156 252 Q155 262 145 262 H55 Q45 262 44 252 Z";
+// One wave period is 200 wide; the path runs two periods so sliding it by one loops seamlessly.
+const WAVE = "M0 12 Q50 0 100 12 T200 12 T300 12 T400 12 V400 H0 Z";
+
+/** A tall glass that fills cup by cup, its surface waving; full, it turns green. */
+function Glass({ cups }: { cups: number }) {
+  const { colors } = useTheme();
+  const { ref, shown } = useInView();
+  const level = shown ? Math.min(cups, GOAL) / GOAL : 0;
+  const done = cups >= GOAL;
+  const tint = done ? colors.success : colors.accentText;
+  return (
+    <View ref={ref} style={styles.glass} accessible accessibilityLabel={`Copo com ${Math.min(cups, GOAL)} de ${GOAL} copos`}>
+      <svg width={200} height={270} viewBox="0 0 200 270" aria-hidden>
+        <defs>
+          <clipPath id="glass-clip">
+            <path d={GLASS} />
+          </clipPath>
+        </defs>
+        <g clipPath="url(#glass-clip)">
+          {/* 254 px of glass from the bottom: empty sits just under it, full a little over the rim. */}
+          <g style={{ transform: `translateY(${262 - level * 262}px)`, transition: "transform 900ms cubic-bezier(.2,.9,.25,1)" }}>
+            {[0.35, 0.8].map((opacity, i) => (
+              <path key={i} d={WAVE} fill={tint} opacity={opacity} transform={`translate(${i * -60} ${i * 4})`}>
+                {/* Backticks: the icon font test reads double-quoted lowercase words as icon names. */}
+                <animateTransform attributeName={`transform`} type={`translate`} from={`${i * -60} ${i * 4}`} to={`${i * -60 - 200} ${i * 4}`} dur={`${2.6 + i}s`} repeatCount="indefinite" />
+              </path>
+            ))}
+          </g>
+        </g>
+        <path d={GLASS} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.55)" strokeWidth={3} strokeLinejoin="round" />
+        <path d="M40 30 L56 230" stroke="rgba(255,255,255,0.18)" strokeWidth={6} strokeLinecap="round" />
+      </svg>
+      <View style={styles.glassLabel} pointerEvents="none">
+        <AppText style={styles.glassCount}>
+          {Math.min(cups, GOAL)}/{GOAL}
+        </AppText>
+        <AppText variant="headline" style={css({ textShadow: "0 1px 6px rgba(0,0,0,0.5)" })}>
+          {done ? "Meta batida! +15 XP" : "copos"}
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+/** Pick an interval and watch the day's reminders move along the timeline. */
 function Simulator() {
   const { colors } = useTheme();
   const { ref, shown } = useInView();
   const [every, setEvery] = useState<number>(90);
-  const [cups, setCups] = useState(5);
   const times = waterMinutes("08:00", "16:00", every, TIPS);
   const count = useCountUp(times.length, shown);
-  const done = cups >= GOAL;
   return (
     <View ref={ref} style={[styles.sim, { borderColor: colors.separator }]}>
       <AppText variant="footnote" color="secondaryLabel" style={styles.kicker}>
@@ -84,41 +120,22 @@ function Simulator() {
         ))}
       </View>
       <AppText variant="footnote" color="secondaryLabel">
-        Pontos brancos são as dicas. Um aviso de água a menos de 10 min de uma dica é pulado.
+        Pontos brancos são as dicas: a água nunca chega junto.
       </AppText>
 
-      <View style={[styles.cups, { borderColor: colors.separator }]}>
-        <View style={styles.cupRow} accessibilityLabel={`${Math.min(cups, GOAL)} de ${GOAL} copos`}>
-          {Array.from({ length: GOAL }, (_, i) => (
-            <View key={i} style={css({ transform: `scale(${i < cups ? 1 : 0.8})`, transition: "transform 300ms cubic-bezier(.3,1.6,.5,1)" })}>
-              <Icon ios="drop.fill" android="water_drop" size={26} color={i < cups ? colors.accentText : "rgba(238,247,255,0.18)"} />
-            </View>
-          ))}
-        </View>
-        <View style={styles.cupFoot}>
-          <AppText variant="headline" style={done ? { color: colors.success } : undefined}>
-            {done ? "Meta batida! +15 XP" : `${cups} de ${GOAL} copos`}
-          </AppText>
-          <SurfaceButton label={done ? "Recomeçar" : "+1 copo"} size="md" variant="outline" onPress={() => setCups(done ? 0 : cups + 1)} />
-        </View>
-      </View>
     </View>
   );
 }
 
 export function WaterSection({ wide }: { wide: boolean }) {
+  const [cups, setCups] = useState(3);
+  const done = cups >= GOAL;
   return (
     <Block id="agua" kicker="Lembrete de água" title="Beba água no ritmo do seu dia">
       <View style={[styles.split, wide && styles.splitWide]}>
-        <View style={[styles.text, wide && styles.textWide]}>
-          <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-            Diga quantos copos quer beber e de quanto em quanto tempo quer ser lembrado. O Habitus avisa ao longo do dia e marca seu
-            progresso com um toque.
-          </AppText>
-          <Bullets items={POINTS} />
-          <AppText variant="footnote" color="secondaryLabel">
-            Vem desligado: você liga em Ajustes quando quiser.
-          </AppText>
+        <View style={styles.glassSide}>
+          <Glass cups={cups} />
+          <SurfaceButton label={done ? "Esvaziar o copo" : "+1 copo"} size="md" variant="outline" onPress={() => setCups(done ? 0 : cups + 1)} />
         </View>
         <View style={wide ? styles.flex : undefined}>
           <Simulator />
@@ -134,9 +151,10 @@ const styles = StyleSheet.create({
   kicker: { fontWeight: "700", letterSpacing: 1 },
   split: { gap: space.xxl },
   splitWide: { flexDirection: "row", alignItems: "center", gap: space.xxl * 2 },
-  text: { gap: space.xl },
-  textWide: { width: 440 },
-  lede: { fontWeight: "400", lineHeight: 30 },
+  glassSide: { alignItems: "center", gap: space.lg },
+  glass: { width: 200, height: 270 },
+  glassLabel: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
+  glassCount: { fontSize: 56, lineHeight: 60, fontWeight: "800", letterSpacing: -2, color: "#FFFFFF", textShadow: "0 2px 10px rgba(0,0,0,0.45)" } as object,
   sim: { gap: space.lg, paddingVertical: space.xl, borderTopWidth: 1, borderBottomWidth: 1 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   chip: { minHeight: 36, paddingHorizontal: space.lg, borderRadius: radius.pill, borderWidth: 1.5, justifyContent: "center" },
@@ -149,7 +167,4 @@ const styles = StyleSheet.create({
   tip: { position: "absolute", width: 8, height: 8, marginLeft: -4, borderRadius: 4, backgroundColor: "#FFFFFF" },
   drop: { position: "absolute", top: -2, marginLeft: -11 },
   axis: { flexDirection: "row", justifyContent: "space-between", marginTop: -space.sm },
-  cups: { gap: space.md, paddingTop: space.lg, borderTopWidth: StyleSheet.hairlineWidth },
-  cupRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  cupFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: space.md },
 });

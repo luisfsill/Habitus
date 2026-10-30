@@ -74,7 +74,8 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Pr
 }
 
 const styles = StyleSheet.create({
-  track: { flexDirection: "row", height: HEIGHT, padding: INSET, borderRadius: radius.sm },
+  // A phone's width at most: on a wide screen two or three tabs spread over the column would read as a bar.
+  track: { flexDirection: "row", height: HEIGHT, maxWidth: 420, padding: INSET, borderRadius: radius.sm },
   pill: { position: "absolute", top: INSET, bottom: INSET, left: INSET, borderRadius: radius.sm - INSET },
   tab: { flex: 1, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   dot: { width: 8, height: 8, borderRadius: 4 },

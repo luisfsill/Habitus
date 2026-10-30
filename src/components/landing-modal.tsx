@@ -71,10 +71,11 @@ export function LoginFrame({ mode }: { mode: "signup" | "signin" }) {
 
 interface DesktopProps {
   onLegal: (page: "terms" | "privacy") => void;
+  onNudge?: () => void;
 }
 
 /** Computer visitors: "Entrar" and "Começar grátis" open the sign-in screen over the page instead of leaving it. */
-export function DesktopLanding({ onLegal }: DesktopProps) {
+export function DesktopLanding({ onLegal, onNudge }: DesktopProps) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [open, setOpen] = useState(false);
   // The frame is a whole second copy of the app (water shader included): load it only once someone asks for it.
@@ -85,7 +86,7 @@ export function DesktopLanding({ onLegal }: DesktopProps) {
     setOpen(true);
   };
   return (
-    <LandingPage onStart={() => show("signup")} onSignIn={() => show("signin")} onLegal={onLegal}>
+    <LandingPage onStart={() => show("signup")} onSignIn={() => show("signin")} onLegal={onLegal} onNudge={onNudge}>
       {/* Kept mounted after the first open, so closing and reopening keeps what was typed. */}
       <LandingModal label="Entrar no Habitus" open={open} onClose={() => setOpen(false)}>
         {loaded && <LoginFrame mode={mode} />}

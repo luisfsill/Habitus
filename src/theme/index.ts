@@ -69,7 +69,10 @@ const dark: typeof light = {
 };
 
 /** Width of the app column on wide (desktop/tablet) screens: pages, headers, pinned bars and sheets keep to it. */
-export const MAX_WIDTH = 640;
+export const MAX_WIDTH = 1120;
+
+/** Pinned action bars (Concluir, Começar, Salvar) stay this wide in the column: a 1120 pt button reads as a banner. */
+export const ACTION_WIDTH = 480;
 
 /**
  * Room beside the app column (0 on a phone). Pinned overlays and header buttons inset by it to stay on the column:

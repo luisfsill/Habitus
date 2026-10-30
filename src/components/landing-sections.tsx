@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { formatPrice } from "@/domain/access";
-import { radius, space, useTheme } from "@/theme";
+import { space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { GAINS } from "./benefits";
@@ -16,28 +16,12 @@ const PLANS = [
   { name: "Anual", days: 365, cents: 7990, highlight: true },
 ] as const;
 
-const STEPS = [
-  { title: "Crie sua conta", text: "Nome, e-mail e senha. Os 7 primeiros dias são grátis, sem cartão." },
-  { title: "Escolha seu horário", text: "Diga quando seu dia começa e termina e a hora em que você dorme." },
-  { title: "Receba os avisos", text: "Dicas, água e seus lembretes chegam na hora certa. Ligue a água e crie lembretes quando quiser." },
-] as const;
-
-const FEATURES = [
-  { icon: { ios: "bell.badge", android: "notifications_active" }, title: "Ações na notificação", text: "Marque como feito ou adie 10 minutos sem abrir o app." },
-  { icon: { ios: "trophy", android: "emoji_events" }, title: "XP, faixas e medalhas", text: "Dicas, dias perfeitos e a meta de água viram XP. Suba de nível." },
-  { icon: { ios: "calendar", android: "calendar_month" }, title: "Histórico do mês", text: "Veja num calendário os dias completos e os parciais." },
-  { icon: { ios: "icloud", android: "cloud_done" }, title: "Na sua conta", text: "Progresso, água e lembretes salvos em qualquer aparelho." },
-  { icon: { ios: "moon", android: "dark_mode" }, title: "Claro ou escuro", text: "O app segue a aparência do seu celular, ou a que você escolher." },
-  { icon: { ios: "iphone", android: "smartphone" }, title: "Sem loja de apps", text: "Instale pelo navegador do celular em poucos segundos." },
-] as const;
-
 const FAQ = [
-  { q: "Preciso de cartão para testar?", a: "Não. Você cria a conta e usa tudo por 7 dias, sem cartão." },
+  { q: "Quanto custa?", a: "Nada. Hoje o Habitus é gratuito: crie a conta e use tudo." },
   { q: "Quais são as 6 dicas?", a: "É surpresa: você descobre ao entrar no app, uma de cada vez, ao longo do dia." },
-  { q: "Sou obrigado a usar o lembrete de água?", a: "Não. Ele vem desligado. Se quiser, você liga em Ajustes e escolhe a meta de copos e o intervalo." },
+  { q: "Como adiciono meus amigos?", a: "Cada um cria a própria conta e escolhe um @. Busque pelo nome ou pelo @ e mande o pedido de amizade." },
   { q: "Que lembretes eu posso criar?", a: "Qualquer um: contas, aniversários, ligações, compromissos. Com notas, até 5 avisos antes e repetição se precisar." },
   { q: "Funciona no celular?", a: "Sim. Abra o site no celular e toque em Instalar agora. O Habitus vira um app na sua tela inicial." },
-  { q: "Como funciona a renovação?", a: "Os planos são por tempo e não renovam sozinhos. Para renovar, você escolhe um plano e fala com a gente pelo WhatsApp." },
 ] as const;
 
 interface BlockProps {
@@ -81,19 +65,6 @@ function Grid({ columns, children }: { columns: number; children: ReactNode[] })
         </View>
       ))}
     </View>
-  );
-}
-
-function Feature({ icon, title, text }: { icon: { ios: string; android: string }; title: string; text: string }) {
-  const { colors } = useTheme();
-  return (
-    <>
-      <Icon ios={icon.ios} android={icon.android} size={26} color={colors.accent} />
-      <AppText variant="headline">{title}</AppText>
-      <AppText variant="subheadline" color="secondaryLabel">
-        {text}
-      </AppText>
-    </>
   );
 }
 
@@ -161,7 +132,7 @@ export function Tips({ wide }: { wide: boolean }) {
         <DayRing shown={shown} />
         <View style={[styles.tipsText, wide && styles.flex]}>
           <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-            A rotina engole o dia e a boa intenção fica para amanhã. Por isso o Habitus espalha pequenos gestos pelo seu horário, do começo do dia até a hora de dormir, e te avisa de cada um. Quais são? Você descobre ao entrar.
+            Pequenos gestos do começo do dia até a hora de dormir. Quais são? Você descobre ao entrar.
           </AppText>
           <View style={styles.gains}>
             {GAINS.map((gain, i) => (
@@ -179,38 +150,7 @@ export function Tips({ wide }: { wide: boolean }) {
   );
 }
 
-export function Steps({ columns }: { columns: number }) {
-  const { colors } = useTheme();
-  return (
-    <Block id="como-funciona" kicker="Como funciona" title="Três passos e pronto">
-      <Grid columns={columns}>
-        {STEPS.map((step, i) => (
-          <View key={step.title} style={styles.step}>
-            <View style={[styles.number, { backgroundColor: colors.accentSoft }]}>
-              <AppText variant="headline" color="accentText">
-                {i + 1}
-              </AppText>
-            </View>
-            <AppText variant="headline">{step.title}</AppText>
-            <AppText variant="subheadline" color="secondaryLabel">
-              {step.text}
-            </AppText>
-          </View>
-        ))}
-      </Grid>
-    </Block>
-  );
-}
-
-export function Features({ columns }: { columns: number }) {
-  return (
-    <Block id="recursos" kicker="Recursos" title="Tudo para criar o hábito">
-      <Grid columns={columns}>{FEATURES.map((f) => <Feature key={f.title} {...f} />)}</Grid>
-    </Block>
-  );
-}
-
-/** Plans side by side, split by hairlines; the yearly one is marked by a single word. */
+/** Plans side by side, split by hairlines; the yearly one is marked by a single word. Hidden from the landing while the app is free. */
 export function Plans({ wide, onStart }: { wide: boolean; onStart: () => void }) {
   const { colors } = useTheme();
   return (
@@ -292,8 +232,6 @@ const styles = StyleSheet.create({
   cell: { padding: space.xl, gap: space.sm },
   right: { borderRightWidth: StyleSheet.hairlineWidth },
   bottom: { borderBottomWidth: StyleSheet.hairlineWidth },
-  step: { gap: space.sm },
-  number: { width: 36, height: 36, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", marginBottom: space.xs },
   flex: { flex: 1 },
   bullets: { gap: space.md },
   bullet: { flexDirection: "row", alignItems: "center", gap: space.md },

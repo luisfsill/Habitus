@@ -149,7 +149,8 @@ const styles = StyleSheet.create({
   grow: { flex: 1, gap: 2 },
   bold: { fontWeight: "600" },
   delete: { minWidth: HIT / 1.5, alignItems: "center" },
-  image: { width: "100%", borderRadius: radius.md },
+  // On a wide screen a full-width photo would be taller than the window.
+  image: { width: "100%", maxWidth: 560, borderRadius: radius.md },
   list: { gap: space.xl },
   edit: { gap: space.sm },
   // TextField grows to 160 for side-by-side form fields; here it sits alone in a column.

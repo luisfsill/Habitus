@@ -109,7 +109,7 @@ export function RemindersSection({ wide }: { wide: boolean }) {
         </View>
         <View ref={ref} style={[styles.text, wide && styles.flex]}>
           <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-            Crie lembretes com título, notas, data e hora. O Habitus avisa antes, repete quando precisa e guarda o que você já fez.
+            Avisa antes, repete e guarda o que você já fez.
           </AppText>
           <View>
             {NUMBERS.map((n) => (

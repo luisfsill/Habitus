@@ -6,40 +6,7 @@ import { space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Block } from "./landing-sections";
-import { css, useCountUp, useInView } from "./surface-parts";
-
-const STATS = [
-  { value: 6, text: "pausas de bem-estar por dia" },
-  { value: 8, text: "copos na meta inicial (você ajusta)" },
-  { value: 5, text: "avisos antes de cada lembrete seu" },
-  { value: 7, text: "dias grátis, sem cartão" },
-] as const;
-
-/** Four headline numbers that count up as they scroll into view. */
-export function StatsBand({ columns }: { columns: number }) {
-  const { colors } = useTheme();
-  const { ref, shown } = useInView();
-  return (
-    <View ref={ref} style={[styles.stats, { borderColor: colors.separator }]}>
-      {STATS.map((s, i) => (
-        <Stat key={s.text} {...s} run={shown} width={`${100 / columns}%`} divider={(i + 1) % columns !== 0} />
-      ))}
-    </View>
-  );
-}
-
-function Stat({ value, text, run, width, divider }: { value: number; text: string; run: boolean; width: `${number}%`; divider: boolean }) {
-  const { colors } = useTheme();
-  const shown = useCountUp(value, run);
-  return (
-    <View style={[styles.stat, { width, borderColor: colors.separator }, divider && styles.divider]}>
-      <AppText style={styles.statValue}>{shown}</AppText>
-      <AppText variant="subheadline" color="secondaryLabel">
-        {text}
-      </AppText>
-    </View>
-  );
-}
+import { css, useInView } from "./surface-parts";
 
 // A sample day, 07:00 to midnight: the default tip times, water every 1h30 by the app's own rule, three of the person's own reminders.
 const FROM = 7 * 60;
@@ -89,7 +56,7 @@ export function DayChart({ wide }: { wide: boolean }) {
   return (
     <Block id="seu-dia" kicker="Um dia com o Habitus" title="Tudo no seu dia, sem chegar junto">
       <AppText variant="title3" color="secondaryLabel" style={styles.lede}>
-        Dicas, água e seus lembretes dividem o mesmo dia. O Habitus espaça os avisos para você não receber tudo de uma vez.
+        O Habitus espaça os avisos para não chegar tudo junto.
       </AppText>
       <View ref={ref} style={[styles.chart, { borderColor: colors.separator }]} accessibilityLabel="Exemplo de dia: 6 dicas, 5 lembretes de água e 3 lembretes pessoais">
         <Lane name="Dicas" color="#FFFFFF" times={TIPS} shown={shown} wide={wide} />
@@ -119,10 +86,6 @@ export function DayChart({ wide }: { wide: boolean }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  stats: { flexDirection: "row", flexWrap: "wrap", borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
-  stat: { paddingVertical: space.xl, paddingHorizontal: space.lg, gap: space.xs },
-  divider: { borderRightWidth: StyleSheet.hairlineWidth },
-  statValue: { fontSize: 56, lineHeight: 60, fontWeight: "700", letterSpacing: -2, color: "#FFFFFF" },
   lede: { fontWeight: "400", lineHeight: 30, maxWidth: 720 },
   chart: { gap: space.lg, paddingVertical: space.xl, borderTopWidth: 1, borderBottomWidth: 1 },
   lane: { flexDirection: "row", alignItems: "center", minHeight: 44 },

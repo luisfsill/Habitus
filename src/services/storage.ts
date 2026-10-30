@@ -76,15 +76,6 @@ export async function saveProfileCache(profile: Profile | null): Promise<void> {
   }
 }
 
-/** Whether this browser holds a login (web only: the Supabase client keeps it as `sb-<project>-auth-token`). */
-export function hasStoredSession(): boolean {
-  try {
-    return Object.keys(localStorage).some((key) => /^sb-.+-auth-token$/.test(key));
-  } catch {
-    return false;
-  }
-}
-
 const LOGIN_CURTAIN_KEY = "habitus:login-curtain";
 
 /** Web: signed in from the landing's dialog, whose page then reloads. Kept for this tab only, across that reload. */

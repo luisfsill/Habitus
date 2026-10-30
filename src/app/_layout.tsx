@@ -10,14 +10,14 @@ import { DesktopLanding } from "@/components/landing-modal";
 import { PrimaryButton } from "@/components/primary-button";
 import { Celebration } from "@/components/celebration";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { DesktopFrame } from "@/components/desktop-frame";
 import { RewardToast } from "@/components/reward-toast";
 import { useStackHeader } from "@/components/stack-header";
 import { WaterBackdrop } from "@/components/water-backdrop";
+import { playNudge } from "@/services/sound";
 import { AccessProvider, useAccess } from "@/state/access";
 import { AppStateProvider, useAppState } from "@/state/app-state";
 import { AuthProvider, useAuth } from "@/state/auth";
-import { framedOnDesktop, inDesktopFrame, leaveLoginModal, mirrorToWindow } from "@/state/desktop-frame";
+import { inLoginModal, leaveLoginModal } from "@/state/desktop-frame";
 import { TransitionProvider, useCurtainHold } from "@/state/transition";
 import { isIPhone, isMobileWeb, isStandalone, useInstallPrompt } from "@/state/use-install-prompt";
 import { useNotificationRouting } from "@/state/use-notification-routing";
@@ -46,9 +46,9 @@ function installOnly(signedIn: boolean, pathname: string): boolean {
   return !__DEV__ || (!signedIn && pathname === "/");
 }
 
-/** A computer's browser, not the installed app: visitors get the landing page at "/" (inside the desktop frame they sign in instead). */
+/** A computer's browser, not the installed app: visitors get the landing page at "/" (inside the sign-in dialog they sign in instead). */
 function desktopWeb(): boolean {
-  return Platform.OS === "web" && !isMobileWeb() && !isStandalone() && !inDesktopFrame();
+  return Platform.OS === "web" && !isMobileWeb() && !isStandalone() && !inLoginModal();
 }
 
 /** Full page loads: the landing page renders instead of the navigator, so there is no router to push to. */
@@ -68,12 +68,13 @@ function entryScreen(signedIn: boolean, pathname: string, install: ReturnType<ty
         iPhone={isIPhone()}
         onInstall={() => void install.install()}
         onLegal={onLegal}
+        onNudge={playNudge}
         canSignIn={__DEV__}
       />
     );
   }
   if (!signedIn && pathname === "/" && desktopWeb()) {
-    return <DesktopLanding onLegal={onLegal} />;
+    return <DesktopLanding onLegal={onLegal} onNudge={playNudge} />;
   }
   return null;
 }
@@ -159,7 +160,6 @@ function RootStack() {
       window.scrollTo(0, 0);
       requestAnimationFrame(() => window.scrollTo(0, 0));
     }
-    mirrorToWindow();
     if (signedIn) leaveLoginModal();
   }, [pathname, signedIn]);
 
@@ -299,16 +299,7 @@ function AccountData({ userId }: { userId: string | null }) {
 // The installed iPhone app needs real insets to keep the title below the clock and pinned footers above the home indicator.
 const SafeArea = Platform.OS === "web" ? WebSafeAreaInsets : Fragment;
 
-const framed = framedOnDesktop();
-
-/** On a computer this window only holds the frame; the app runs inside it. */
-function FramedApp() {
-  useEffect(() => void SplashScreen.hideAsync(), []);
-  return <DesktopFrame src={window.location.pathname + window.location.search} />;
-}
-
 export default function RootLayout() {
-  if (framed) return <FramedApp />;
   return (
     <SafeArea>
       <AuthProvider>

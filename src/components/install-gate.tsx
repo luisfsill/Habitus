@@ -20,6 +20,8 @@ interface Props {
   iPhone: boolean;
   onInstall: () => void;
   onLegal: (page: "terms" | "privacy") => void;
+  /** Plays the app's nudge sound in the landing's friends section. */
+  onNudge?: () => void;
   /** Development: "Entrar" and "Começar" open the sign-in screen, as on a computer, while the install stays testable. */
   canSignIn?: boolean;
 }
@@ -40,7 +42,7 @@ function Installed() {
  * A phone's browser: the landing page, but the app only runs installed. "Entrar" and "Começar" explain that and
  * offer the install; a bar pinned to the bottom keeps "Instalar o app" one tap away.
  */
-export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, canSignIn = false }: Props) {
+export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, onNudge, canSignIn = false }: Props) {
   const insets = useSafeAreaInsets();
   const [ask, setAsk] = useState(false);
   const [steps, setSteps] = useState(false);
@@ -54,7 +56,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, canSi
   };
 
   return (
-    <LandingPage onStart={() => start("signup")} onSignIn={() => start("signin")} onLegal={onLegal} onInstall={installed ? undefined : install}>
+    <LandingPage onStart={() => start("signup")} onSignIn={() => start("signin")} onLegal={onLegal} onInstall={installed ? undefined : install} onNudge={onNudge}>
       {/* Room for the bar under the footer. */}
       <View style={{ height: BAR_HEIGHT + insets.bottom }} />
       {/* Hidden under the steps sheet, whose own buttons sit where it would. */}
@@ -65,7 +67,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, canSi
           <>
             <SurfaceButton label="Instalar o app" onPress={install} />
             <AppText variant="footnote" color="secondaryLabel" align="center">
-              7 dias grátis · sem cartão · sem loja de apps
+              Grátis · sem loja de apps
             </AppText>
           </>
         )}
@@ -88,7 +90,7 @@ export function InstallGate({ mode, installed, iPhone, onInstall, onLegal, canSi
                   A conta e as dicas funcionam no app instalado. Leva menos de um minuto.
                 </AppText>
                 <AppText variant="subheadline" align="center" style={styles.bold}>
-                  7 dias grátis · sem cartão · sem loja de apps
+                  Grátis · sem loja de apps
                 </AppText>
                 <SurfaceButton label="Instalar agora" onPress={install} />
               </>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { pinned, space, useColumnGutter } from "@/theme";
+import { ACTION_WIDTH, pinned, space, useColumnGutter } from "@/theme";
 
 import { AppText } from "./app-text";
 import { MoonScene, sceneLayout } from "./moon-scene";
@@ -117,8 +117,10 @@ export function MoonTrick(props: Props) {
           </View>
         </>
       )}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg, paddingHorizontal: gutter + space.xl }]}>
-        <Footer {...props} litNow={speech.lit} />
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.lg }]}>
+        <View style={styles.action}>
+          <Footer {...props} litNow={speech.lit} />
+        </View>
       </View>
     </View>
   );
@@ -131,5 +133,6 @@ const styles = StyleSheet.create({
   dim: { color: "rgba(235,238,250,0.72)" },
   line: { color: SILVER, fontWeight: "600", letterSpacing: 0.3 },
   phrase: { marginTop: space.sm },
-  footer: { position: "absolute", left: 0, right: 0, bottom: 0 },
+  footer: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
+  action: { width: "100%", maxWidth: ACTION_WIDTH + 2 * space.xl, paddingHorizontal: space.xl },
 });

@@ -2,7 +2,7 @@ import { type ReactNode, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { backdrops, HIT, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
+import { ACTION_WIDTH, backdrops, HIT, MAX_WIDTH, pinned, space, useTheme } from "@/theme";
 
 import { AppText } from "./app-text";
 import { Icon } from "./icon";
@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
   backLabel: { fontWeight: "600" },
   pressed: { opacity: 0.6 },
   // Same column as the content, so buttons do not stretch across a desktop screen.
-  footer: { paddingHorizontal: space.xl, paddingTop: space.sm, maxWidth: MAX_WIDTH, width: "100%", alignSelf: "center" },
+  footer: { paddingHorizontal: space.xl, paddingTop: space.sm, maxWidth: ACTION_WIDTH + 2 * space.xl, width: "100%", alignSelf: "center" },
   footerBar: { left: 0, right: 0, bottom: 0, alignItems: "center" },
 });

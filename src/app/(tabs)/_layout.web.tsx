@@ -7,7 +7,7 @@ import { useUnreadCount } from "@/state/use-chat";
 import { useIncomingCount } from "@/state/use-friends";
 import { useOnlineSharing } from "@/state/use-online";
 import { playSplash, settleWater, stirWater } from "@/services/water-sound";
-import { MAX_WIDTH, pinned, useTheme } from "@/theme";
+import { pinned, useTheme } from "@/theme";
 
 // Native tabs render as a floating pill on top of the page on web, which does
 // not fit four tabs on a phone. The PWA draws its own floating bar instead: the liquid glass navbar.
@@ -80,7 +80,8 @@ const EDGE = 18;
 // (it overflows it evenly): mobile Safari paints its toolbar in a solid colour when a fixed box at least 90% of the
 // window wide sits at the bottom edge, and keeps that colour once a scroll has put its probe point inside the box
 // (WebKit fixedContainerEdges). The wrap stays at 84%, below that, and off the edge (`bottom`, not padding).
-const BAR = { width: `calc(100vw - ${2 * EDGE}px)`, maxWidth: MAX_WIDTH };
+// Five tabs read as one group: on a wide screen the pill stays this narrow instead of spanning the 1120 px column.
+const BAR = { width: `calc(100vw - ${2 * EDGE}px)`, maxWidth: 640 };
 const SIDE = "8%";
 
 const styles = StyleSheet.create({
