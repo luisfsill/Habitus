@@ -58,8 +58,9 @@ interface BannersProps {
   onAllowExactAlarms: () => void;
 }
 
-/** The one permission problem worth showing right now, if any. */
+/** The one permission problem worth showing right now, if any. None in dev: the dev server rarely has the permission. */
 export function PermissionBanners({ permission, exactAlarms, onOpenSettings, onAllowExactAlarms }: BannersProps) {
+  if (__DEV__) return null;
   if (permission === "denied") return <PermissionBanner onPress={onOpenSettings} />;
   if (permission === "granted" && !exactAlarms) return <PermissionBanner kind="exact-alarms" onPress={onAllowExactAlarms} />;
   return null;
